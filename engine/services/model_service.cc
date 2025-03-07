@@ -155,8 +155,8 @@ ModelService::ModelService(std::shared_ptr<DatabaseService> db_service,
       inference_svc_(inference_service),
       engine_svc_(engine_svc),
       task_queue_(task_queue) {
-  // ProcessBgrTasks();
-};
+        // ProcessBgrTasks();
+      };
 
 void ModelService::ForceIndexingModelList() {
   CTL_INF("Force indexing model list");
@@ -947,6 +947,15 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};
       }
+      if (!mc.mmproj.empty()) {
+#if defined(_WIN32)
+        json_data["mmproj"] = cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).wstring());
+#else
+        json_data["mmproj"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).string();
+#endif
+      }
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
@@ -996,16 +1005,18 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     auto data = std::get<1>(ir);
 
     if (status == drogon::k200OK) {
-      // start model successfully, we store the metadata so we can use
+      // start model successfully, in case not vision model, we store the metadata so we can use
       // for each inference
-      auto metadata_res = GetModelMetadata(model_handle);
-      if (metadata_res.has_value()) {
-        loaded_model_metadata_map_.emplace(model_handle,
-                                           std::move(metadata_res.value()));
-        CTL_INF("Successfully stored metadata for model " << model_handle);
-      } else {
-        CTL_WRN("Failed to get metadata for model " << model_handle << ": "
-                                                    << metadata_res.error());
+      if (!json_data.isMember("mmproj") || json_data["mmproj"].isNull()) {
+        auto metadata_res = GetModelMetadata(model_handle);
+        if (metadata_res.has_value()) {
+          loaded_model_metadata_map_.emplace(model_handle,
+                                             std::move(metadata_res.value()));
+          CTL_INF("Successfully stored metadata for model " << model_handle);
+        } else {
+          CTL_WRN("Failed to get metadata for model " << model_handle << ": "
+                                                      << metadata_res.error());
+        }
       }
 
       return StartModelResult{.success = true,

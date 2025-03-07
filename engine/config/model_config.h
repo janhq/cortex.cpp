@@ -135,6 +135,7 @@ struct ModelConfig {
   bool text_model = std::numeric_limits<bool>::quiet_NaN();
   std::string id;
   std::vector<std::string> files;
+  std::string mmproj;
   std::size_t created;
   std::string object;
   std::string owned_by = "";
@@ -338,6 +339,9 @@ struct ModelConfig {
       files_array.append(file);
     }
     obj["files"] = files_array;
+    if (!mmproj.empty()) {
+      obj["mmproj"] = mmproj;
+    }
 
     obj["created"] = static_cast<Json::UInt64>(created);
     obj["object"] = object;
