@@ -163,5 +163,5 @@ class TestApiGetListAssistant:
         }
 
         # Validate response schema
-        jsonschema.validate(instance=response_list_assistant, schema=schema)
+        jsonschema.validate(instance=json_data_list_assistant, schema=schema)
     

@@ -67,36 +67,26 @@ class TestApiDeleteAssistant:
         assert_equal(response_del_assistant.status_code,200)
         
         schema = {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
             "properties": {
-            "deleted": {
-                "description": "Indicates the assistant was successfully deleted.",
-                "enum": [
-                True
-                ],
-                "type": "boolean"
+                "deleted": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "object": {
+                    "type": "string",
+                    "enum": ["assistant.deleted"]
+                }
             },
-            "id": {
-                "description": "The unique identifier of the deleted assistant.",
-                "type": "string"
-            },
-            "object": {
-                "description": "The object type for a deleted assistant.",
-                "enum": [
-                "assistant.deleted"
-                ],
-                "type": "string"
-            }
-            },
-            "required": [
-            "id",
-            "object",
-            "deleted"
-            ],
-            "type": "object"
+            "required": ["deleted", "id", "object"]
         }
 
+
         # Validate response schema
-        jsonschema.validate(instance=response_del_assistant, schema=schema)
+        jsonschema.validate(instance=json_data_del_assistant, schema=schema)
         
         # Assert content
         assert_equal(response_del_assistant["deleted"], True)

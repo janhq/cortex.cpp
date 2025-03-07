@@ -58,6 +58,9 @@ class TestApiGetAssistant:
         assistant_id=json_data["id"]
         
         # Get list assistant
+        headers = {
+            "OpenAI-Beta": "assistants=v2"
+        }
         assistantid_url=f"http://localhost:3928/v1/assistants/{assistant_id}"
         response_assistant = requests.get(
             assistantid_url
@@ -104,6 +107,6 @@ class TestApiGetAssistant:
         }
 
         # Validate response schema
-        jsonschema.validate(instance=response_assistant, schema=schema)
+        jsonschema.validate(instance=json_data_assistant, schema=schema)
         assert_equal(json_data_assistant["id"], assistant_id)
     
