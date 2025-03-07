@@ -34,6 +34,8 @@ struct CurlResponse {
   std::string error_message;
 };
 
+enum class RequestType { kChatCompletions, kEmbeddings };
+
 class RemoteEngine : public RemoteEngineI {
  protected:
   // Model configuration
@@ -58,11 +60,15 @@ class RemoteEngine : public RemoteEngineI {
   std::string engine_name_;
   std::string chat_url_;
   trantor::ConcurrentTaskQueue q_;
+  // TODO(sang)
+  std::string embed_req_template_;
+  std::string embed_res_template_;
+  std::string embed_url_;
 
   // Helper functions
-  CurlResponse MakeChatCompletionRequest(const ModelConfig& config,
-                                         const std::string& body,
-                                         const std::string& method = "POST");
+  CurlResponse MakeNonStreamRequest(
+      const ModelConfig& config, const std::string& body,
+      const RequestType& req_type = RequestType::kChatCompletions);
   CurlResponse MakeStreamingChatCompletionRequest(
       const ModelConfig& config, const std::string& body,
       const std::function<void(Json::Value&&, Json::Value&&)>& callback);
