@@ -22,6 +22,29 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Add CORTEX_CQA option
+# Enabling this option will currently break the build.
+# Only for debugging
+option(CORTEX_CQA "Enable Cortex Code Quality Assurance(DO NOT TURN THIS ON unless you know what you are doing)" OFF)
+
+if(CORTEX_CQA)
+    message(STATUS "CORTEX_CQA is ON: Enabling debug symbols, ASan, All Warnings, and treating Warnings as Errors")
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        add_compile_options(-fsanitize=address -Wall -Wextra -Wpedantic -Werror -g)
+        add_link_options(-fsanitize=address)
+    elseif(MSVC)
+        # TODO: Sang, test on Windows and setup MSVC accordingly
+        add_compile_options(/INFERASAN /Wall /WX /Zi)
+        add_link_options(/DEBUG)
+        message(WARNING "Address Sanitizer might require additional setup on MSVC. Please refer to MSVC documentation for ASan.")
+    else()
+        message(WARNING "Address Sanitizer and warning flags are not automatically configured for this compiler. Please configure them manually if supported.")
+    endif()
+else()
+    message(STATUS "CORTEX_CQA is OFF.")
+endif()
+
 if(MSVC)
   add_compile_options(
       $<$<CONFIG:>:/MT> #---------|
@@ -56,7 +79,7 @@ endif()
 if(NOT DEFINED CORTEX_CPP_VERSION)
   set(CORTEX_CPP_VERSION "default_version")
 endif()
- 
+
 add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
@@ -101,7 +124,7 @@ set(CHUNK_INDEX 0)
 
 while(${OFFSET} LESS ${CONTENT_LENGTH})
     math(EXPR REMAINING "${CONTENT_LENGTH} - ${OFFSET}")
-    
+
     if(${REMAINING} LESS ${CHUNK_SIZE})
         string(SUBSTRING "${JSON_CONTENT}" ${OFFSET} ${REMAINING} CHUNK_CONTENT)
         math(EXPR OFFSET "${OFFSET} + ${REMAINING}")
@@ -109,16 +132,16 @@ while(${OFFSET} LESS ${CONTENT_LENGTH})
         string(SUBSTRING "${JSON_CONTENT}" ${OFFSET} ${CHUNK_SIZE} CHUNK_CONTENT)
         math(EXPR OFFSET "${OFFSET} + ${CHUNK_SIZE}")
     endif()
-    
+
     # Escape special characters
     string(REPLACE "\\" "\\\\" CHUNK_CONTENT "${CHUNK_CONTENT}")
     string(REPLACE "\"" "\\\"" CHUNK_CONTENT "${CHUNK_CONTENT}")
     string(REPLACE "\n" "\\n" CHUNK_CONTENT "${CHUNK_CONTENT}")
-    
+
     file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
         "    inline std::string const json_part_${CHUNK_INDEX} = \"${CHUNK_CONTENT}\";\n"
     )
-    
+
     math(EXPR CHUNK_INDEX "${CHUNK_INDEX} + 1")
 endwhile()
 
@@ -192,7 +215,7 @@ aux_source_directory(database DB_SRC)
 aux_source_directory(extensions EX_SRC)
 aux_source_directory(migrations MIGR_SRC)
 aux_source_directory(utils UTILS_SRC)
- 
+
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 
 target_sources(${TARGET_NAME} PRIVATE ${UTILS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC} ${EX_SRC} ${MIGR_SRC} ${REPO_SRC})
