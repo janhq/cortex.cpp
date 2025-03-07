@@ -2,7 +2,6 @@ import pytest
 import requests
 from utils.test_runner import start_server, stop_server
 import jsonschema
-import time
 from utils.logger import log_response
 from utils.assertion import assert_equal
 
@@ -24,7 +23,6 @@ class TestApiCreateAssistant:
     def test_api_create_assistant_successfully(self):
         headers = {
             "Content-Type": "application/json",
-            "Authorization": "Bearer apikey1"
         }
         
         data = {
@@ -165,37 +163,3 @@ class TestApiCreateAssistant:
         # Validate response schema
         jsonschema.validate(instance=json_data, schema=schema)
     
-    # def test_create_assistant(self):
-    #     # time.sleep(30)
-    #     url = "http://localhost:3928/v1/assistants"
-    #     headers = {
-    #         "OpenAI-Beta": "assistants=v1",
-    #         "Content-Type": "application/json",
-    #         "Authorization": "Bearer apikey1"
-    #     }
-    #     payload = {
-    #         "description": "",
-    #         "instructions": "",
-    #         "metadata": {
-    #             "ANY_ADDITIONAL_PROPERTY": "anything"
-    #         },
-    #         "model": "tinyllama:1b",
-    #         "name": "test_assistant",
-    #         "response_format": "auto",
-    #         "temperature": 1,
-    #         "tool_resources": {
-    #             "code_interpreter": {},
-    #             "file_search": {}
-    #         },
-    #         "tools": [
-    #             {"type": "code_interpreter"}
-    #         ],
-    #         "top_p": 1
-    #     }
-
-    #     response = requests.post(url, headers=headers, json=payload)
-
-    #     print(f"Status Code: {response.status_code}")
-    #     print(f"Response Body: {response.text}")
-
-    #     assert response.status_code == 200
