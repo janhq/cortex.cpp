@@ -64,59 +64,102 @@ class TestApiGetListAssistant:
         assert_equal(response_list_assistant.status_code,200)
         
         schema = {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
             "properties": {
-            "data": {
-                "items": {
-                "properties": {
-                    "created_at": {
-                    "description": "Unix timestamp (in seconds) of when the assistant was created.",
-                    "type": "integer"
-                    },
-                    "id": {
-                    "description": "The unique identifier of the assistant.",
-                    "type": "string"
-                    },
-                    "metadata": {
-                    "additionalProperties": True,
-                    "description": "Set of key-value pairs that can be attached to the assistant.",
-                    "type": "object"
-                    },
-                    "model": {
-                    "description": "The model identifier used by the assistant.",
-                    "type": "string"
-                    },
-                    "object": {
-                    "description": "The object type, which is always 'assistant'.",
-                    "enum": [
-                        "assistant"
-                    ],
-                    "type": "string"
+                "object": {
+                    "type": "string",
+                    "enum": ["list"]
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "created_at": {
+                                "type": "integer"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "instructions": {
+                                "type": "string"
+                            },
+                            "metadata": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            },
+                            "model": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "object": {
+                                "type": "string",
+                                "enum": ["assistant"]
+                            },
+                            "temperature": {
+                                "type": "number"
+                            },
+                            "tool_resources": {
+                                "type": "object",
+                                "properties": {
+                                    "file_search": {
+                                        "type": "object",
+                                        "properties": {
+                                            "vector_store_ids": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "required": ["vector_store_ids"]
+                                    }
+                                },
+                                "required": ["file_search"]
+                            },
+                            "tools": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "enum": ["code_interpreter"]
+                                        }
+                                    },
+                                    "required": ["type"]
+                                }
+                            },
+                            "top_p": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "created_at",
+                            "description",
+                            "id",
+                            "instructions",
+                            "metadata",
+                            "model",
+                            "name",
+                            "object",
+                            "temperature",
+                            "tool_resources",
+                            "tools",
+                            "top_p"
+                        ]
                     }
-                },
-                "required": [
-                    "id",
-                    "object",
-                    "created_at",
-                    "model",
-                    "metadata"
-                ],
-                "type": "object"
-                },
-                "type": "array"
+                }
             },
-            "object": {
-                "description": "The object type, which is always 'list' for a list response.",
-                "enum": [
-                "list"
-                ],
-                "type": "string"
-            }
-            },
-            "required": [
-            "object",
-            "data"
-            ],
-            "type": "object"
+            "required": ["object", "data"]
         }
 
         # Validate response schema

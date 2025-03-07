@@ -55,7 +55,7 @@ class TestApiGetAssistant:
         log_response(json_data, "test_api_get_assistant_successfully")
         assert_equal(response.status_code,200)
         
-        assistant_id=response["id"]
+        assistant_id=json_data["id"]
         
         # Get list assistant
         assistantid_url=f"http://localhost:3928/v1/assistants/{assistant_id}"
