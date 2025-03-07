@@ -63,7 +63,7 @@ class TestApiGetAssistant:
         }
         assistantid_url=f"http://localhost:3928/v1/assistants/{assistant_id}"
         response_assistant = requests.get(
-            assistantid_url
+            assistantid_url, headers= headers
         )
         json_data_assistant = response_assistant.json()
         log_response(json_data_assistant, "test_api_get_assistant_successfully")

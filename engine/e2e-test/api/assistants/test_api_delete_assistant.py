@@ -89,7 +89,7 @@ class TestApiDeleteAssistant:
         jsonschema.validate(instance=json_data_del_assistant, schema=schema)
         
         # Assert content
-        assert_equal(response_del_assistant["deleted"], True)
-        assert_equal(response_del_assistant["id"], assistant_id)
-        assert_equal(response_del_assistant["object"], "assistant.deleted")
+        assert_equal(json_data_del_assistant["deleted"], True)
+        assert_equal(json_data_del_assistant["id"], assistant_id)
+        assert_equal(json_data_del_assistant["object"], "assistant.deleted")
     
