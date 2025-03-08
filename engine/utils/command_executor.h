@@ -7,7 +7,7 @@
 
 #ifdef _WIN32
 #define POPEN _popen
-#define PCLOSE windo
+#define PCLOSE _pclose
 #else
 #define POPEN popen
 #define PCLOSE pclose
