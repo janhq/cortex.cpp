@@ -102,6 +102,12 @@ jobs:
         run: |
           cd engine
           make configure-vcpkg
+      
+      - name: Clean vcpkg directory
+        if: runner.os = 'Linux'
+        run: |
+          cd engine
+          rm -rf vcpkg
 
       - name: Configure vcpkg linux amd64
         if: runner.os != 'Linux'
