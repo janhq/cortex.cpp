@@ -304,7 +304,14 @@ void HardwareService::UpdateHardwareInfos() {
   };
   for (auto const& he : b.value()) {
     if (!exists(he.uuid)) {
-      db_service_->DeleteHardwareEntry(he.uuid);
+      auto result = db_service_->DeleteHardwareEntry(he.uuid);
+      if (!result) {
+        // Handle the error if any.
+        // Log the Error
+        LOG_ERROR << "Error deleting hardware entry " << he.uuid << ": "
+                  << result.error();
+        continue;
+      }
     }
   }
 
