@@ -187,7 +187,7 @@ struct CpuInfo {
       return CPU{};
     auto cpu = res[0];
     cortex::cpuid::CpuInfo inst;
-    float usage = GetCPUUsage();
+    auto usage = static_cast<float>(GetCPUUsage());
     return CPU{.cores = cpu.numPhysicalCores(),
                .arch = std::string(GetArch()),
                .model = cpu.modelName(),

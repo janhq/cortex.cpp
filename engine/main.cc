@@ -105,7 +105,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
 #if defined(_WIN32)
-      std::filesystem::u8path(config.logFolderPath) /
+      std::filesystem::path(cortex::wc::Utf8ToWstring(config.logFolderPath)) /
 #else
       std::filesystem::path(config.logFolderPath) /
 #endif

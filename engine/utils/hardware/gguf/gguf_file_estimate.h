@@ -6,7 +6,7 @@
 
 namespace hardware {
 inline uint64_t BytesToMiB(uint64_t b) {
-  return (double)b / 1024 / 1024;
+  return static_cast<uint64_t>((double)b / 1024 / 1024);
 };
 struct RunConfig {
   int ngl;
@@ -91,8 +91,8 @@ inline std::optional<Estimation> EstimateLLaMACppRun(
   // std::cout << n_vocab << std::endl;
 
   // token_embeddings_size = n_vocab * embedding_length * 2 * quant_bit_in/16 bytes
-  int32_t quant_bit_in = 0;
-  int32_t quant_bit_out = 0;
+  float quant_bit_in = 0;
+  float quant_bit_out = 0;
 
   for (auto const& ti : (*gf).tensor_infos) {
     if (ti->name == "output.weight") {
@@ -109,16 +109,17 @@ inline std::optional<Estimation> EstimateLLaMACppRun(
   // std::cout << "n_vocab: " << n_vocab << std::endl;
   // std::cout << "file_size: " << file_size << std::endl;
   // Model weight
-  int64_t token_embeddings_size =
-      n_vocab * embedding_length * 2 * quant_bit_in / 16;
-  int64_t output_layer_size =
-      n_vocab * embedding_length * 2 * quant_bit_out / 16;
+  auto token_embeddings_size =
+      static_cast<int64_t>(n_vocab * embedding_length * 2 * quant_bit_in / 16);
+  auto output_layer_size =
+      static_cast<int64_t>(n_vocab * embedding_length * 2 * quant_bit_out / 16);
   // RAM = token_embeddings_size + ((total_ngl-ngl) >=1 ? output_layer_size +  (total_ngl - ngl - 1 ) / (total_ngl-1) * (total_file_size - token_embeddings_size - output_layer_size) : 0  )  (bytes)
   int64_t offload = 0;
   if (total_ngl >= rc.ngl + 1) {
-    offload = output_layer_size +
-              (double)(total_ngl - rc.ngl - 1) / (total_ngl - 1) *
-                  (file_size - token_embeddings_size - output_layer_size);
+    offload = static_cast<int64_t>(
+        output_layer_size +
+        (double)(total_ngl - rc.ngl - 1) / (total_ngl - 1) *
+            (file_size - token_embeddings_size - output_layer_size));
   }
 
   int64_t ram_usage = token_embeddings_size + offload;
@@ -133,18 +134,18 @@ inline std::optional<Estimation> EstimateLLaMACppRun(
   // KV cache
   // kv_cache_size = ctx_len/8192 * hidden_dim/4096 * quant_bit/16 * num_block/33 * 1 (GB)
   auto hidden_dim = embedding_length;
-  int kv_quant_bit =
+  auto kv_quant_bit =
       GetQuantBit(rc.kv_cache_type);  // f16, 8 bits for q8_0, 4.5 bits for q4_0
-  int64_t kv_cache_size = (double)(1024 * 1024 * 1024) * rc.ctx_len / 8192 *
-                          hidden_dim / 4096 * kv_quant_bit / 16 * num_block /
-                          33;  //(bytes)
+  auto kv_cache_size = static_cast<int64_t>(
+      (double)(1024 * 1024 * 1024) * rc.ctx_len / 8192 * hidden_dim / 4096 *
+      kv_quant_bit / 16 * num_block / 33);  //(bytes)
 
   // std::cout << "kv_cache_size: " << BytesToMiB(kv_cache_size) << std::endl;
 
   // VRAM = (min(n_batch, n_ubatch))/ 512 * 266 (MiB)
-  int64_t preprocessing_buffer_size =
+  auto preprocessing_buffer_size = static_cast<int64_t>(
       (double)std::min(rc.n_batch, rc.n_ubatch) / 512 * 266 * 1024 * 1024 *
-      n_vocab / 128256 /*llama3 n_vocab*/;  //(bytes)
+      n_vocab / 128256 /*llama3 n_vocab*/);  //(bytes)
   if (total_ngl != rc.ngl) {
     preprocessing_buffer_size += output_layer_size;
   }
@@ -173,8 +174,8 @@ inline std::optional<Estimation> EstimateLLaMACppRun(
     if (rc.free_vram_MiB > res.gpu_mode.vram_MiB) {
       res.gpu_mode.recommend_ngl = total_ngl;
     } else {
-      res.gpu_mode.recommend_ngl =
-          (double)rc.free_vram_MiB / res.gpu_mode.vram_MiB * rc.ngl;
+      res.gpu_mode.recommend_ngl = static_cast<int>(
+          (double)rc.free_vram_MiB / res.gpu_mode.vram_MiB * rc.ngl);
     }
 #if defined(__APPLE__) && defined(__MACH__)
     res.cpu_mode.ram_MiB = res.gpu_mode.vram_MiB + res.gpu_mode.ram_MiB;

@@ -67,7 +67,7 @@ inline std::string WriteKeyValue(const std::string& key,
         strValue.pop_back();
       }
       out_file << strValue;
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       out_file << value;  // If not a float, write as is
     }
   } else {
