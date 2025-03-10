@@ -106,9 +106,19 @@ bool HardwareService::Restart(const std::string& host, int port) {
     return false;
   }
 
+#ifdef _MSC_VER
+  char* value = nullptr;
+  size_t len = 0;
+  _dupenv_s(&value, &len, "CUDA_VISIBLE_DEVICES");
+#else
   const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+#endif
+
   if (value) {
     LOG_INFO << "CUDA_VISIBLE_DEVICES is set to: " << value;
+#ifdef _MSC_VER
+    free(value);
+#endif
   } else {
     LOG_WARN << "CUDA_VISIBLE_DEVICES is not set.";
   }
@@ -128,9 +138,18 @@ bool HardwareService::Restart(const std::string& host, int port) {
     return false;
   }
 
+#ifdef _MSC_VER
+  char* vk_value = nullptr;
+  _dupenv_s(&vk_value, &len, "GGML_VK_VISIBLE_DEVICES");
+#else
   const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+#endif
+
   if (vk_value) {
     LOG_INFO << "GGML_VK_VISIBLE_DEVICES is set to: " << vk_value;
+#ifdef _MSC_VER
+    free(vk_value);
+#endif
   } else {
     LOG_WARN << "GGML_VK_VISIBLE_DEVICES is not set.";
   }
@@ -240,7 +259,7 @@ bool HardwareService::SetActivateHardwareConfig(
   auto priority = [&ahc](int software_id) -> int {
     for (size_t i = 0; i < ahc.gpus.size(); i++) {
       if (ahc.gpus[i] == software_id)
-        return i;
+        return static_cast<int>(i);
       break;
     }
     return INT_MAX;
@@ -397,16 +416,33 @@ void HardwareService::UpdateHardwareInfos() {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   bool has_deactivated_gpu = a.value().size() != activated_gpu_af.size();
   if (!gpus.empty() && has_deactivated_gpu) {
+#ifdef _MSC_VER
+    char* value = nullptr;
+    size_t len = 0;
+    _dupenv_s(&value, &len, "CUDA_VISIBLE_DEVICES");
+#else
     const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+#endif
     if (value) {
       LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
+#ifdef _MSC_VER
+      free(value);
+#endif
     } else {
       need_restart = true;
     }
 
+#ifdef _MSC_VER
+    char* vk_value = nullptr;
+    _dupenv_s(&vk_value, &len, "GGML_VK_VISIBLE_DEVICES");
+#else
     const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+#endif
     if (vk_value) {
       LOG_INFO << "GGML_VK_VISIBLE_DEVICES: " << vk_value;
+#ifdef _MSC_VER
+      free(vk_value);
+#endif
     } else {
       need_restart = true;
     }

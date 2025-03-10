@@ -37,7 +37,8 @@ class CommandExecutor {
     std::array<char, 128> buffer;
     std::string result;
 
-    while (fgets(buffer.data(), buffer.size(), m_pipe.get()) != nullptr) {
+    while (fgets(buffer.data(), static_cast<int>(buffer.size()),
+                 m_pipe.get()) != nullptr) {
       result += buffer.data();
     }
 
