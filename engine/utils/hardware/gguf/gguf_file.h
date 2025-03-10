@@ -63,7 +63,6 @@ enum GGUFMetadataValueType : uint32_t {
   GGUFMetadataValueTypeUint64,
   GGUFMetadataValueTypeInt64,
   GGUFMetadataValueTypeFloat64,
-  _GGUFMetadataValueTypeCount  // Unknown
 };
 
 struct GGUFMetadataKV {
@@ -293,10 +292,9 @@ struct GGUFHelper {
 
   std::string ReadString() {
     auto l = Read<uint64_t>();
-    std::string res(reinterpret_cast<const char*>(data), l);
-    auto r = res;
+    std::string result(reinterpret_cast<const char*>(data), l);
     data += l;
-    return r;
+    return result;
   }
 
   GGUFMetadataKVArrayValue ReadArray() {

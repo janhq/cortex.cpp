@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
-#include "utils/result.hpp"
 
 namespace hardware {
 enum GGMLType {
