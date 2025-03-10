@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <drogon/HttpClient.h>
 #include <drogon/HttpResponse.h>
 #include <sys/stat.h>
@@ -31,9 +30,16 @@ inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
 // example: Mon, 25 Nov 2024 09:57:03 GMT
 inline std::string GetDateRFC1123() {
   std::time_t now = std::time(nullptr);
-  std::tm* gmt_time = std::gmtime(&now);
+  std::tm gmt_time = {};
+#ifdef _MSC_VER
+  gmtime_s(&gmt_time, &now);
   std::ostringstream oss;
-  oss << std::put_time(gmt_time, "%a, %d %b %Y %H:%M:%S GMT");
+  oss << std::put_time(&gmt_time, "%a, %d %b %Y %H:%M:%S GMT");
+#else
+  std::tm* gmt_time_ptr = std::gmtime(&now);
+  std::ostringstream oss;
+  oss << std::put_time(gmt_time_ptr, "%a, %d %b %Y %H:%M:%S GMT");
+#endif
   return oss.str();
 }
 
