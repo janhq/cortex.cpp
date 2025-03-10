@@ -6,7 +6,7 @@
 
 namespace hardware {
 inline uint64_t BytesToMiB(uint64_t b) {
-  return static_cast<uint64_t>((double)b / 1024 / 1024);
+  return static_cast<uint64_t>(static_cast<double>(b) / 1024 / 1024);
 };
 struct RunConfig {
   int ngl;
@@ -118,7 +118,7 @@ inline std::optional<Estimation> EstimateLLaMACppRun(
   if (total_ngl >= rc.ngl + 1) {
     offload = static_cast<int64_t>(
         output_layer_size +
-        (double)(total_ngl - rc.ngl - 1) / (total_ngl - 1) *
+        static_cast<double>(total_ngl - rc.ngl - 1) / (total_ngl - 1) *
             (file_size - token_embeddings_size - output_layer_size));
   }
 
@@ -137,15 +137,15 @@ inline std::optional<Estimation> EstimateLLaMACppRun(
   auto kv_quant_bit =
       GetQuantBit(rc.kv_cache_type);  // f16, 8 bits for q8_0, 4.5 bits for q4_0
   auto kv_cache_size = static_cast<int64_t>(
-      (double)(1024 * 1024 * 1024) * rc.ctx_len / 8192 * hidden_dim / 4096 *
-      kv_quant_bit / 16 * num_block / 33);  //(bytes)
+      static_cast<double>(1024 * 1024 * 1024) * rc.ctx_len / 8192 * hidden_dim /
+      4096 * kv_quant_bit / 16 * num_block / 33);  //(bytes)
 
   // std::cout << "kv_cache_size: " << BytesToMiB(kv_cache_size) << std::endl;
 
   // VRAM = (min(n_batch, n_ubatch))/ 512 * 266 (MiB)
   auto preprocessing_buffer_size = static_cast<int64_t>(
-      (double)std::min(rc.n_batch, rc.n_ubatch) / 512 * 266 * 1024 * 1024 *
-      n_vocab / 128256 /*llama3 n_vocab*/);  //(bytes)
+      static_cast<double>(std::min(rc.n_batch, rc.n_ubatch)) / 512 * 266 *
+      1024 * 1024 * n_vocab / 128256 /*llama3 n_vocab*/);  //(bytes)
   if (total_ngl != rc.ngl) {
     preprocessing_buffer_size += output_layer_size;
   }
@@ -174,8 +174,9 @@ inline std::optional<Estimation> EstimateLLaMACppRun(
     if (rc.free_vram_MiB > res.gpu_mode.vram_MiB) {
       res.gpu_mode.recommend_ngl = total_ngl;
     } else {
-      res.gpu_mode.recommend_ngl = static_cast<int>(
-          (double)rc.free_vram_MiB / res.gpu_mode.vram_MiB * rc.ngl);
+      res.gpu_mode.recommend_ngl =
+          static_cast<int>(static_cast<double>(rc.free_vram_MiB) /
+                           res.gpu_mode.vram_MiB * rc.ngl);
     }
 #if defined(__APPLE__) && defined(__MACH__)
     res.cpu_mode.ram_MiB = res.gpu_mode.vram_MiB + res.gpu_mode.ram_MiB;
