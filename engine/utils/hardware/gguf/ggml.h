@@ -83,11 +83,9 @@ inline float GetQuantBit(GGMLType gt) {
     case GGML_TYPE_Q8_1:
     case GGML_TYPE_Q8_K:
       return 8.0f;
-
     case GGML_TYPE_I64:
     case GGML_TYPE_F64:
       return 64.0f;
-
     default:
       return 8.0f;
   }
@@ -171,7 +169,7 @@ inline std::string to_string(GGMLType t) {
 struct GGMLTypeTrait {
   uint64_t block_size;
   uint64_t type_size;
-  bool is_quantized;
+  bool is_quantized = false;
 };
 
 const std::unordered_map<GGMLType, GGMLTypeTrait> kGGMLTypeTraits = {
