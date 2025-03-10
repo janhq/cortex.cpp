@@ -20,7 +20,7 @@ class CommandExecutor {
     if (!pipe) {
       throw std::runtime_error("popen() failed!");
     }
-    m_pipe = std::unique_ptr<FILE, decltype(&PCLOSE)>(pipe, PCLOSE);
+    m_pipe = std::unique_ptr<FILE, void (*)(FILE*)>(pipe, [](FILE* file) { if (file) { PCLOSE(file); } });
   }
 
   CommandExecutor(const CommandExecutor&) = delete;
@@ -46,5 +46,5 @@ class CommandExecutor {
   }
 
  private:
-  std::unique_ptr<FILE, decltype(&PCLOSE)> m_pipe{nullptr, PCLOSE};
+  std::unique_ptr<FILE, void (*)(FILE*)> m_pipe{nullptr, [](FILE* file) { if (file) { PCLOSE(file); } }};
 };
