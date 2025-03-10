@@ -45,5 +45,5 @@ class CommandExecutor {
   }
 
  private:
- std::unique_ptr<FILE, void (*)(FILE*)> m_pipe{nullptr, [](FILE* file) { if (file) { PCLOSE(file); } }};
+  std::unique_ptr<FILE, void (*)(FILE*)> m_pipe{nullptr, [](FILE* file) { if (file) { PCLOSE(file); } }};
 };
