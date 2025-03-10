@@ -153,7 +153,8 @@ inline std::string FromUrl(const Url& url) {
     } catch (const std::bad_variant_access& e) {
       // Handle the case where the variant does not match any of the expected types
       // This should not happen if the map was created correctly
-      throw std::runtime_error("Invalid variant type in queries map");
+      throw std::runtime_error(
+          std::string("Invalid variant type in queries map: ") + e.what());
     }
   }
 
