@@ -433,8 +433,8 @@ class VulkanGpu {
       for (uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
         if (memory_properties.memoryHeaps[i].flags &
             VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-          gpu_avail_MiB +=
-              memory_properties.memoryHeaps[i].size / (1024ull * 1024ull);
+          gpu_avail_MiB += static_cast<int>(
+              memory_properties.memoryHeaps[i].size / (1024ull * 1024ull));
         }
       }
 
@@ -449,8 +449,10 @@ class VulkanGpu {
       used_vram_MiB = gpus_usages[device_properties.deviceName];
 
 #endif
-      int free_vram_MiB =
-          total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
+      auto free_vram_MiB =
+          total_vram_MiB > used_vram_MiB
+              ? static_cast<int>(total_vram_MiB - used_vram_MiB)
+              : 0;
       if (device_properties.vendorID == kNvidiaVendor ||
           device_properties.vendorID == kAmdVendor) {
         gpus.emplace_back(cortex::hw::GPU{
@@ -507,8 +509,10 @@ class VulkanGpu {
       total_vram_MiB = gpus_[i].free_vram;
       used_vram_MiB = gpus_usages[gpus_[i].name];
 #endif
-      int free_vram_MiB =
-          total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
+      auto free_vram_MiB =
+          total_vram_MiB > used_vram_MiB
+              ? static_cast<int>(total_vram_MiB - used_vram_MiB)
+              : 0;
       gpus_[i].free_vram = free_vram_MiB;
     }
 
