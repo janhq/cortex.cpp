@@ -70,7 +70,7 @@ inline std::unique_ptr<SystemInfo> GetSystemInfo() {
 
 #if defined(__i386__) || defined(__x86_64__) || defined(__amd64__) || \
     defined(__amd64) || defined(__x86_64) || defined(_M_AMD64)
-  arch << "amd64";
+  arch << "x64";
 #elif defined(__arm__) || defined(__arm) || defined(__arm64__) || \
     defined(__aarch64__) || defined(__thumb__) ||                 \
     defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) || \

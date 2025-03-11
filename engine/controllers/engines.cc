@@ -5,9 +5,9 @@
 #include "utils/engine_constants.h"
 #include "utils/http_util.h"
 #include "utils/logging_utils.h"
+#include "utils/normalize_engine.h"
 #include "utils/scope_exit.h"
 #include "utils/string_utils.h"
-#include "utils/normalize_engine.h"
 
 void Engines::ListEngine(
     const HttpRequestPtr& req,
@@ -146,11 +146,13 @@ void Engines::GetEngineVariants(
   auto normalize_version = string_utils::RemoveSubstring(version, "v");
   Json::Value releases(Json::arrayValue);
   for (const auto& release : result.value()) {
-    auto json = release.ToApiJson(cortex::engine::NormalizeEngine(engine), normalize_version);
+    auto json = release.ToApiJson(cortex::engine::NormalizeEngine(engine),
+                                  normalize_version);
     if (json != std::nullopt) {
       releases.append(json.value());
     }
   }
+  CTL_INF(releases.toStyledString());
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);
   resp->setStatusCode(k200OK);
   callback(resp);
@@ -173,6 +175,8 @@ void Engines::InstallEngine(
     }
     norm_version = version;
   }
+  CTL_INF("version: " << norm_version
+                      << ", norm_variant: " << norm_variant.value_or(""));
 
   auto result =
       engine_service_->InstallEngineAsync(engine, norm_version, norm_variant);

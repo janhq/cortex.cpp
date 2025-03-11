@@ -9,6 +9,7 @@
 #include "config/model_config.h"
 #include "database/engines.h"
 #include "database/models.h"
+#include "extensions/local-engine/local_engine.h"
 #include "extensions/python-engine/python_engine.h"
 #include "extensions/remote-engine/remote_engine.h"
 
@@ -18,11 +19,11 @@
 #include "utils/file_manager_utils.h"
 #include "utils/github_release_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/normalize_engine.h"
 #include "utils/result.hpp"
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
-#include "utils/normalize_engine.h"
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -236,11 +237,15 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     auto latest_version_semantic = normalized_version == "latest"
                                        ? res.value()[0].version
                                        : normalized_version;
-    auto merged_variant_name = engine + "-" + latest_version_semantic + "-" +
-                               variant_name.value() + ".tar.gz";
+    std::unordered_set<std::string> merged_variant_name = {
+        "llama-" + latest_version_semantic + "-bin-" + variant_name.value() +
+            ".tar.gz",
+        "llama-" + latest_version_semantic + "-bin-" + variant_name.value() +
+            ".zip"};
 
+    // CTL_INF("merged_variant_name: " << merged_variant_name);
     for (const auto& asset : res.value()) {
-      if (asset.name == merged_variant_name) {
+      if (merged_variant_name.find(asset.name) != merged_variant_name.end()) {
         selected_variant = asset;
         break;
       }
@@ -275,7 +280,8 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     }
   }
 
-  auto normalize_version = "v" + selected_variant->version;
+  // auto normalize_version = "v" + selected_variant->version;
+  auto normalize_version = selected_variant->version;
   auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(
       selected_variant->name, engine, selected_variant->version);
   auto variant_folder_path = file_manager_utils::GetEnginesContainerPath() /
@@ -295,11 +301,42 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     auto extract_path = finishedTask.items[0].localPath.parent_path();
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   extract_path.string(), true);
-
+    CTL_INF("local path: " << finishedTask.items[0].localPath.string()
+                           << ", extract path: " << extract_path.string());
     auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
         selected_variant->name, engine, normalize_version);
-
     CTL_INF("Extracted variant: " + variant.value());
+    try {
+      std::ofstream meta(extract_path / "version.txt", std::ios::out);
+      meta << "name: " << variant.value() << std::endl;
+      meta << "version: " << normalize_version << std::endl;
+      meta.close();
+      namespace fs = std::filesystem;
+
+      fs::path bin_path = extract_path / "build" / "bin";
+      if (fs::exists(bin_path)) {
+        for (const auto& entry : fs::directory_iterator(bin_path)) {
+          if (entry.is_regular_file()) {
+            fs::path target_file = extract_path / entry.path().filename();
+            fs::copy_file(entry.path(), target_file,
+                          fs::copy_options::overwrite_existing);
+          }
+        }
+        std::filesystem::remove_all(bin_path.parent_path());
+      }
+      if (!fs::exists(extract_path.parent_path().parent_path() / "deps")) {
+        fs::create_directory(extract_path.parent_path().parent_path() / "deps");
+      }
+      std::filesystem::permissions(extract_path / "llama-server",
+                                   std::filesystem::perms::owner_exec |
+                                       std::filesystem::perms::group_exec |
+                                       std::filesystem::perms::others_exec,
+                                   std::filesystem::perm_options::add);
+
+    } catch (const std::exception& e) {
+      CTL_INF(e.what());
+    }
+
     // set as default
 
     auto res =
@@ -436,7 +473,26 @@ std::string EngineService::GetMatchedVariant(
 cpp::result<std::vector<EngineService::EngineRelease>, std::string>
 EngineService::GetEngineReleases(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  return github_release_utils::GetReleases("janhq", ne);
+  auto ggml_org = github_release_utils::GetReleases("ggml-org", ne);
+  auto janhq = github_release_utils::GetReleases("janhq", ne);
+  if (ggml_org.has_error() && janhq.has_error()) {
+    return cpp::fail(ggml_org.error());
+  }
+  auto comparator = [](const EngineService::EngineRelease& e1,
+                       const EngineService::EngineRelease& e2) {
+    return e1.name > e2.name;
+  };
+  std::set<EngineService::EngineRelease, decltype(comparator)> s(comparator);
+  if (ggml_org.has_value()) {
+    s.insert(ggml_org.value().begin(), ggml_org.value().end());
+  }
+
+  if (janhq.has_value()) {
+    s.insert(janhq.value().begin(), janhq.value().end());
+  }
+  std::vector<EngineService::EngineRelease> res;
+  std::copy(s.begin(), s.end(), std::back_inserter(res));
+  return res;
 }
 
 cpp::result<std::vector<EngineService::EngineVariant>, std::string>
@@ -444,16 +500,40 @@ EngineService::GetEngineVariants(const std::string& engine,
                                  const std::string& version,
                                  bool filter_compatible_only) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  auto engine_release =
+  auto engine_release_janhq =
       github_release_utils::GetReleaseByVersion("janhq", ne, version);
+  auto engine_release_ggml =
+      github_release_utils::GetReleaseByVersion("ggml-org", ne, version);
 
-  if (engine_release.has_error()) {
-    return cpp::fail("Failed to get engine release: " + engine_release.error());
+  if (engine_release_janhq.has_error() && engine_release_ggml.has_error()) {
+    return cpp::fail("Failed to get engine release: " +
+                     engine_release_janhq.error());
+  }
+  if (engine_release_janhq.has_error()) {
+    CTL_WRN("Failed to get engine release: " << engine_release_janhq.error());
+  }
+
+  if (engine_release_ggml.has_error()) {
+    CTL_WRN("Failed to get engine release: " << engine_release_ggml.error());
   }
 
   std::vector<EngineVariant> compatible_variants;
-  for (const auto& variant : engine_release.value().assets) {
-    if (variant.content_type != "application/gzip") {
+  std::vector<github_release_utils::GitHubAsset> assets;
+  if (engine_release_janhq.has_value()) {
+    assets.insert(std::end(assets),
+                  std::begin(engine_release_janhq.value().assets),
+                  std::end(engine_release_janhq.value().assets));
+  }
+  if (engine_release_ggml.has_value()) {
+    assets.insert(std::end(assets),
+                  std::begin(engine_release_ggml.value().assets),
+                  std::end(engine_release_ggml.value().assets));
+  }
+  for (const auto& variant : assets) {
+    CTL_INF("content_type: " << variant.content_type
+                             << ", name: " << variant.name);
+    if (variant.content_type != "application/gzip" &&
+        variant.content_type != "application/json; charset=utf-8") {
       continue;
     }
     if (variant.state != "uploaded") {
@@ -480,10 +560,11 @@ EngineService::GetEngineVariants(const std::string& engine,
                              name.find("mac") != std::string::npos)
                            os_match = true;
                          if (system_info->os == "windows" &&
-                             name.find("windows") != std::string::npos)
+                             name.find("win") != std::string::npos)
                            os_match = true;
                          if (system_info->os == "linux" &&
-                             name.find("linux") != std::string::npos)
+                             (name.find("linux") != std::string::npos ||
+                              name.find("ubuntu") != std::string::npos))
                            os_match = true;
 
                          bool arch_match = false;
@@ -491,19 +572,17 @@ EngineService::GetEngineVariants(const std::string& engine,
                              name.find("arm64") != std::string::npos)
                            arch_match = true;
                          if (system_info->arch == "amd64" &&
-                             name.find("amd64") != std::string::npos)
+                             name.find("x64") != std::string::npos)
                            arch_match = true;
 
                          return !(os_match && arch_match);
                        }),
         compatible_variants.end());
-
     if (compatible_variants.empty()) {
       return cpp::fail("No compatible variants found for system " +
                        system_info->os + "/" + system_info->arch);
     }
   }
-
   return compatible_variants;
 }
 
@@ -536,7 +615,7 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
 
   auto config = file_manager_utils::GetCortexConfig();
-  config.llamacppVersion = "v" + normalized_version;
+  config.llamacppVersion = normalized_version;
   config.llamacppVariant = variant;
   auto result = file_manager_utils::UpdateCortexConfig(config);
   if (result.has_error()) {
@@ -560,10 +639,10 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
     return cpp::fail(installed_engines.error());
   }
 
-  CLI_LOG("IsEngineVariantReady: " << ne << ", " << normalized_version << ", "
+  CTL_INF("IsEngineVariantReady: " << ne << ", " << normalized_version << ", "
                                    << variant);
   for (const auto& installed_engine : installed_engines.value()) {
-    CLI_LOG("Installed: name: " + installed_engine.name +
+    CTL_INF("Installed: name: " + installed_engine.name +
             ", version: " + installed_engine.version);
     if (installed_engine.name == variant &&
             installed_engine.version == normalized_version ||
@@ -627,7 +706,7 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
           auto node = YAML::LoadFile(version_txt_path.string());
           auto ev = EngineVariantResponse{
               .name = node["name"].as<std::string>(),
-              .version = "v" + node["version"].as<std::string>(),
+              .version = node["version"].as<std::string>(),
               .engine = engine,
           };
           variants.push_back(ev);
@@ -689,6 +768,15 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     }
     return {};
   }
+  if (engines_.find(ne) == engines_.end()) {
+    CTL_INF("Loading local engine: " << engine_name);
+    engines_[ne].engine = new cortex::local::LocalEngine(*this, *(q_.get()));
+    CTL_INF("Loaded engine: " << engine_name);
+  } else {
+    CTL_INF("Engine has already been loaded: " << engine_name);
+  }
+
+  return {};
 
   // End hard code
 
@@ -789,7 +877,8 @@ void EngineService::RegisterEngineLibPath() {
 
       auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
       if (reg_result.has_error()) {
-        CTL_WRN("Failed register lib path for " << engine);
+        CTL_WRN("Failed register lib path for "
+                << engine << ", error: " << reg_result.error());
       } else {
         CTL_DBG("Registered lib path for " << engine);
       }
@@ -863,6 +952,8 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
+  } else if (std::holds_alternative<LocalEngineI*>(engines_[ne].engine)) {
+    delete std::get<LocalEngineI*>(engines_[ne].engine);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }

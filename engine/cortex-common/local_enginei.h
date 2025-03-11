@@ -5,9 +5,9 @@
 
 #include "json/value.h"
 #include "trantor/utils/Logger.h"
-class RemoteEngineI {
+class LocalEngineI {
  public:
-  virtual ~RemoteEngineI() {}
+  virtual ~LocalEngineI() {}
 
   virtual void HandleChatCompletion(
       std::shared_ptr<Json::Value> json_body,
@@ -29,9 +29,4 @@ class RemoteEngineI {
   virtual void GetModels(
       std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
-
-  // Get available remote models
-  virtual Json::Value GetRemoteModels(const std::string& url,
-                                      const std::string& api_key,
-                                      const std::string& header_template) = 0;
 };

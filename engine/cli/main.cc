@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
     should_check_for_latest_llamacpp_version = now > last_check;
   }
 
-  if (should_check_for_latest_llamacpp_version) {
+  if (false) {
     std::thread t1([]() {
       // TODO: namh current we only check for llamacpp. Need to add support for other engine
       auto get_latest_version = []() -> cpp::result<std::string, std::string> {

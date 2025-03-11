@@ -179,9 +179,9 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
   if (tag != "latest") {
     path_params.push_back("tags");
 
-    if (!string_utils::StartsWith(tag, "v")) {
-      path_params.push_back("v" + tag);
-    }
+    // if (!string_utils::StartsWith(tag, "v")) {
+    //   path_params.push_back("v" + tag);
+    // }
 
     path_params.push_back(tag);
   } else {

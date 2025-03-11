@@ -24,13 +24,20 @@ inline cpp::result<std::string, std::string> GetVariantFromNameAndVersion(
   if (engine.empty()) {
     return cpp::fail("Engine name is empty");
   }
+  CTL_INF("version: " << version);
   auto nv = string_utils::RemoveSubstring(version, "v");
+  CTL_INF("nv: " << nv);
   using namespace string_utils;
+  CTL_INF("engine_file_name: " << engine_file_name);
   auto removed_extension = RemoveSubstring(engine_file_name, ".tar.gz");
-  auto version_and_variant = RemoveSubstring(removed_extension, engine + "-");
-
+  auto removed_extension_e = RemoveSubstring(removed_extension, ".zip");
+  CTL_INF("removed_extension: " << removed_extension_e);
+  auto version_and_variant = RemoveSubstring(removed_extension_e, engine + "-");
+  CTL_INF("version_and_variant: " << version_and_variant);
   auto variant = RemoveSubstring(version_and_variant, nv + "-");
-  return variant;
+  auto v = RemoveSubstring(variant, "llama-bin-");
+  CTL_INF("variant: " << v);
+  return v;
 }
 
 inline std::string GetSuitableAvxVariant(cortex::cpuid::CpuInfo& cpu_info) {

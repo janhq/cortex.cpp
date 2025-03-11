@@ -33,6 +33,7 @@
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/task_queue.h"
 
 namespace {
 constexpr const auto kCommonCommandsGroup = "Common Commands";
@@ -51,7 +52,8 @@ CommandLineParser::CommandLineParser()
       dylib_path_manager_{std::make_shared<cortex::DylibPathManager>()},
       db_service_{std::make_shared<DatabaseService>()},
       engine_service_{std::make_shared<EngineService>(
-          download_service_, dylib_path_manager_, db_service_)} {
+          download_service_, dylib_path_manager_, db_service_,
+          std::make_shared<cortex::TaskQueue>(1, "q"))} {
   supported_engines_ = engine_service_->GetSupportedEngineNames().value();
 }
 
@@ -124,14 +126,14 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     }
   }
 #endif
-  auto config = file_manager_utils::GetCortexConfig();
-  if (!config.llamacppVersion.empty() &&
-      config.latestLlamacppRelease != config.llamacppVersion) {
-    CLI_LOG(
-        "\nNew llama.cpp version available: " << config.latestLlamacppRelease);
-    CLI_LOG("To update, run: " << commands::GetCortexBinary()
-                               << " engines update llama-cpp");
-  }
+  // auto config = file_manager_utils::GetCortexConfig();
+  // if (!config.llamacppVersion.empty() &&
+  //     config.latestLlamacppRelease != config.llamacppVersion) {
+  //   CLI_LOG(
+  //       "\nNew llama.cpp version available: " << config.latestLlamacppRelease);
+  //   CLI_LOG("To update, run: " << commands::GetCortexBinary()
+  //                              << " engines update llama-cpp");
+  // }
 
   return true;
 }

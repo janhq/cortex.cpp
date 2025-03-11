@@ -10,6 +10,7 @@
 #include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
+#include "cortex-common/local_enginei.h"
 #include "cortex-common/remote_enginei.h"
 #include "database/engines.h"
 #include "services/database_service.h"
@@ -20,6 +21,7 @@
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
+#include "utils/task_queue.h"
 
 struct EngineUpdateResult {
   std::string engine;
@@ -37,7 +39,8 @@ struct EngineUpdateResult {
   }
 };
 
-using EngineV = std::variant<EngineI*, CortexPythonEngineI*, RemoteEngineI*>;
+using EngineV =
+    std::variant<EngineI*, CortexPythonEngineI*, RemoteEngineI*, LocalEngineI*>;
 
 class EngineService : public EngineServiceI {
  private:
@@ -61,18 +64,21 @@ class EngineService : public EngineServiceI {
   };
   HardwareInfo hw_inf_;
   std::shared_ptr<DatabaseService> db_service_ = nullptr;
+  std::shared_ptr<cortex::TaskQueue> q_ = nullptr;
 
  public:
   explicit EngineService(
       std::shared_ptr<DownloadService> download_service,
       std::shared_ptr<cortex::DylibPathManager> dylib_path_manager,
-      std::shared_ptr<DatabaseService> db_service)
+      std::shared_ptr<DatabaseService> db_service,
+      std::shared_ptr<cortex::TaskQueue> q)
       : download_service_{download_service},
         dylib_path_manager_{dylib_path_manager},
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
                 .cuda_driver_version =
                     system_info_utils::GetDriverAndCudaVersion().second},
-        db_service_(db_service) {}
+        db_service_(db_service),
+        q_(q) {}
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
@@ -132,7 +138,6 @@ class EngineService : public EngineServiceI {
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
 
- 
   cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngines();
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);
@@ -157,6 +162,9 @@ class EngineService : public EngineServiceI {
 
   bool IsRemoteEngine(const std::string& engine_name) const override;
 
+  cpp::result<std::pair<std::filesystem::path, bool>, std::string>
+  GetEngineDirPath(const std::string& engine_name);
+
  private:
   bool IsEngineLoaded(const std::string& engine);
 
@@ -169,9 +177,6 @@ class EngineService : public EngineServiceI {
 
   std::string GetMatchedVariant(const std::string& engine,
                                 const std::vector<std::string>& variants);
-
-  cpp::result<std::pair<std::filesystem::path, bool>, std::string>
-  GetEngineDirPath(const std::string& engine_name);
 
   cpp::result<bool, std::string> IsEngineVariantReady(
       const std::string& engine, const std::string& version,

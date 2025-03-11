@@ -66,7 +66,7 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
   std::wstring params = L"--start-server";
-  params += L" --config_file_path \"" + 
+  params += L" --config_file_path \"" +
             file_manager_utils::GetConfigurationPath().wstring() + L"\"";
   params += L" --data_folder_path \"" +
             file_manager_utils::GetCortexDataPath().wstring() + L"\"";
@@ -80,17 +80,17 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   mutable_cmds.push_back(L'\0');
   // Create child process
   if (!CreateProcess(
-          NULL,                 // No module name (use command line)
+          NULL,  // No module name (use command line)
           mutable_cmds
-              .data(),          // Command line (replace with your actual executable)
-          NULL,                 // Process handle not inheritable
-          NULL,                 // Thread handle not inheritable
-          FALSE,                // Set handle inheritance
-          CREATE_NO_WINDOW,     // No new console
-          NULL,                 // Use parent's environment block
-          NULL,                 // Use parent's starting directory
-          &si,                  // Pointer to STARTUPINFO structure
-          &pi))                 // Pointer to PROCESS_INFORMATION structure
+              .data(),  // Command line (replace with your actual executable)
+          NULL,         // Process handle not inheritable
+          NULL,         // Thread handle not inheritable
+          FALSE,        // Set handle inheritance
+          CREATE_NO_WINDOW,  // No new console
+          NULL,              // Use parent's environment block
+          NULL,              // Use parent's starting directory
+          &si,               // Pointer to STARTUPINFO structure
+          &pi))              // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;
@@ -109,7 +109,9 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   auto download_srv = std::make_shared<DownloadService>();
   auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
   auto db_srv = std::make_shared<DatabaseService>();
-  EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
+  EngineService(download_srv, dylib_path_mng, db_srv,
+                std::make_shared<cortex::TaskQueue>(1, "task_queue"))
+      .RegisterEngineLibPath();
 
   std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
   commands.push_back(p);
