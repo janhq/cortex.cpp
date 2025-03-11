@@ -30,7 +30,6 @@ const std::vector<std::string> kDefaultSupportedEngines{kLlamaEngine,
 struct CortexConfig {
   std::string logFolderPath;
   std::string logLlamaCppPath;
-  std::string logTensorrtLLMPath;
   std::string logOnnxPath;
   std::string dataFolderPath;
 
