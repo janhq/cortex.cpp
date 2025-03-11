@@ -52,7 +52,7 @@ HardwareInfo HardwareService::GetHardwareInfo() {
     };
   }
 
-  return HardwareInfo{.cpu = cortex::hw::GetCPUInfo(),
+  return HardwareInfo{.cpu = cpu_info_.GetCPUInfo(),
                       .os = cortex::hw::GetOSInfo(),
                       .ram = cortex::hw::GetMemoryInfo(),
                       .storage = cortex::hw::GetStorageInfo(),
@@ -106,9 +106,19 @@ bool HardwareService::Restart(const std::string& host, int port) {
     return false;
   }
 
+#ifdef _MSC_VER
+  char* value = nullptr;
+  size_t len = 0;
+  _dupenv_s(&value, &len, "CUDA_VISIBLE_DEVICES");
+#else
   const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+#endif
+
   if (value) {
     LOG_INFO << "CUDA_VISIBLE_DEVICES is set to: " << value;
+#ifdef _MSC_VER
+    free(value);
+#endif
   } else {
     LOG_WARN << "CUDA_VISIBLE_DEVICES is not set.";
   }
@@ -128,9 +138,18 @@ bool HardwareService::Restart(const std::string& host, int port) {
     return false;
   }
 
+#ifdef _MSC_VER
+  char* vk_value = nullptr;
+  _dupenv_s(&vk_value, &len, "GGML_VK_VISIBLE_DEVICES");
+#else
   const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+#endif
+
   if (vk_value) {
     LOG_INFO << "GGML_VK_VISIBLE_DEVICES is set to: " << vk_value;
+#ifdef _MSC_VER
+    free(vk_value);
+#endif
   } else {
     LOG_WARN << "GGML_VK_VISIBLE_DEVICES is not set.";
   }
@@ -197,19 +216,16 @@ bool HardwareService::Restart(const std::string& host, int port) {
   commands.push_back(get_data_folder_path());
   commands.push_back("--loglevel");
   commands.push_back(luh::LogLevelStr(luh::global_log_level));
-  auto pid = cortex::process::SpawnProcess(commands);
-  if (pid < 0) {
+  auto result = cortex::process::SpawnProcess(commands);
+  if (result.has_error()) {
     // Fork failed
-    std::cerr << "Could not start server: " << std::endl;
+    std::cerr << "Could not start server: " << result.error() << std::endl;
     return false;
   } else {
     // Parent process
     if (!TryConnectToServer(host, port)) {
       return false;
     }
-    std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":"
-              << port << std::endl;
   }
 
 #endif
@@ -243,7 +259,7 @@ bool HardwareService::SetActivateHardwareConfig(
   auto priority = [&ahc](int software_id) -> int {
     for (size_t i = 0; i < ahc.gpus.size(); i++) {
       if (ahc.gpus[i] == software_id)
-        return i;
+        return static_cast<int>(i);
       break;
     }
     return INT_MAX;
@@ -307,7 +323,14 @@ void HardwareService::UpdateHardwareInfos() {
   };
   for (auto const& he : b.value()) {
     if (!exists(he.uuid)) {
-      db_service_->DeleteHardwareEntry(he.uuid);
+      auto result = db_service_->DeleteHardwareEntry(he.uuid);
+      if (!result) {
+        // Handle the error if any.
+        // Log the Error
+        LOG_ERROR << "Error deleting hardware entry " << he.uuid << ": "
+                  << result.error();
+        continue;
+      }
     }
   }
 
@@ -322,23 +345,40 @@ void HardwareService::UpdateHardwareInfos() {
     }
   }
   CTL_INF("Activated GPUs before: " << debug_b);
+  auto has_nvidia = [&gpus] {
+    for (auto const& g : gpus) {
+      if (g.vendor == cortex::hw::kNvidiaStr) {
+        return true;
+      }
+    }
+    return false;
+  }();
+
   for (auto const& gpu : gpus) {
-    // ignore error
-    // Note: only support NVIDIA for now, so hardware_id = software_id
     if (db_service_->HasHardwareEntry(gpu.uuid)) {
       auto res = db_service_->UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
-                                           std::stoi(gpu.id));
+                                                  std::stoi(gpu.id));
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
     } else {
-      auto res =
-      db_service_->AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
-                                         .type = "gpu",
-                                         .hardware_id = std::stoi(gpu.id),
-                                         .software_id = std::stoi(gpu.id),
-                                         .activated = true,
-                                         .priority = INT_MAX});
+      // iGPU should be deactivated by default
+      // Only activate Nvidia GPUs if both AMD and Nvidia GPUs exists
+      auto activated = [&gpu, &gpus, has_nvidia] {
+        if (gpu.gpu_type != cortex::hw::GpuType::kGpuTypeDiscrete)
+          return false;
+        if (has_nvidia && gpu.vendor != cortex::hw::kNvidiaStr)
+          return false;
+        return true;
+      };
+
+      auto res = db_service_->AddHardwareEntry(
+          HwEntry{.uuid = gpu.uuid,
+                  .type = "gpu",
+                  .hardware_id = std::stoi(gpu.id),
+                  .software_id = std::stoi(gpu.id),
+                  .activated = activated(),
+                  .priority = INT_MAX});
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
@@ -376,16 +416,33 @@ void HardwareService::UpdateHardwareInfos() {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   bool has_deactivated_gpu = a.value().size() != activated_gpu_af.size();
   if (!gpus.empty() && has_deactivated_gpu) {
+#ifdef _MSC_VER
+    char* value = nullptr;
+    size_t len = 0;
+    _dupenv_s(&value, &len, "CUDA_VISIBLE_DEVICES");
+#else
     const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+#endif
     if (value) {
       LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
+#ifdef _MSC_VER
+      free(value);
+#endif
     } else {
       need_restart = true;
     }
 
+#ifdef _MSC_VER
+    char* vk_value = nullptr;
+    _dupenv_s(&vk_value, &len, "GGML_VK_VISIBLE_DEVICES");
+#else
     const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+#endif
     if (vk_value) {
       LOG_INFO << "GGML_VK_VISIBLE_DEVICES: " << vk_value;
+#ifdef _MSC_VER
+      free(vk_value);
+#endif
     } else {
       need_restart = true;
     }

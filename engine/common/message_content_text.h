@@ -148,9 +148,9 @@ struct Text : JsonSerializable {
       // Parse annotations array
       if (json.isMember("annotations") && json["annotations"].isArray()) {
         for (const auto& annotation_json : json["annotations"]) {
-          std::string type = std::move(annotation_json["type"].asString());
+          std::string type = annotation_json["type"].asString();
           std::string annotation_text =
-              std::move(annotation_json["text"].asString());
+              annotation_json["text"].asString();
           uint32_t start_index = annotation_json["start_index"].asUInt();
           uint32_t end_index = annotation_json["end_index"].asUInt();
 
@@ -192,7 +192,7 @@ struct Text : JsonSerializable {
       }
       json["annotations"] = annotations_json_arr;
       return json;
-    } catch (const std::exception e) {
+    } catch (const std::exception & e) {
       return cpp::fail(std::string("ToJson failed: ") + e.what());
     }
   };

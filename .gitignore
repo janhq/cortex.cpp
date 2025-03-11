@@ -17,6 +17,7 @@ build
 platform/cortex.exe
 platform/package-lock.json
 .vscode
+.vs
 platform/command
 platform/src/infrastructure/commanders/test/test_data
 **/vcpkg_installed

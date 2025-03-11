@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
-#include <vector>
 #include "utils/result.hpp"
 
 namespace hardware {
@@ -50,21 +49,21 @@ inline float GetQuantBit(GGMLType gt) {
   switch (gt) {
     case GGML_TYPE_I32:
     case GGML_TYPE_F32:
-      return 32.0;
+      return 32.0f;
     case GGML_TYPE_I16:
     case GGML_TYPE_BF16:
     case GGML_TYPE_F16:
-      return 16.0;
+      return 16.0f;
     case GGML_TYPE_IQ2_S:
     case GGML_TYPE_IQ2_XXS:
     case GGML_TYPE_IQ2_XS:
-      return 2.31;
+      return 2.31f;
     case GGML_TYPE_Q2_K:
-      return 2.5625;
+      return 2.5625f;
     case GGML_TYPE_IQ3_XXS:
     case GGML_TYPE_IQ3_S:
     case GGML_TYPE_Q3_K:
-      return 3.4375;
+      return 3.4375f;
     case GGML_TYPE_Q4_0_4_4:
     case GGML_TYPE_Q4_0_4_8:
     case GGML_TYPE_Q4_0_8_8:
@@ -73,25 +72,25 @@ inline float GetQuantBit(GGMLType gt) {
     case GGML_TYPE_Q4_0:
     case GGML_TYPE_Q4_1:
     case GGML_TYPE_Q4_K:
-      return 4.5;
+      return 4.5f;
     case GGML_TYPE_Q5_0:
     case GGML_TYPE_Q5_1:
     case GGML_TYPE_Q5_K:
-      return 5.5;
+      return 5.5f;
     case GGML_TYPE_Q6_K:
-      return 6.5625;
+      return 6.5625f;
     case GGML_TYPE_I8:
     case GGML_TYPE_Q8_0:
     case GGML_TYPE_Q8_1:
     case GGML_TYPE_Q8_K:
-      return 8.0;
+      return 8.0f;
 
     case GGML_TYPE_I64:
     case GGML_TYPE_F64:
-      return 64.0;
+      return 64.0f;
 
     default:
-      return 8.0;
+      return 8.0f;
   }
 }
 

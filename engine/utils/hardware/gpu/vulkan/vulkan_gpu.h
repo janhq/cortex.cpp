@@ -24,21 +24,26 @@
 #endif
 
 namespace cortex::hw {
-constexpr const uint32_t NVIDIA_VENDOR = 0x10DE;
-constexpr const uint32_t AMD_VENDOR = 0x1002;
-constexpr const uint32_t INTEL_VENDOR = 0x8086;
-constexpr const uint32_t ARM_VENDOR = 0x13B5;
+constexpr const uint32_t kNvidiaVendor = 0x10DE;
+constexpr const uint32_t kAmdVendor = 0x1002;
+constexpr const uint32_t kIntelVendor = 0x8086;
+constexpr const uint32_t kArmVendor = 0x13B5;
+
+constexpr const auto kAmdStr = "AMD";
+constexpr const auto kNvidiaStr = "NVIDIA";
+constexpr const auto kIntelStr = "INTEL";
+constexpr const auto kArmStr = "ARM";
 
 inline std::string GetVendorStr(uint32_t vendor_id) {
   switch (vendor_id) {
-    case AMD_VENDOR:
-      return "AMD";
-    case NVIDIA_VENDOR:
-      return "NVIDIA";
-    case INTEL_VENDOR:
-      return "INTEL";
-    case ARM_VENDOR:
-      return "ARM";
+    case kAmdVendor:
+      return kAmdStr;
+    case kNvidiaVendor:
+      return kNvidiaStr;
+    case kIntelVendor:
+      return kIntelStr;
+    case kArmVendor:
+      return kArmStr;
     default:
       return std::to_string(vendor_id);
   }
@@ -428,8 +433,8 @@ class VulkanGpu {
       for (uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
         if (memory_properties.memoryHeaps[i].flags &
             VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-          gpu_avail_MiB +=
-              memory_properties.memoryHeaps[i].size / (1024ull * 1024ull);
+          gpu_avail_MiB += static_cast<int>(
+              memory_properties.memoryHeaps[i].size / (1024ull * 1024ull));
         }
       }
 
@@ -444,10 +449,12 @@ class VulkanGpu {
       used_vram_MiB = gpus_usages[device_properties.deviceName];
 
 #endif
-      int free_vram_MiB =
-          total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
-      if (device_properties.vendorID == NVIDIA_VENDOR ||
-          device_properties.vendorID == AMD_VENDOR) {
+      auto free_vram_MiB =
+          total_vram_MiB > used_vram_MiB
+              ? static_cast<int>(total_vram_MiB - used_vram_MiB)
+              : 0;
+      if (device_properties.vendorID == kNvidiaVendor ||
+          device_properties.vendorID == kAmdVendor) {
         gpus.emplace_back(cortex::hw::GPU{
             .id = std::to_string(id),
             .device_id = device_properties.deviceID,
@@ -457,7 +464,8 @@ class VulkanGpu {
             .free_vram = free_vram_MiB,
             .total_vram = total_vram_MiB,
             .uuid = uuid_to_string(device_id_properties.deviceUUID),
-            .vendor = GetVendorStr(device_properties.vendorID)});
+            .vendor = GetVendorStr(device_properties.vendorID),
+            .gpu_type = static_cast<GpuType>(device_properties.deviceType)});
       }
       id++;
     }
@@ -501,8 +509,10 @@ class VulkanGpu {
       total_vram_MiB = gpus_[i].free_vram;
       used_vram_MiB = gpus_usages[gpus_[i].name];
 #endif
-      int free_vram_MiB =
-          total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
+      auto free_vram_MiB =
+          total_vram_MiB > used_vram_MiB
+              ? static_cast<int>(total_vram_MiB - used_vram_MiB)
+              : 0;
       gpus_[i].free_vram = free_vram_MiB;
     }
 

@@ -37,6 +37,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
+#include "utils/task_queue.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -104,7 +105,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
 #if defined(_WIN32)
-      std::filesystem::u8path(config.logFolderPath) /
+      std::filesystem::path(cortex::wc::Utf8ToWstring(config.logFolderPath)) /
 #else
       std::filesystem::path(config.logFolderPath) /
 #endif
@@ -177,8 +178,11 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       download_service, dylib_path_manager, db_service);
   auto inference_svc = std::make_shared<InferenceService>(engine_service);
   auto model_src_svc = std::make_shared<ModelSourceService>(db_service);
-  auto model_service = std::make_shared<ModelService>(
-      db_service, hw_service, download_service, inference_svc, engine_service);
+  cortex::TaskQueue task_queue(
+      std::min(2u, std::thread::hardware_concurrency()), "background_task");
+  auto model_service =
+      std::make_shared<ModelService>(db_service, hw_service, download_service,
+                                     inference_svc, engine_service, task_queue);
   inference_svc->SetModelService(model_service);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(
@@ -244,6 +248,54 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       .enableCompressedRequest(true)
       .setClientMaxBodySize(256 * 1024 * 1024)   // Max 256MiB body size
       .setClientMaxMemoryBodySize(1024 * 1024);  // 1MiB before writing to disk
+
+  auto validate_api_key = [config_service](const drogon::HttpRequestPtr& req) {
+    auto api_keys = config_service->GetApiServerConfiguration()->api_keys;
+    static const std::unordered_set<std::string> public_endpoints = {
+        "/openapi.json", "/healthz", "/processManager/destroy"};
+
+    // If API key is not set, skip validation
+    if (api_keys.empty()) {
+      return true;
+    }
+
+    // If path is public or is static file, skip validation
+    if (public_endpoints.find(req->path()) != public_endpoints.end() ||
+        req->path() == "/") {
+      return true;
+    }
+
+    // Check for API key in the header
+    auto auth_header = req->getHeader("Authorization");
+
+    std::string prefix = "Bearer ";
+    if (auth_header.substr(0, prefix.size()) == prefix) {
+      std::string received_api_key = auth_header.substr(prefix.size());
+      if (std::find(api_keys.begin(), api_keys.end(), received_api_key) !=
+          api_keys.end()) {
+        return true;  // API key is valid
+      }
+    }
+
+    CTL_WRN("Unauthorized: Invalid API Key\n");
+    return false;
+  };
+
+  drogon::app().registerPreRoutingAdvice(
+      [&validate_api_key](
+          const drogon::HttpRequestPtr& req,
+          std::function<void(const drogon::HttpResponsePtr&)>&& cb,
+          drogon::AdviceChainCallback&& ccb) {
+        if (!validate_api_key(req)) {
+          Json::Value ret;
+          ret["message"] = "Invalid API Key";
+          auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+          resp->setStatusCode(drogon::k401Unauthorized);
+          cb(resp);
+          return;
+        }
+        ccb();
+      });
 
   // CORS
   drogon::app().registerPostHandlingAdvice(

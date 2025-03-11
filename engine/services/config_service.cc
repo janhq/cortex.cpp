@@ -6,10 +6,13 @@ cpp::result<ApiServerConfiguration, std::string>
 ConfigService::UpdateApiServerConfiguration(const Json::Value& json) {
   auto config = file_manager_utils::GetCortexConfig();
   ApiServerConfiguration api_server_config{
-      config.enableCors,         config.allowedOrigins,   config.verifyProxySsl,
-      config.verifyProxyHostSsl, config.proxyUrl,         config.proxyUsername,
-      config.proxyPassword,      config.noProxy,          config.verifyPeerSsl,
-      config.verifyHostSsl,      config.huggingFaceToken, config.gitHubToken};
+      config.enableCors,       config.allowedOrigins,
+      config.verifyProxySsl,   config.verifyProxyHostSsl,
+      config.proxyUrl,         config.proxyUsername,
+      config.proxyPassword,    config.noProxy,
+      config.verifyPeerSsl,    config.verifyHostSsl,
+      config.huggingFaceToken, config.gitHubToken,
+      config.apiKeys};
 
   std::vector<std::string> updated_fields;
   std::vector<std::string> invalid_fields;
@@ -37,6 +40,7 @@ ConfigService::UpdateApiServerConfiguration(const Json::Value& json) {
 
   config.huggingFaceToken = api_server_config.hf_token;
   config.gitHubToken = api_server_config.gh_token;
+  config.apiKeys = api_server_config.api_keys;
 
   auto result = file_manager_utils::UpdateCortexConfig(config);
   return api_server_config;
@@ -46,8 +50,11 @@ cpp::result<ApiServerConfiguration, std::string>
 ConfigService::GetApiServerConfiguration() {
   auto config = file_manager_utils::GetCortexConfig();
   return ApiServerConfiguration{
-      config.enableCors,         config.allowedOrigins,   config.verifyProxySsl,
-      config.verifyProxyHostSsl, config.proxyUrl,         config.proxyUsername,
-      config.proxyPassword,      config.noProxy,          config.verifyPeerSsl,
-      config.verifyHostSsl,      config.huggingFaceToken, config.gitHubToken};
+      config.enableCors,       config.allowedOrigins,
+      config.verifyProxySsl,   config.verifyProxyHostSsl,
+      config.proxyUrl,         config.proxyUsername,
+      config.proxyPassword,    config.noProxy,
+      config.verifyPeerSsl,    config.verifyHostSsl,
+      config.huggingFaceToken, config.gitHubToken,
+      config.apiKeys};
 }
