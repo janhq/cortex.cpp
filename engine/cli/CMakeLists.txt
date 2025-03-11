@@ -60,11 +60,8 @@ add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 find_package(jsoncpp CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
-find_package(CLI11 CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
-find_package(tabulate CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(Trantor CONFIG REQUIRED)
@@ -99,12 +96,13 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/process/utils.cc
   )
 
-target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
+target_link_libraries(${TARGET_NAME} PRIVATE CLI11)
+target_link_libraries(${TARGET_NAME} PRIVATE drogon)
 target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
-target_link_libraries(${TARGET_NAME} PRIVATE tabulate::tabulate)
+target_link_libraries(${TARGET_NAME} PRIVATE tabulate)
 target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
-target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
+target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenSSL::Crypto yaml-cpp
   ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE Trantor::Trantor)

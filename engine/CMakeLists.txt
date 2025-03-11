@@ -97,8 +97,6 @@ if(CMAKE_BUILD_INJA_TEST)
 endif()
 
 find_package(jsoncpp CONFIG REQUIRED)
-find_package(Drogon CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(CURL REQUIRED)
@@ -167,26 +165,29 @@ file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
 )
 ## End of generating openapi json
 
+# Add Github 3rd-party submodules
+add_subdirectory(../3rd-party/yaml-cpp ${CMAKE_BINARY_DIR}/yaml-cpp)
+add_subdirectory(../3rd-party/cli11 ${CMAKE_BINARY_DIR}/cli11)
+add_subdirectory(../3rd-party/drogon ${CMAKE_BINARY_DIR}/drogon)
+add_subdirectory(../3rd-party/tabulate ${CMAKE_BINARY_DIR}/tabulate)
+
+
+# Collect all .cc files in various subdirectories recursively
+file(GLOB_RECURSE UTILS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/utils/*.cc)
+file(GLOB_RECURSE EXTENSIONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/extensions/*.cc)
+
 add_executable(${TARGET_NAME} main.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/template_renderer.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/python-engine/python_engine.cc
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/dylib_path_manager.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/process/utils.cc
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/remote_engine.cc
-
+    ${UTILS_SOURCES}
+    ${EXTENSIONS_SOURCES}
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
+target_link_libraries(${TARGET_NAME} PRIVATE drogon)
 target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
 target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
-target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
+target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenSSL::Crypto yaml-cpp
   ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE eventpp::eventpp)
@@ -212,13 +213,11 @@ aux_source_directory(models MODEL_SRC)
 aux_source_directory(cortex-common CORTEX_COMMON)
 aux_source_directory(config CONFIG_SRC)
 aux_source_directory(database DB_SRC)
-aux_source_directory(extensions EX_SRC)
 aux_source_directory(migrations MIGR_SRC)
-aux_source_directory(utils UTILS_SRC)
 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 
-target_sources(${TARGET_NAME} PRIVATE ${UTILS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC} ${EX_SRC} ${MIGR_SRC} ${REPO_SRC})
+target_sources(${TARGET_NAME} PRIVATE ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC} ${MIGR_SRC} ${REPO_SRC})
 
 set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}

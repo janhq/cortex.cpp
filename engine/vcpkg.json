@@ -2,13 +2,8 @@
   "dependencies": [
     "curl",
     "gtest",
-    "cli11",
-    "drogon",
-    "jsoncpp",
     "minizip",
-    "yaml-cpp",
     "libarchive",
-    "tabulate",
     "eventpp",
     "sqlitecpp",
     "trantor",
