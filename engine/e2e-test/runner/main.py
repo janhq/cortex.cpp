@@ -36,11 +36,11 @@ from api.thread.test_api_create_thread import TestApiCreateThread
 from api.thread.test_api_delete_thread import TestApiDeleteThread
 from api.thread.test_api_get_thread import TestApiGetThread
 from api.thread.test_api_get_list_thread import TestApiGetListThread
+from api.hardware.test_api_get_hardware import TestApiGetHardware
 from api.assistants.test_api_create_assistant import TestApiCreateAssistant
 from api.assistants.test_api_get_list_assistant import TestApiGetListAssistant
 from api.assistants.test_api_get_assistant import TestApiGetAssistant
 from api.assistants.test_api_delete_assistant import TestApiDeleteAssistant
-
 
 ###
 from cli.engines.test_cli_engine_get import TestCliEngineGet
