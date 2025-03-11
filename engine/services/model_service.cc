@@ -757,12 +757,17 @@ cpp::result<void, std::string> ModelService::DeleteModel(
         fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     auto mc = yaml_handler.GetModelConfig();
-    // Remove yaml files
-    for (const auto& entry :
-         std::filesystem::directory_iterator(yaml_fp.parent_path())) {
-      if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
-        std::filesystem::remove(entry);
-        CTL_INF("Removed: " << entry.path().string());
+    if (engine_svc_->IsRemoteEngine(mc.engine)) {
+      std::filesystem::remove(yaml_fp);
+      CTL_INF("Removed: " << yaml_fp.string());
+    } else {
+      // Remove yaml files
+      for (const auto& entry :
+           std::filesystem::directory_iterator(yaml_fp.parent_path())) {
+        if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
+          std::filesystem::remove(entry);
+          CTL_INF("Removed: " << entry.path().string());
+        }
       }
     }
 
