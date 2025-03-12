@@ -26,6 +26,11 @@ class TestApiEngineList:
         engine= "llama-cpp"
         name= "linux-amd64-avx"
         version= "v0.1.35-27.10.24"
+        
+        post_install_url = f"http://localhost:3928/v1/engines/{engine}/install"
+        response = requests.delete(
+            post_install_url
+        )
     
         data = {"version": version, "variant": name}
         post_install_url = f"http://localhost:3928/v1/engines/{engine}/install"

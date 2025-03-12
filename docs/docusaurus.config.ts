@@ -476,7 +476,7 @@ const config: Config = {
             },
             {
               label: "Careers",
-              href: "https://homebrew.bamboohr.com/careers",
+              href: "https://menlo.bamboohr.com/careers",
             },
           ],
         },
