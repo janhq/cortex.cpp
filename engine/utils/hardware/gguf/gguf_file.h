@@ -131,23 +131,23 @@ inline std::string to_string(GGUFMetadataValueType vt, const std::any& v) {
   return "array";
 }
 inline std::string to_string(const GGUFMetadataKVArrayValue& arr_v) {
-  std::string res = "[";
+  std::string result = "[";
   size_t array_size = arr_v.arr.size();
-  size_t elementsToShow = std::min(kMaxElementsToShow, array_size);
-  for (size_t i = 0; i < elementsToShow; i++) {
-    res += to_string(arr_v.type, arr_v.arr[i]) + ", ";
+  size_t elements_to_show = std::min(kMaxElementsToShow, array_size);
+  for (size_t i = 0; i < elements_to_show; i++) {
+    result += to_string(arr_v.type, arr_v.arr[i]) + ", ";
   }
   if(array_size > 0) {
-    res.pop_back();
-    res.pop_back();
+    result.pop_back();
+    result.pop_back();
   }
-  res += "]";
-  if(array_size > elementsToShow) {
-    res += "... (";
-    res += std::to_string(array_size - elementsToShow);
-    res += " more elements)";
+  result += "]";
+  if(array_size > elements_to_show) {
+    result += "... (";
+    result += std::to_string(array_size - elements_to_show);
+    result += " more elements)";
   }
-  return res;
+  return result;
 }
 
 inline std::string to_string(const GGUFMetadataKV& kv) {
