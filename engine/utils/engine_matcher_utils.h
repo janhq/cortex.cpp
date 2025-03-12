@@ -51,52 +51,56 @@ inline std::string GetSuitableCudaVariant(
   std::regex cuda_reg("cuda-(\\d+)-(\\d+)");
   std::smatch match;
 
-  int requestedMajor = 0;
-  int requestedMinor = 0;
+  int requested_major = 0;
+  int requested_minor = 0;
 
   if (!cuda_version.empty()) {
-    // Split the provided CUDA version into major and minor parts
-    sscanf(cuda_version.c_str(), "%d.%d", &requestedMajor, &requestedMinor);
+// Split the provided CUDA version into major and minor parts
+#if defined(_MSC_VER)
+    sscanf_s(cuda_version.c_str(), "%d.%d", &requested_major, &requested_minor);
+#else
+    sscanf(cuda_version.c_str(), "%d.%d", &requested_major, &requested_minor);
+#endif
   }
 
-  std::string selectedVariant;
-  int bestMatchMajor = -1;
-  int bestMatchMinor = -1;
+  std::string selected_variant;
+  int best_match_major = -1;
+  int best_match_minor = -1;
 
   for (const auto& variant : variants) {
     if (std::regex_search(variant, match, cuda_reg)) {
       // Found a CUDA version in the variant
-      int variantMajor = std::stoi(match[1]);
-      int variantMinor = std::stoi(match[2]);
+      int variant_major = std::stoi(match[1]);
+      int variant_minor = std::stoi(match[2]);
 
-      if (requestedMajor == variantMajor) {
+      if (requested_major == variant_major) {
         // If the major versions match, prefer the closest minor version
-        if (requestedMinor >= variantMinor &&
-            (variantMajor > bestMatchMajor ||
-             (variantMajor == bestMatchMajor &&
-              variantMinor > bestMatchMinor))) {
-          selectedVariant = variant;
-          bestMatchMajor = variantMajor;
-          bestMatchMinor = variantMinor;
+        if (requested_minor >= variant_minor &&
+            (variant_major > best_match_major ||
+             (variant_major == best_match_major &&
+              variant_minor > best_match_minor))) {
+          selected_variant = variant;
+          best_match_major = variant_major;
+          best_match_minor = variant_minor;
         }
       }
     }
   }
 
   // If no CUDA version is provided, select the variant without any CUDA in the name
-  if (selectedVariant.empty()) {
+  if (selected_variant.empty()) {
     LOG_WARN
         << "No suitable CUDA variant found, selecting a variant without CUDA";
     for (const auto& variant : variants) {
       if (variant.find("cuda") == std::string::npos) {
-        selectedVariant = variant;
-        LOG_INFO << "Found variant without CUDA: " << selectedVariant << "\n";
+        selected_variant = variant;
+        LOG_INFO << "Found variant without CUDA: " << selected_variant << "\n";
         break;
       }
     }
   }
 
-  return selectedVariant;
+  return selected_variant;
 }
 
 inline std::string ValidateTensorrtLlm(const std::vector<std::string>& variants,

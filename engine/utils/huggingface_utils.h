@@ -308,7 +308,7 @@ inline std::optional<std::string> GetDefaultBranch(
       return default_branch.as<std::string>();
     }
     return std::nullopt;
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return std::nullopt;
   }
 }
@@ -328,7 +328,7 @@ inline std::optional<std::string> GetModelAuthorCortexsoHub(
       return author.as<std::string>();
     }
     return std::nullopt;
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return std::nullopt;
   }
 }

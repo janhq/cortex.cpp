@@ -316,7 +316,7 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 
   try {
     std::filesystem::create_directories(local_path.parent_path());
-  } catch (const std::filesystem::filesystem_error& e) {
+  } catch (const std::filesystem::filesystem_error&) {
     // if file exist, remove it
     std::filesystem::remove(local_path.parent_path());
     std::filesystem::create_directories(local_path.parent_path());
@@ -381,7 +381,7 @@ ModelService::EstimateModel(const std::string& model_handle,
     auto mc = yaml_handler.GetModelConfig();
     assert(hw_service_);
     auto hw_info = hw_service_->GetHardwareInfo();
-    auto free_vram_MiB = 0u;
+    int64_t free_vram_MiB = 0;
     for (const auto& gpu : hw_info.gpus) {
       free_vram_MiB += gpu.free_vram;
     }
@@ -445,7 +445,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
 
   try {
     std::filesystem::create_directories(local_path.parent_path());
-  } catch (const std::filesystem::filesystem_error& e) {
+  } catch (const std::filesystem::filesystem_error&) {
     // if file exist, remove it
     std::filesystem::remove(local_path.parent_path());
     std::filesystem::create_directories(local_path.parent_path());
@@ -1242,7 +1242,7 @@ ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
   }
   // If in GPU acceleration mode:
   // We use all visible GPUs, so only need to sum all free vram
-  auto free_vram_MiB = 0u;
+  int64_t free_vram_MiB = 0;
   for (const auto& gpu : hw_info.gpus) {
     free_vram_MiB += gpu.free_vram;
   }

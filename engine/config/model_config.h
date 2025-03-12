@@ -35,8 +35,7 @@ struct RemoteModelConfig {
 
     // Load basic string fields
     model = json.get("model", model).asString();
-    header_template =
-        json.get("header_template", header_template).asString();
+    header_template = json.get("header_template", header_template).asString();
     engine = json.get("engine", engine).asString();
     version = json.get("version", version).asString();
     created =
@@ -405,7 +404,8 @@ struct ModelConfig {
     oss << format_utils::print_comment("END REQUIRED");
     oss << format_utils::print_comment("BEGIN OPTIONAL");
 
-    oss << format_utils::print_float("size", size);
+    oss << format_utils::print_kv("size", std::to_string(size),
+                                  format_utils::MAGENTA);
     oss << format_utils::print_bool("stream", stream);
     oss << format_utils::print_float("top_p", top_p);
     oss << format_utils::print_float("temperature", temperature);

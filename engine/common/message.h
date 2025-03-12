@@ -107,7 +107,8 @@ struct Message : JsonSerializable {
           std::move(root.get("object", "thread.message").asString());
       message.created_at = root["created_at"].asUInt();
       if (message.created_at == 0 && root["created"].asUInt64() != 0) {
-        message.created_at = root["created"].asUInt64() / 1000;
+        message.created_at =
+            static_cast<uint32_t>(root["created"].asUInt64() / 1000);
       }
       message.thread_id = std::move(root["thread_id"].asString());
       message.status = StatusFromString(std::move(root["status"].asString()));
