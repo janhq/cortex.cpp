@@ -30,8 +30,8 @@ inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
 // example: Mon, 25 Nov 2024 09:57:03 GMT
 inline std::string GetDateRFC1123() {
   std::time_t now = std::time(nullptr);
-  std::tm gmt_time = {};
 #ifdef _MSC_VER
+  std::tm gmt_time = {};
   gmtime_s(&gmt_time, &now);
   std::ostringstream oss;
   oss << std::put_time(&gmt_time, "%a, %d %b %Y %H:%M:%S GMT");
@@ -133,7 +133,7 @@ inline std::string GetCurrentPath() {
 #else
   std::vector<char> buf(PATH_MAX);
   ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
-  if (len == -1 || len == buf.size()) {
+  if (len == -1 || len == (ssize_t) buf.size()) {
     std::cerr << "Error reading symlink /proc/self/exe." << std::endl;
     return "";
   }
