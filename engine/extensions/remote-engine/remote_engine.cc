@@ -252,11 +252,14 @@ CurlResponse RemoteEngine::MakeGetModelsRequest(
     return response;
   }
 
-  std::string api_key_header =
-      ReplaceApiKeyPlaceholder(header_template, api_key);
+  std::unordered_map<std::string, std::string> replacements = {
+      {"api_key", api_key}};
+  auto hs = ReplaceHeaderPlaceholders(header_template, replacements);
 
   struct curl_slist* headers = nullptr;
-  headers = curl_slist_append(headers, api_key_header.c_str());
+  for (auto const& h : hs) {
+    headers = curl_slist_append(headers, h.c_str());
+  }
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -699,25 +702,7 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
                                           const std::string& api_key,
                                           const std::string& header_template) {
   if (url.empty()) {
-    if (engine_name_ == kAnthropicEngine) {
-      Json::Value json_resp;
-      Json::Value model_array(Json::arrayValue);
-      for (const auto& m : kAnthropicModels) {
-        Json::Value val;
-        val["id"] = std::string(m);
-        val["engine"] = "anthropic";
-        val["created"] = "_";
-        val["object"] = "model";
-        model_array.append(val);
-      }
-
-      json_resp["object"] = "list";
-      json_resp["data"] = model_array;
-      CTL_INF("Remote models responded");
-      return json_resp;
-    } else {
-      return Json::Value();
-    }
+    return Json::Value();
   } else {
     auto response = MakeGetModelsRequest(url, api_key, header_template);
     if (response.error) {
@@ -728,8 +713,22 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
     }
     CTL_DBG(response.body);
     auto body_json = json_helper::ParseJsonString(response.body);
-    if (body_json.isMember("error")) {
+    if (body_json.isMember("error") && !body_json["error"].isNull()) {
       return body_json["error"];
+    }
+
+    // hardcode for cohere
+    if (url.find("api.cohere.ai") != std::string::npos) {
+      if (body_json.isMember("models")) {
+        for (auto& model : body_json["models"]) {
+          if (model.isMember("name")) {
+            model["id"] = model["name"];
+            model.removeMember("name");
+          }
+        }
+        body_json["data"] = body_json["models"];
+        body_json.removeMember("models");
+      }
     }
     return body_json;
   }
