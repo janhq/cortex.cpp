@@ -49,6 +49,8 @@ constexpr const GGUFVersion kGGUFVersionV1 = 1;
 constexpr const GGUFVersion kGGUFVersionV2 = 2;
 constexpr const GGUFVersion kGGUFVersionV3 = 3;
 
+constexpr std::size_t kMaxElementsToShow = 50;
+
 enum GGUFMetadataValueType : uint32_t {
   GGUFMetadataValueTypeUint8 = 0,
   GGUFMetadataValueTypeInt8,
@@ -63,7 +65,6 @@ enum GGUFMetadataValueType : uint32_t {
   GGUFMetadataValueTypeUint64,
   GGUFMetadataValueTypeInt64,
   GGUFMetadataValueTypeFloat64,
-  _GGUFMetadataValueTypeCount  // Unknown
 };
 
 struct GGUFMetadataKV {
@@ -130,12 +131,23 @@ inline std::string to_string(GGUFMetadataValueType vt, const std::any& v) {
   return "array";
 }
 inline std::string to_string(const GGUFMetadataKVArrayValue& arr_v) {
-  std::string res;
-  auto num = std::min(size_t(5), arr_v.arr.size());
-  for (size_t i = 0; i < num; i++) {
-    res += to_string(arr_v.type, arr_v.arr[i]) + " ";
+  std::string result = "[";
+  size_t array_size = arr_v.arr.size();
+  size_t elements_to_show = std::min(kMaxElementsToShow, array_size);
+  for (size_t i = 0; i < elements_to_show; i++) {
+    result += to_string(arr_v.type, arr_v.arr[i]) + ", ";
   }
-  return res;
+  if(array_size > 0) {
+    result.pop_back();
+    result.pop_back();
+  }
+  result += "]";
+  if(array_size > elements_to_show) {
+    result += "... (";
+    result += std::to_string(array_size - elements_to_show);
+    result += " more elements)";
+  }
+  return result;
 }
 
 inline std::string to_string(const GGUFMetadataKV& kv) {
@@ -194,6 +206,9 @@ struct GGUFTensorInfo {
   //
   // The offset is the start of the file.
   int64_t start_offset;
+
+  GGUFTensorInfo()
+  : name(""), n_dimensions(0), dimensions(), type(GGMLType{}), offset(0), start_offset(0) {}
 };
 
 struct GGUFHelper {
@@ -293,10 +308,9 @@ struct GGUFHelper {
 
   std::string ReadString() {
     auto l = Read<uint64_t>();
-    std::string res(reinterpret_cast<const char*>(data), l);
-    auto r = res;
+    std::string result(reinterpret_cast<const char*>(data), l);
     data += l;
-    return r;
+    return result;
   }
 
   GGUFMetadataKVArrayValue ReadArray() {
@@ -423,6 +437,10 @@ struct GGUFHeader {
   // MetadataKV are the key-value pairs in the metadata,
   std::vector<GGUFMetadataKV> metadata_kv;
 
+  // Constructor to initialize member variables.
+  GGUFHeader()
+    : magic{0}, version{0}, tensor_count(0), metadata_kv_count(0), metadata_kv() {}
+
   std::pair<GGUFMetadataKV, bool> Get(const std::string& name) {
     for (auto const& kv : metadata_kv) {
       if (kv.key == name) {
@@ -482,6 +500,20 @@ struct GGUFFile {
   // which describes how many bits are used to store a weight,
   // higher is better.
   double model_bits_per_weight;
+
+  GGUFFile()
+    : header(),
+      tensor_infos(),
+      padding(0),
+      split_paddings(),
+      tensor_data_start_offset(-1),
+      split_tensor_data_start_offsets(),
+      size(0),
+      split_sizes(),
+      model_size(0),
+      split_model_sizes(),
+      model_parameters(0),
+      model_bits_per_weight(0.0) {}
 };
 
 inline std::optional<GGUFFile> ParseGgufFile(const std::string& path) {
