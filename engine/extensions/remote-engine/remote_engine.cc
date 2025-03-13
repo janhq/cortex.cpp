@@ -713,8 +713,22 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
     }
     CTL_DBG(response.body);
     auto body_json = json_helper::ParseJsonString(response.body);
-    if (body_json.isMember("error")) {
+    if (body_json.isMember("error") && !body_json["error"].isNull()) {
       return body_json["error"];
+    }
+
+    // hardcode for cohere
+    if (url.find("api.cohere.ai") != std::string::npos) {
+      if (body_json.isMember("models")) {
+        for (auto& model : body_json["models"]) {
+          if (model.isMember("name")) {
+            model["id"] = model["name"];
+            model.removeMember("name");
+          }
+        }
+        body_json["data"] = body_json["models"];
+        body_json.removeMember("models");
+      }
     }
     return body_json;
   }
