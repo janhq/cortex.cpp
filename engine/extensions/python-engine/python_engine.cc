@@ -56,7 +56,7 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
-static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
+[[maybe_unused]] static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
                             std::string* data) {
   data->append(ptr, size * nmemb);
   return size * nmemb;
@@ -185,6 +185,7 @@ void PythonEngine::GetModels(
   status["status_code"] = k200OK;
 
   callback(std::move(status), std::move(response_json));
+  (void) json_body;
 }
 
 void PythonEngine::LoadModel(
@@ -386,6 +387,8 @@ void PythonEngine::HandleChatCompletion(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
   LOG_WARN << "Does not support yet!";
+  (void) json_body;
+  (void) callback;
 }
 
 CurlResponse PythonEngine::MakeStreamPostRequest(
@@ -623,7 +626,9 @@ Json::Value PythonEngine::GetRemoteModels() {
   return Json::Value();
 }
 
-void PythonEngine::StopInferencing(const std::string& model_id) {}
+void PythonEngine::StopInferencing(const std::string& model_id) {
+  (void)model_id;
+}
 
 void PythonEngine::HandleRouteRequest(
     std::shared_ptr<Json::Value> json_body,
@@ -893,12 +898,14 @@ void PythonEngine::SetLogLevel(trantor::Logger::LogLevel log_level) {
 
 void PythonEngine::Load(EngineLoadOption opts) {
   // Develop register model here on loading engine
+  (void) opts;
 };
 
 void PythonEngine::Unload(EngineUnloadOption opts) {
   for (const auto& pair : models_) {
     TerminateModelProcess(pair.first);
   }
+  (void) opts;
 };
 
 }  // namespace python_engine

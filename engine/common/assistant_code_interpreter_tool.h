@@ -20,7 +20,7 @@ struct AssistantCodeInterpreterTool : public AssistantTool {
 
   static cpp::result<AssistantCodeInterpreterTool, std::string> FromJson() {
     AssistantCodeInterpreterTool tool;
-    return std::move(tool);
+    return tool;
   }
 
   cpp::result<Json::Value, std::string> ToJson() override {

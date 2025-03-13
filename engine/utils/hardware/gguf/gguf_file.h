@@ -571,6 +571,7 @@ inline std::optional<GGUFFile> ParseGgufFile(const std::string& path) {
     }
     gf.tensor_infos = tis;
   }
+  (void) version;
   return gf;
 }
 }  // namespace hardware
