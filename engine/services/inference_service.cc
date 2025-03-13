@@ -4,6 +4,14 @@
 #include "utils/function_calling/common.h"
 #include "utils/jinja_utils.h"
 
+static InferResult GetUnsupportedResponse(const std::string& msg) {
+  Json::Value res, stt;
+  res["message"] = msg;
+  stt["status_code"] = drogon::k400BadRequest;
+  LOG_WARN << msg;
+  return std::make_pair(stt, res);
+}
+
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
@@ -99,6 +107,9 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
         ->HandleChatCompletion(json_body, std::move(cb));
+  } else if (std::holds_alternative<PythonEngineI*>(engine_result.value())) {
+    return cpp::fail(GetUnsupportedResponse(
+        "Python engine does not support Chat completion"));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
         ->HandleChatCompletion(json_body, std::move(cb));
@@ -132,6 +143,9 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
         ->HandleEmbedding(json_body, std::move(cb));
+  } else if (std::holds_alternative<PythonEngineI*>(engine_result.value())) {
+    return cpp::fail(
+        GetUnsupportedResponse("Python engine does not support Embedding"));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
         ->HandleEmbedding(json_body, std::move(cb));
@@ -197,6 +211,16 @@ cpp::result<void, InferResult> InferenceService::HandleRouteRequest(
   return {};
 }
 
+cpp::result<int, std::string> InferenceService::GetPythonPort(
+    const std::string& model) {
+  auto engine_result = engine_service_->GetLoadedEngine(kPythonEngine);
+  if (engine_result.has_error()) {
+    return cpp::fail("Python engine is not loaded yet");
+  }
+
+  return std::get<PythonEngineI*>(engine_result.value())->GetPort(model);
+}
+
 InferResult InferenceService::LoadModel(
     std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
@@ -219,18 +243,18 @@ InferResult InferenceService::LoadModel(
   }
 
   // might need mutex here
-  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
+  auto engine = engine_service_->GetLoadedEngine(engine_type).value();
 
   auto cb = [&stt, &r](Json::Value status, Json::Value res) {
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->LoadModel(json_body, std::move(cb));
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->LoadModel(json_body, std::move(cb));
+  } else if (std::holds_alternative<PythonEngineI*>(engine)) {
+    std::get<PythonEngineI*>(engine)->LoadModel(json_body, std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->LoadModel(json_body, std::move(cb));
+    std::get<RemoteEngineI*>(engine)->LoadModel(json_body, std::move(cb));
   }
   // Save model config to reload if needed
   auto model_id = json_body->get("model", "").asString();
@@ -261,12 +285,16 @@ InferResult InferenceService::UnloadModel(const std::string& engine_name,
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
+  auto engine = engine_result.value();
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->UnloadModel(
+        std::make_shared<Json::Value>(json_body), std::move(cb));
+  } else if (std::holds_alternative<PythonEngineI*>(engine)) {
+    std::get<PythonEngineI*>(engine)->UnloadModel(
+        std::make_shared<Json::Value>(json_body), std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
+    std::get<RemoteEngineI*>(engine)->UnloadModel(
+        std::make_shared<Json::Value>(json_body), std::move(cb));
   }
 
   return std::make_pair(stt, r);
@@ -299,12 +327,13 @@ InferResult InferenceService::GetModelStatus(
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->GetModelStatus(json_body, std::move(cb));
+  auto engine = engine_result.value();
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
+  } else if (std::holds_alternative<PythonEngineI*>(engine)) {
+    std::get<PythonEngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->GetModelStatus(json_body, std::move(cb));
+    std::get<RemoteEngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   }
 
   return std::make_pair(stt, r);
@@ -335,6 +364,9 @@ InferResult InferenceService::GetModels(
       if (e->IsSupported("GetModels")) {
         e->GetModels(json_body, std::move(cb));
       }
+    } else if (std::holds_alternative<PythonEngineI*>(loaded_engine)) {
+      std::get<PythonEngineI*>(loaded_engine)
+          ->GetModels(json_body, std::move(cb));
     } else {
       std::get<RemoteEngineI*>(loaded_engine)
           ->GetModels(json_body, std::move(cb));
@@ -350,51 +382,12 @@ InferResult InferenceService::GetModels(
 
 InferResult InferenceService::FineTuning(
     std::shared_ptr<Json::Value> json_body) {
-  std::string ne = kPythonRuntimeRepo;
+  std::string ne = kPythonEngine;
   Json::Value r;
   Json::Value stt;
 
-  // TODO: namh refactor this
-  // if (engines_.find(ne) == engines_.end()) {
-  //   try {
-  //     std::string abs_path =
-  //         (getenv("ENGINE_PATH")
-  //              ? getenv("ENGINE_PATH")
-  //              : file_manager_utils::GetCortexDataPath().string()) +
-  //         kPythonRuntimeLibPath;
-  //     engines_[ne].dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
-  //   } catch (const cortex_cpp::dylib::load_error& e) {
-  //
-  //     LOG_ERROR << "Could not load engine: " << e.what();
-  //     engines_.erase(ne);
-  //
-  //     Json::Value res;
-  //     r["message"] = "Could not load engine " + ne;
-  //     stt["status_code"] = drogon::k500InternalServerError;
-  //     return std::make_pair(stt, r);
-  //   }
-  //
-  //   auto func =
-  //       engines_[ne].dl->get_function<CortexPythonEngineI*()>("get_engine");
-  //   engines_[ne].engine = func();
-  //   LOG_INFO << "Loaded engine: " << ne;
-  // }
-  //
-  // LOG_TRACE << "Start to fine-tuning";
-  // auto& en = std::get<CortexPythonEngineI*>(engines_[ne].engine);
-  // if (en->IsSupported("HandlePythonFileExecutionRequest")) {
-  //   en->HandlePythonFileExecutionRequest(
-  //       json_body, [&r, &stt](Json::Value status, Json::Value res) {
-  //         r = res;
-  //         stt = status;
-  //       });
-  // } else {
-  //   LOG_WARN << "Method is not supported yet";
   r["message"] = "Method is not supported yet";
   stt["status_code"] = drogon::k500InternalServerError;
-  //   return std::make_pair(stt, r);
-  // }
-  // LOG_TRACE << "Done fine-tuning";
   return std::make_pair(stt, r);
 }
 

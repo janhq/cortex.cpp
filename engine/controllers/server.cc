@@ -210,6 +210,59 @@ void server::RouteRequest(
   }
 }
 
+void server::Python(const HttpRequestPtr& req,
+                    std::function<void(const HttpResponsePtr&)>&& callback,
+                    const std::string& model) {
+
+  const std::string& full_path = req->getPath();
+
+  const std::string prefix = "/v1/python/";
+  if (full_path.substr(0, prefix.size()) != prefix) {
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(
+        Json::Value("Invalid path: must start with " + prefix));
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  // convert /v1/python/{model}/remaining/path -> /remaning/path
+  const std::string path = full_path.substr(prefix.size() + model.size());
+
+  auto port_result = inference_svc_->GetPythonPort(model);
+  if (port_result.has_error()) {
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(
+        Json::Value(port_result.error()));
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  // route request. localhost might not work?
+  const int port = port_result.value();
+  const std::string host = "http://127.0.0.1:" + std::to_string(port);
+  CTL_INF("Route request to " << host << path);
+
+  // https://github.com/drogonframework/drogon/blob/v1.9.10/examples/simple_reverse_proxy/plugins/SimpleReverseProxy.cc
+  auto client = HttpClient::newHttpClient(
+      host, trantor::EventLoop::getEventLoopOfCurrentThread());
+
+  // NOTE: modify request object inplace
+  req->setPassThrough(true);
+  req->setPath(path);
+
+  client->sendRequest(req, [callback = std::move(callback)](
+                               ReqResult result, const HttpResponsePtr& resp) {
+    if (result == ReqResult::Ok) {
+      resp->setPassThrough(true);
+      callback(resp);
+    } else {
+      auto errResp = HttpResponse::newHttpResponse();
+      errResp->setStatusCode(k500InternalServerError);
+      callback(errResp);
+    }
+  });
+}
+
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto ir = inference_svc_->LoadModel(req->getJsonObject());
@@ -227,7 +280,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
                                       char* buf,
-                                       std::size_t buf_size) -> std::size_t {
+                                      std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
       if (!(*err_or_done)) {

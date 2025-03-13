@@ -9,7 +9,7 @@
 
 #include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
-#include "cortex-common/cortexpythoni.h"
+#include "cortex-common/python_enginei.h"
 #include "cortex-common/remote_enginei.h"
 #include "database/engines.h"
 #include "services/database_service.h"
@@ -37,7 +37,7 @@ struct EngineUpdateResult {
   }
 };
 
-using EngineV = std::variant<EngineI*, CortexPythonEngineI*, RemoteEngineI*>;
+using EngineV = std::variant<EngineI*, PythonEngineI*, RemoteEngineI*>;
 
 class EngineService : public EngineServiceI {
  private:
@@ -132,7 +132,6 @@ class EngineService : public EngineServiceI {
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
 
- 
   cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngines();
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);
@@ -162,6 +161,10 @@ class EngineService : public EngineServiceI {
 
   cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",
+      const std::optional<std::string> variant_name = std::nullopt);
+
+  cpp::result<void, std::string> DownloadLlamaCpp(
+      const std::string& version = "latest",
       const std::optional<std::string> variant_name = std::nullopt);
 
   cpp::result<bool, std::string> DownloadCuda(const std::string& engine,

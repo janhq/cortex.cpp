@@ -184,19 +184,25 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   }
 
   std::optional<std::filesystem::path> path_to_remove = std::nullopt;
-  if (version == std::nullopt && variant == std::nullopt) {
-    // if no version and variant provided, remove all engines variant of that engine
-    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
-  } else if (version != std::nullopt && variant != std::nullopt) {
-    // if both version and variant are provided, we only remove that variant
-    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne /
-                     variant.value() / version.value();
-  } else if (version == std::nullopt) {
-    // if only have variant, we remove all of that variant
-    path_to_remove =
-        file_manager_utils::GetEnginesContainerPath() / ne / variant.value();
+
+  // Python engine is stored in a separate folder
+  if (ne == kPythonEngine) {
+    path_to_remove = python_engine::GetPythonEnginePath();
   } else {
-    return cpp::fail("No variant provided");
+    if (version == std::nullopt && variant == std::nullopt) {
+      // if no version and variant provided, remove all engines variant of that engine
+      path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
+    } else if (version != std::nullopt && variant != std::nullopt) {
+      // if both version and variant are provided, we only remove that variant
+      path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne /
+                       variant.value() / version.value();
+    } else if (version == std::nullopt) {
+      // if only have variant, we remove all of that variant
+      path_to_remove =
+          file_manager_utils::GetEnginesContainerPath() / ne / variant.value();
+    } else {
+      return cpp::fail("No variant provided");
+    }
   }
 
   if (path_to_remove == std::nullopt) {
@@ -220,6 +226,19 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
 
+  if (engine == kLlamaRepo) {
+    return DownloadLlamaCpp(version, variant_name);
+  } else if (engine == kPythonEngine) {
+    // ignore version and variant_name
+    return python_engine::DownloadUv(download_service_);
+  }
+  return cpp::fail("Unknown engine " + engine);
+}
+
+cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
+    const std::string& version, const std::optional<std::string> variant_name) {
+
+  const std::string engine = kLlamaRepo;
   auto normalized_version = version == "latest"
                                 ? "latest"
                                 : string_utils::RemoveSubstring(version, "v");
@@ -357,8 +376,8 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine, bool async) {
-  if (hw_inf_.sys_inf->os == "mac") {
-    // mac does not require cuda toolkit
+  if (hw_inf_.sys_inf->os == "mac" || engine == kPythonEngine) {
+    // mac and Python engine do not require cuda toolkit
     return true;
   }
 
@@ -602,6 +621,23 @@ cpp::result<std::vector<EngineVariantResponse>, std::string>
 EngineService::GetInstalledEngineVariants(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
   auto os = hw_inf_.sys_inf->os;
+
+  if (ne == kPythonEngine) {
+    if (!python_engine::IsUvInstalled()) {
+      return {};
+    } else {
+      // Python engine only means uv is installed.
+      // variant name and version don't quite make sense in this context.
+      // hence, they are left blank.
+      std::vector<EngineVariantResponse> variants;
+      variants.push_back(EngineVariantResponse{
+          .name = "",
+          .version = "",
+          .engine = kPythonEngine,
+      });
+      return variants;
+    }
+  }
 
   auto engines_variants_dir =
       file_manager_utils::GetEnginesContainerPath() / ne;
@@ -863,6 +899,8 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
+  } else if (std::holds_alternative<PythonEngineI*>(engines_[ne].engine)) {
+    delete std::get<PythonEngineI*>(engines_[ne].engine);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }
@@ -904,9 +942,13 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     return true;
   }
 
-  // End hard code
   // Check for python engine
   if (engine == kPythonEngine) {
+    if (!python_engine::IsUvInstalled()) {
+      return cpp::fail(
+          "Python engine is not ready. Please run `cortex engines install "
+          "python`");
+    }
     return true;
   }
 
