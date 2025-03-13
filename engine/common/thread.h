@@ -150,9 +150,11 @@ struct Thread : JsonSerializable {
         if (auto code_interpreter =
                 dynamic_cast<CodeInterpreter*>(tool_resources.get())) {
           tool_json["code_interpreter"] = tool_result.value();
+          (void) code_interpreter;
         } else if (auto file_search =
                        dynamic_cast<FileSearch*>(tool_resources.get())) {
           tool_json["file_search"] = tool_result.value();
+          (void) file_search;
         }
         json["tool_resources"] = tool_json;
       }

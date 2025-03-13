@@ -234,6 +234,8 @@ class DownloadService {
         break;
       }
     }
+    (void) ultotal;
+    (void) ulnow;
 
     return 0;
   }

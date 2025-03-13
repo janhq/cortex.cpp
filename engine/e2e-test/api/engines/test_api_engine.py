@@ -28,7 +28,7 @@ class TestApiEngine:
 
     # engines install
     def test_engines_install_llamacpp_specific_version_and_variant(self):
-        data = {"version": "v0.1.40-b4354", "variant": "linux-amd64-avx-cuda-11-7"}
+        data = {"version": "v0.1.40-b4354", "variant": "linux-amd64-avx"}
         response = requests.post(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
         )
