@@ -188,7 +188,6 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
       .logFolderPath = default_data_folder_path.string(),
 #endif
       .logLlamaCppPath = kLogsLlamacppBaseName,
-      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
       .logOnnxPath = kLogsOnnxBaseName,
 #if defined(_WIN32)
       .dataFolderPath =

@@ -66,7 +66,7 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
   std::wstring params = L"--start-server";
-  params += L" --config_file_path \"" + 
+  params += L" --config_file_path \"" +
             file_manager_utils::GetConfigurationPath().wstring() + L"\"";
   params += L" --data_folder_path \"" +
             file_manager_utils::GetCortexDataPath().wstring() + L"\"";
@@ -80,17 +80,17 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   mutable_cmds.push_back(L'\0');
   // Create child process
   if (!CreateProcess(
-          NULL,                 // No module name (use command line)
+          NULL,  // No module name (use command line)
           mutable_cmds
-              .data(),          // Command line (replace with your actual executable)
-          NULL,                 // Process handle not inheritable
-          NULL,                 // Thread handle not inheritable
-          FALSE,                // Set handle inheritance
-          CREATE_NO_WINDOW,     // No new console
-          NULL,                 // Use parent's environment block
-          NULL,                 // Use parent's starting directory
-          &si,                  // Pointer to STARTUPINFO structure
-          &pi))                 // Pointer to PROCESS_INFORMATION structure
+              .data(),  // Command line (replace with your actual executable)
+          NULL,         // Process handle not inheritable
+          NULL,         // Thread handle not inheritable
+          FALSE,        // Set handle inheritance
+          CREATE_NO_WINDOW,  // No new console
+          NULL,              // Use parent's environment block
+          NULL,              // Use parent's starting directory
+          &si,               // Pointer to STARTUPINFO structure
+          &pi))              // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;
@@ -136,4 +136,171 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
 #endif
   return true;
 }
+
+bool ServerStartCmd::Exec(
+    const std::optional<std::string>& log_level,
+    const std::unordered_map<std::string, std::string>& options,
+    CortexConfig& data) {
+  for (const auto& [key, value] : options) {
+    if (!value.empty()) {
+      UpdateConfig(data, key, value);
+    }
+  }
+
+  auto config_path = file_manager_utils::GetConfigurationPath();
+  auto result =
+      config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+          data, config_path.string());
+  if (result.has_error()) {
+    CTL_WRN("Error update " << config_path.string() << result.error());
+  }
+  return Exec(data.apiServerHost, std::stoi(data.apiServerPort), log_level);
+}
+
+void ServerStartCmd::UpdateConfig(CortexConfig& data, const std::string& key,
+                                  const std::string& value) {
+  static const std::unordered_map<
+      std::string, std::function<void(CortexConfig&, const std::string&,
+                                      const std::string&)>>
+      updaters = {
+          {"logspath",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.logFolderPath = v;
+           }},
+          {"logsllama",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.logLlamaCppPath = v;
+           }},
+          {"logsonnx",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.logOnnxPath = v;
+           }},
+          {"loglines",
+           [this](CortexConfig& data, const std::string& k,
+                  const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data.maxLogLines = static_cast<int>(f);
+             });
+           }},
+          {"host",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.apiServerHost = v;
+           }},
+          {"port",
+           [](CortexConfig& data, const std::string& k, const std::string& v) {
+             data.apiServerPort = v;
+           }},
+          {"hf-token",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.huggingFaceToken = v;
+           }},
+          {"gh-agent",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.gitHubUserAgent = v;
+           }},
+          {"gh-token",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.gitHubToken = v;
+           }},
+          {"cors",
+           [this](CortexConfig& data, const std::string& k,
+                  const std::string& v) {
+             UpdateBooleanField(k, v, [&data](bool b) { data.enableCors = b; });
+           }},
+          {"origins",
+           [this](CortexConfig& data, const std::string& k,
+                  const std::string& v) {
+             UpdateVectorField(k, v,
+                               [&data](const std::vector<std::string>& orgs) {
+                                 data.allowedOrigins = orgs;
+                               });
+           }},
+          {"proxy-url",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.proxyUrl = v;
+           }},
+          {"verify-proxy",
+           [this](CortexConfig& data, const std::string& k,
+                  const std::string& v) {
+             UpdateBooleanField(k, v,
+                                [&data](bool b) { data.verifyProxySsl = b; });
+           }},
+          {"verify-proxy-host",
+           [this](CortexConfig& data, const std::string& k,
+                  const std::string& v) {
+             UpdateBooleanField(
+                 k, v, [&data](bool b) { data.verifyProxyHostSsl = b; });
+           }},
+          {"proxy-username",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.proxyUsername = v;
+           }},
+          {"proxy-password",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.proxyPassword = v;
+           }},
+          {"no-proxy",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.noProxy = v;
+           }},
+          {"verify-ssl-peer",
+           [this](CortexConfig& data, const std::string& k,
+                  const std::string& v) {
+             UpdateBooleanField(k, v,
+                                [&data](bool b) { data.verifyPeerSsl = b; });
+           }},
+          {"verify-ssl-host",
+           [this](CortexConfig& data, const std::string& k,
+                  const std::string& v) {
+             UpdateBooleanField(k, v,
+                                [&data](bool b) { data.verifyHostSsl = b; });
+           }},
+          {"ssl-cert-path",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.sslCertPath = v;
+           }},
+          {"ssl-key-path",
+           [](CortexConfig& data, const std::string&, const std::string& v) {
+             data.sslKeyPath = v;
+           }},
+      };
+
+  if (auto it = updaters.find(key); it != updaters.end()) {
+    it->second(data, key, value);
+    CTL_INF("Updated " << key << " to: " << value);
+  } else {
+    CTL_WRN("Warning: Unknown configuration key '" << key << "' ignored.");
+  }
+}
+
+void ServerStartCmd::UpdateVectorField(
+    const std::string& key, const std::string& value,
+    std::function<void(const std::vector<std::string>&)> setter) {
+  std::vector<std::string> tokens;
+  std::istringstream iss(value);
+  std::string token;
+  while (std::getline(iss, token, ',')) {
+    tokens.push_back(token);
+  }
+  setter(tokens);
+}
+
+void ServerStartCmd::UpdateNumericField(const std::string& key,
+                                        const std::string& value,
+                                        std::function<void(float)> setter) {
+  try {
+    float numeric_val = std::stof(value);
+    setter(numeric_val);
+  } catch (const std::exception& e) {
+    CLI_LOG("Failed to parse numeric value for " << key << ": " << e.what());
+  }
+}
+
+void ServerStartCmd::UpdateBooleanField(const std::string& key,
+                                        const std::string& value,
+                                        std::function<void(bool)> setter) {
+  bool bool_value = (value == "true" || value == "1");
+  setter(bool_value);
+}
+
 };  // namespace commands

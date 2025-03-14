@@ -22,7 +22,6 @@ cpp::result<void, std::string> CortexConfigMgr::DumpYamlConfig(
     YAML::Node node;
     node["logFolderPath"] = config.logFolderPath;
     node["logLlamaCppPath"] = config.logLlamaCppPath;
-    node["logTensorrtLLMPath"] = config.logTensorrtLLMPath;
     node["logOnnxPath"] = config.logOnnxPath;
     node["dataFolderPath"] = config.dataFolderPath;
     node["maxLogLines"] = config.maxLogLines;
@@ -78,11 +77,10 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
          !node["apiServerPort"] || !node["checkedForUpdateAt"] ||
          !node["checkedForLlamacppUpdateAt"] || !node["latestRelease"] ||
          !node["latestLlamacppRelease"] || !node["logLlamaCppPath"] ||
-         !node["logOnnxPath"] || !node["logTensorrtLLMPath"] ||
-         !node["huggingFaceToken"] || !node["gitHubUserAgent"] ||
-         !node["gitHubToken"] || !node["llamacppVariant"] ||
-         !node["llamacppVersion"] || !node["enableCors"] ||
-         !node["allowedOrigins"] || !node["proxyUrl"] ||
+         !node["logOnnxPath"] || !node["huggingFaceToken"] ||
+         !node["gitHubUserAgent"] || !node["gitHubToken"] ||
+         !node["llamacppVariant"] || !node["llamacppVersion"] ||
+         !node["enableCors"] || !node["allowedOrigins"] || !node["proxyUrl"] ||
          !node["proxyUsername"] || !node["proxyPassword"] ||
          !node["verifyPeerSsl"] || !node["verifyHostSsl"] ||
          !node["verifyProxySsl"] || !node["verifyProxyHostSsl"] ||
@@ -97,9 +95,6 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
         .logLlamaCppPath = node["logLlamaCppPath"]
                                ? node["logLlamaCppPath"].as<std::string>()
                                : default_cfg.logLlamaCppPath,
-        .logTensorrtLLMPath = node["logTensorrtLLMPath"]
-                                  ? node["logTensorrtLLMPath"].as<std::string>()
-                                  : default_cfg.logTensorrtLLMPath,
         .logOnnxPath = node["logOnnxPath"]
                            ? node["logOnnxPath"].as<std::string>()
                            : default_cfg.logOnnxPath,
@@ -183,10 +178,9 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
         .checkedForSyncHubAt = node["checkedForSyncHubAt"]
                                    ? node["checkedForSyncHubAt"].as<uint64_t>()
                                    : default_cfg.checkedForSyncHubAt,
-                                   .apiKeys =
-            node["apiKeys"]
-                ? node["apiKeys"].as<std::vector<std::string>>()
-                : default_cfg.apiKeys,
+        .apiKeys = node["apiKeys"]
+                       ? node["apiKeys"].as<std::vector<std::string>>()
+                       : default_cfg.apiKeys,
 
     };
     if (should_update_config) {
