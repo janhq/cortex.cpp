@@ -16,7 +16,6 @@ class CortexConfigTest : public ::testing::Test {
     // Set up default configuration
     default_config = {"default_log_path",
                       "default_llamacpp_log_path",
-                      "default_tensorrtllm_log_path",
                       "default_onnx_log_path",
                       "default_data_path",
                       1000,
@@ -38,7 +37,6 @@ class CortexConfigTest : public ::testing::Test {
 TEST_F(CortexConfigTest, DumpYamlConfig_WritesCorrectly) {
   CortexConfig config = {"log_path",
                          "default_llamacpp_log_path",
-                         "default_tensorrtllm_log_path",
                          "default_onnx_log_path",
                          "data_path",
                          5000,
@@ -68,7 +66,6 @@ TEST_F(CortexConfigTest, FromYaml_ReadsCorrectly) {
   // First, create a valid YAML configuration file
   CortexConfig config = {"log_path",
                          "default_llamacpp_log_path",
-                         "default_tensorrtllm_log_path",
                          "default_onnx_log_path",
                          "data_path",
                          5000,
