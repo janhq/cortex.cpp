@@ -11,7 +11,7 @@ namespace commands {
 // NOTE: should have a single source of truth between CLI and server
 static bool NeedCudaDownload(const std::string& engine) {
   return !system_info_utils::GetDriverAndCudaVersion().second.empty() &&
-         engine != kPythonEngine;
+         engine == kLlamaRepo;
 }
 
 bool EngineInstallCmd::Exec(const std::string& engine,

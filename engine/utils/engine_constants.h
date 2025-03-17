@@ -2,6 +2,7 @@
 
 constexpr const auto kLlamaEngine = "llama-cpp";
 constexpr const auto kPythonEngine = "python-engine";
+constexpr const auto kVllmEngine = "vllm";
 
 constexpr const auto kOpenAiEngine = "openai";
 constexpr const auto kAnthropicEngine = "anthropic";

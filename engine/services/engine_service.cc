@@ -9,7 +9,7 @@
 #include "config/model_config.h"
 #include "database/engines.h"
 #include "database/models.h"
-#include "extensions/python-engine/python_engine.h"
+#include "extensions/python-engines/vllm_engine.h"
 #include "extensions/remote-engine/remote_engine.h"
 
 #include "utils/archive_utils.h"
@@ -18,11 +18,11 @@
 #include "utils/file_manager_utils.h"
 #include "utils/github_release_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/normalize_engine.h"
 #include "utils/result.hpp"
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
-#include "utils/normalize_engine.h"
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -187,7 +187,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
 
   // Python engine is stored in a separate folder
   if (ne == kPythonEngine) {
-    path_to_remove = python_engine::GetPythonEnginePath();
+    return cpp::fail("Not implemented");
   } else {
     if (version == std::nullopt && variant == std::nullopt) {
       // if no version and variant provided, remove all engines variant of that engine
@@ -228,9 +228,8 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
 
   if (engine == kLlamaRepo) {
     return DownloadLlamaCpp(version, variant_name);
-  } else if (engine == kPythonEngine) {
-    // ignore version and variant_name
-    return python_engine::DownloadUv(download_service_);
+  } else if (engine == kVllmEngine) {
+    return VllmEngine::Download(download_service_, version, variant_name);
   }
   return cpp::fail("Unknown engine " + engine);
 }
@@ -376,8 +375,8 @@ cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine, bool async) {
-  if (hw_inf_.sys_inf->os == "mac" || engine == kPythonEngine) {
-    // mac and Python engine do not require cuda toolkit
+  if (hw_inf_.sys_inf->os == "mac" || engine != kLlamaRepo) {
+    // mac and non-llama.cpp engine do not require cuda toolkit
     return true;
   }
 
@@ -622,22 +621,22 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
   auto os = hw_inf_.sys_inf->os;
 
-  if (ne == kPythonEngine) {
-    if (!python_engine::IsUvInstalled()) {
-      return {};
-    } else {
-      // Python engine only means uv is installed.
-      // variant name and version don't quite make sense in this context.
-      // hence, they are left blank.
-      std::vector<EngineVariantResponse> variants;
-      variants.push_back(EngineVariantResponse{
-          .name = "",
-          .version = "",
-          .engine = kPythonEngine,
-      });
-      return variants;
-    }
-  }
+  // if (ne == kPythonEngine) {
+  //   if (!python_engine::IsUvInstalled()) {
+  //     return {};
+  //   } else {
+  //     // Python engine only means uv is installed.
+  //     // variant name and version don't quite make sense in this context.
+  //     // hence, they are left blank.
+  //     std::vector<EngineVariantResponse> variants;
+  //     variants.push_back(EngineVariantResponse{
+  //         .name = "",
+  //         .version = "",
+  //         .engine = kPythonEngine,
+  //     });
+  //     return variants;
+  //   }
+  // }
 
   auto engines_variants_dir =
       file_manager_utils::GetEnginesContainerPath() / ne;
@@ -705,11 +704,11 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
   // Check for python engine
 
-  if (engine_name == kPythonEngine) {
-    engines_[engine_name].engine = new python_engine::PythonEngine();
-    CTL_INF("Loaded engine: " << engine_name);
-    return {};
-  }
+  // if (engine_name == kPythonEngine) {
+  //   engines_[engine_name].engine = new python_engine::PythonEngine();
+  //   CTL_INF("Loaded engine: " << engine_name);
+  //   return {};
+  // }
 
   // Check for remote engine
   if (IsRemoteEngine(engine_name)) {
@@ -943,14 +942,14 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   }
 
   // Check for python engine
-  if (engine == kPythonEngine) {
-    if (!python_engine::IsUvInstalled()) {
-      return cpp::fail(
-          "Python engine is not ready. Please run `cortex engines install "
-          "python`");
-    }
-    return true;
-  }
+  // if (engine == kPythonEngine) {
+  //   if (!python_engine::IsUvInstalled()) {
+  //     return cpp::fail(
+  //         "Python engine is not ready. Please run `cortex engines install "
+  //         "python`");
+  //   }
+  //   return true;
+  // }
 
   auto os = hw_inf_.sys_inf->os;
 
