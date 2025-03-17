@@ -169,15 +169,15 @@ jobs:
           mkdir -p engine/templates/linux/dependencies
           cd engine/templates/linux/dependencies
           if [ "${{ inputs.arch }}" == "amd64" ]; then
-            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-11-7.tar.gz
-            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-12-0.tar.gz
-            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx.tar.gz
+            # wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-11-7.tar.gz
+            # wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-12-0.tar.gz
+            # wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx.tar.gz
             wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-11-7.tar.gz
             wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-12-0.tar.gz
             wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2.tar.gz
-            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-11-7.tar.gz
-            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-12-0.tar.gz
-            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512.tar.gz
+            # wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-11-7.tar.gz
+            # wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-12-0.tar.gz
+            # wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512.tar.gz
             wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-11-7.tar.gz
             wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-12-0.tar.gz
             wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx.tar.gz
