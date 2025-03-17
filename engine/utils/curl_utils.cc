@@ -147,6 +147,7 @@ cpp::result<std::string, std::string> SimpleGet(const std::string& url,
                                   std::default_delete<CurlResponse>());
 
   SetUpProxy(curl, url);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlResponse::WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
