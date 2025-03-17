@@ -56,7 +56,7 @@ void commands::ConfigUpdCmd::Exec(
 
   auto non_null_opts = std::unordered_map<std::string, std::string>();
   for (const auto& [key, value] : options) {
-    if (value.empty()) {
+    if (value.empty() && !CONFIGURATIONS.at(key).allow_empty) {
       continue;
     }
     non_null_opts[key] = value;

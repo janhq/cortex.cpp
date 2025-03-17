@@ -112,7 +112,7 @@ def pull_model_if_needed(model_id: str = "tinyllama:1b"):
 def start_server_nix() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        [executable] + ["start", "-p", "3928"],
+        [executable] + ["start", "--port", "3928"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -142,7 +142,7 @@ def start_server_nix() -> bool:
 def start_server_windows() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        [executable] + ["start", "-p", "3928"],
+        [executable] + ["start", "--port", "3928"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
