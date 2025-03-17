@@ -28,16 +28,16 @@ std::chrono::seconds GetTimeSinceEpochMillisec() {
   return duration_cast<seconds>(system_clock::now().time_since_epoch());
 }
 
-/* std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
+[[maybe_unused]] std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info->os == "mac") {
     CTL_INF("Change arch from " << system_info->arch << " to universal");
     system_info->arch = "universal";
   }
   return system_info;
-} */
+}
 
-/* std::string GetNightlyInstallerName(const std::string& v,
+[[maybe_unused]] std::string GetNightlyInstallerName(const std::string& v,
                                     const std::string& os_arch) {
   const std::string kCortex = "cortex";
   // Remove 'v' in file name
@@ -51,7 +51,7 @@ std::chrono::seconds GetTimeSinceEpochMillisec() {
 #endif
 }
 
-std::string GetInstallCmd(const std::string& exe_path) {
+[[maybe_unused]] std::string GetInstallCmd(const std::string& exe_path) {
 #if defined(__APPLE__) && defined(__MACH__)
   return "sudo touch /var/tmp/cortex_installer_skip_postinstall_check && sudo "
          "installer "
@@ -67,7 +67,7 @@ std::string GetInstallCmd(const std::string& exe_path) {
   return "start /wait \"\" " + exe_path +
          " /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SkipPostInstall";
 #endif
-} */
+}
 
 std::string GetInstallCmdLinux(const std::string& script_path,
                                const std::string& channel,
