@@ -770,6 +770,9 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   }
   if (engines_.find(ne) == engines_.end()) {
     CTL_INF("Loading local engine: " << engine_name);
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+    CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
+#endif
     engines_[ne].engine = new cortex::local::LocalEngine(*this, *(q_.get()));
     CTL_INF("Loaded engine: " << engine_name);
   } else {
@@ -777,76 +780,6 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   }
 
   return {};
-
-  // End hard code
-
-  CTL_INF("Loading engine: " << ne);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-  CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
-#endif
-
-  auto engine_dir_path_res = GetEngineDirPath(ne);
-  if (engine_dir_path_res.has_error()) {
-    return cpp::fail(engine_dir_path_res.error());
-  }
-  auto engine_dir_path = engine_dir_path_res.value().first;
-  auto custom_engine_path = engine_dir_path_res.value().second;
-
-  try {
-    auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
-
-#if defined(_WIN32) || defined(_WIN64)
-    // register deps
-    if (!(getenv("ENGINE_PATH"))) {
-      std::vector<std::filesystem::path> paths{};
-      paths.push_back(cuda_path);
-      paths.push_back(engine_dir_path);
-
-      CTL_DBG("Registering dylib for "
-              << ne << " with " << std::to_string(paths.size()) << " paths.");
-      for (const auto& path : paths) {
-        CTL_DBG("Registering path: " << path.string());
-      }
-
-      auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
-      if (reg_result.has_error()) {
-        CTL_DBG("Failed register lib paths for: " << ne);
-      } else {
-        CTL_DBG("Registered lib paths for: " << ne);
-      }
-    }
-#endif
-
-    auto dylib =
-        std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
-
-    auto config = file_manager_utils::GetCortexConfig();
-    auto log_path = std::filesystem::path(config.logFolderPath) /
-                    std::filesystem::path(config.logLlamaCppPath);
-
-    // init
-    auto func = dylib->get_function<EngineI*()>("get_engine");
-    auto engine_obj = func();
-    auto load_opts = EngineI::EngineLoadOption{
-        .engine_path = engine_dir_path,
-        .deps_path = cuda_path,
-        .is_custom_engine_path = custom_engine_path,
-        .log_path = log_path,
-        .max_log_lines = config.maxLogLines,
-        .log_level = logging_utils_helper::global_log_level,
-    };
-    engine_obj->Load(load_opts);
-
-    engines_[ne].engine = engine_obj;
-    engines_[ne].dl = std::move(dylib);
-
-    CTL_DBG("Engine loaded: " << ne);
-    return {};
-  } catch (const cortex_cpp::dylib::load_error& e) {
-    CTL_ERR("Could not load engine: " << e.what());
-    engines_.erase(ne);
-    return cpp::fail("Could not load engine " + ne + ": " + e.what());
-  }
 }
 
 void EngineService::RegisterEngineLibPath() {
@@ -952,8 +885,6 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
-  } else if (std::holds_alternative<LocalEngineI*>(engines_[ne].engine)) {
-    delete std::get<LocalEngineI*>(engines_[ne].engine);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }

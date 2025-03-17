@@ -47,9 +47,6 @@ class EngineI {
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 
-  // For backward compatible checking
-  virtual bool IsSupported(const std::string& f) = 0;
-
   // Get list of running models
   virtual void GetModels(
       std::shared_ptr<Json::Value> jsonBody,
@@ -62,7 +59,6 @@ class EngineI {
   // Stop inflight chat completion in stream mode
   virtual void StopInferencing(const std::string& model_id) = 0;
 
-  virtual Json::Value GetRemoteModels() = 0;
   virtual void HandleRouteRequest(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;

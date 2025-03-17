@@ -622,10 +622,6 @@ void PythonEngine::HandleInference(
   }
 }
 
-Json::Value PythonEngine::GetRemoteModels() {
-  return Json::Value();
-}
-
 void PythonEngine::StopInferencing(const std::string& model_id) {
   (void)model_id;
 }
@@ -858,15 +854,6 @@ void PythonEngine::HandleEmbedding(
     std::shared_ptr<Json::Value>,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
   callback(Json::Value(), Json::Value());
-}
-
-bool PythonEngine::IsSupported(const std::string& f) {
-  if (f == "HandleChatCompletion" || f == "LoadModel" || f == "UnloadModel" ||
-      f == "GetModelStatus" || f == "GetModels" || f == "SetFileLogger" ||
-      f == "SetLogLevel") {
-    return true;
-  }
-  return false;
 }
 
 bool PythonEngine::SetFileLogger(int max_log_lines,

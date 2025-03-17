@@ -57,8 +57,6 @@ class InferenceService {
 
   InferResult GetModels(std::shared_ptr<Json::Value> json_body);
 
-  InferResult FineTuning(std::shared_ptr<Json::Value> json_body);
-
   bool StopInferencing(const std::string& engine_name,
                        const std::string& model_id);
 
