@@ -482,36 +482,49 @@ void CommandLineParser::SetupEngineCommands() {
   install_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                      " engines install [engine_name] [options]");
   install_cmd->group(kSubcommands);
+  install_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
+  install_cmd->add_option("-v, --version", cml_data_.engine_version,
+                          "Engine version to download");
+  install_cmd->add_option("-s, --source", cml_data_.engine_src,
+                          "Install engine by local path");
+  install_cmd->add_flag("-m, --menu", cml_data_.show_menu,
+                        "Display menu for engine variant selection");
+
   install_cmd->callback([this, install_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (install_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(install_cmd->help());
+    try {
+      commands::EngineInstallCmd(
+          engine_service_, cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.show_menu)
+          .Exec(cml_data_.engine_name, cml_data_.engine_version,
+                cml_data_.engine_src);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
     }
   });
-
-  for (const auto& engine : supported_engines_) {
-    EngineInstall(install_cmd, engine, cml_data_.engine_version,
-                  cml_data_.engine_src);
-  }
 
   auto uninstall_cmd =
       engines_cmd->add_subcommand("uninstall", "Uninstall engine");
   uninstall_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                        " engines uninstall [engine_name] [options]");
+  uninstall_cmd->group(kSubcommands);
+  uninstall_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
   uninstall_cmd->callback([this, uninstall_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (uninstall_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(uninstall_cmd->help());
+    try {
+      commands::EngineUninstallCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.engine_name);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
     }
   });
-  uninstall_cmd->group(kSubcommands);
-  for (const auto& engine : supported_engines_) {
-    EngineUninstall(uninstall_cmd, engine);
-  }
 
   auto engine_upd_cmd = engines_cmd->add_subcommand("update", "Update engine");
   engine_upd_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
@@ -723,57 +736,6 @@ void CommandLineParser::SetupSystemCommands() {
     auto cuc = commands::CortexUpdCmd(download_service_);
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
-  });
-}
-
-void CommandLineParser::EngineInstall(CLI::App* parent,
-                                      const std::string& engine_name,
-                                      std::string& version, std::string& src) {
-  auto install_engine_cmd = parent->add_subcommand(engine_name, "");
-  install_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                            " engines install " + engine_name + " [options]");
-  install_engine_cmd->group(kEngineGroup);
-
-  install_engine_cmd->add_option("-v, --version", version,
-                                 "Engine version to download");
-
-  install_engine_cmd->add_option("-s, --source", src,
-                                 "Install engine by local path");
-
-  install_engine_cmd->add_flag("-m, --menu", cml_data_.show_menu,
-                               "Display menu for engine variant selection");
-
-  install_engine_cmd->callback([this, engine_name, &version, &src] {
-    if (std::exchange(executed_, true))
-      return;
-    try {
-      commands::EngineInstallCmd(
-          engine_service_, cml_data_.config.apiServerHost,
-          std::stoi(cml_data_.config.apiServerPort), cml_data_.show_menu)
-          .Exec(engine_name, version, src);
-    } catch (const std::exception& e) {
-      CTL_ERR(e.what());
-    }
-  });
-}
-
-void CommandLineParser::EngineUninstall(CLI::App* parent,
-                                        const std::string& engine_name) {
-  auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
-  uninstall_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                              " engines install " + engine_name + " [options]");
-  uninstall_engine_cmd->group(kEngineGroup);
-
-  uninstall_engine_cmd->callback([this, engine_name] {
-    if (std::exchange(executed_, true))
-      return;
-    try {
-      commands::EngineUninstallCmd().Exec(
-          cml_data_.config.apiServerHost,
-          std::stoi(cml_data_.config.apiServerPort), engine_name);
-    } catch (const std::exception& e) {
-      CTL_ERR(e.what());
-    }
   });
 }
 

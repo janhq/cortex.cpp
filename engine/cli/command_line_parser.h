@@ -25,11 +25,6 @@ class CommandLineParser {
 
   void SetupConfigsCommands();
 
-  void EngineInstall(CLI::App* parent, const std::string& engine_name,
-                     std::string& version, std::string& src);
-
-  void EngineUninstall(CLI::App* parent, const std::string& engine_name);
-
   void EngineUpdate(CLI::App* parent, const std::string& engine_name);
 
   void EngineGet(CLI::App* parent);
@@ -54,6 +49,7 @@ class CommandLineParser {
     std::string msg;
     std::string model_alias;
     std::string model_path;
+    std::string engine_name;
     std::string engine_version = "latest";
     std::string engine_src;
     std::string cortex_version;
