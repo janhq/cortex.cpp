@@ -25,6 +25,13 @@ constexpr static auto kGpuQueryCommand{
 constexpr static auto kGpuInfoRegex{
     R"((\d+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*([\d\.]+),\s*([^\n,]+))"};
 
+constexpr static auto kGpuQueryCommandFb{
+    "nvidia-smi "
+    "--query-gpu=index,memory.total,memory.free,name,uuid "
+    "--format=csv,noheader,nounits"};
+constexpr static auto kGpuInfoRegexFb{
+    R"((\d+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*([^\n,]+))"};
+
 struct SystemInfo {
   explicit SystemInfo(std::string os, std::string arch)
       : os(std::move(os)), arch(std::move(arch)) {}
@@ -114,6 +121,7 @@ struct GpuInfo {
   std::optional<std::string> cuda_driver_version;
   std::optional<std::string> compute_cap;
   std::string uuid;
+  std::string vendor;
 };
 
 std::vector<GpuInfo> GetGpuInfoListVulkan();

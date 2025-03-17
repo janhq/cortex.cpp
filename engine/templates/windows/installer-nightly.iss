@@ -19,6 +19,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "cortex-nightly.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "cortex-server-nightly.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "vulkan-1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion

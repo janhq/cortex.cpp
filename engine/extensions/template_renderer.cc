@@ -7,7 +7,9 @@
 #include <regex>
 #include <stdexcept>
 #include "utils/logging_utils.h"
+#include "utils/string_utils.h"
 namespace extensions {
+
 TemplateRenderer::TemplateRenderer() {
   // Configure Inja environment
   env_.set_trim_blocks(true);
@@ -21,7 +23,8 @@ TemplateRenderer::TemplateRenderer() {
     const auto& value = *args[0];
 
     if (value.is_string()) {
-      return nlohmann::json(std::string("\"") + value.get<std::string>() +
+      return nlohmann::json(std::string("\"") +
+                            string_utils::EscapeJson(value.get<std::string>()) +
                             "\"");
     }
     return value;
@@ -46,16 +49,14 @@ std::string TemplateRenderer::Render(const std::string& tmpl,
     std::string result = env_.render(tmpl, template_data);
 
     // Clean up any potential double quotes in JSON strings
-    result = std::regex_replace(result, std::regex("\\\"\\\""), "\"");
+    // result = std::regex_replace(result, std::regex("\\\"\\\""), "\"");
 
     LOG_DEBUG << "Result: " << result;
-
-    // Validate JSON
-    auto parsed = nlohmann::json::parse(result);
 
     return result;
   } catch (const std::exception& e) {
     LOG_ERROR << "Template rendering failed: " << e.what();
+    LOG_ERROR << "Data: " << data.toStyledString();
     LOG_ERROR << "Template: " << tmpl;
     throw std::runtime_error(std::string("Template rendering failed: ") +
                              e.what());
@@ -133,4 +134,4 @@ std::string TemplateRenderer::RenderFile(const std::string& template_path,
                              e.what());
   }
 }
-}  // namespace remote_engine
+}  // namespace extensions

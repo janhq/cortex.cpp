@@ -1,9 +1,9 @@
 #pragma once
+#include <assert.h>
 #include <json/json.h>
 #include <string>
 #include <variant>
 #include <vector>
-#include <assert.h>
 
 namespace cortex::hw {
 
@@ -26,6 +26,7 @@ struct CPU {
   int cores;
   std::string arch;
   std::string model;
+  float usage;
   std::vector<std::string> instructions;
 };
 
@@ -34,6 +35,7 @@ inline Json::Value ToJson(const CPU& cpu) {
   res["arch"] = cpu.arch;
   res["cores"] = cpu.cores;
   res["model"] = cpu.model;
+  res["usage"] = cpu.usage;
   Json::Value insts(Json::arrayValue);
   for (auto const& i : cpu.instructions) {
     insts.append(i);
@@ -47,11 +49,16 @@ inline CPU FromJson(const Json::Value& root) {
   int cores = root["cores"].asInt();
   std::string arch = root["arch"].asString();
   std::string model = root["model"].asString();
+  float usage = root["usage"].asFloat();
   std::vector<std::string> insts;
   for (auto const& i : root["instructions"]) {
     insts.emplace_back(i.asString());
   }
-  return {.cores = cores, .arch = arch, .model = model, .instructions = insts};
+  return {.cores = cores,
+          .arch = arch,
+          .model = model,
+          .usage = usage,
+          .instructions = insts};
 }
 }  // namespace cpu
 
@@ -62,8 +69,19 @@ struct NvidiaAddInfo {
 };
 struct AmdAddInfo {};
 using GPUAddInfo = std::variant<NvidiaAddInfo, AmdAddInfo>;
+
+enum class GpuType {
+  kGpuTypeOther = 0,
+  kGpuTypeIntegrated = 1,
+  kGpuTypeDiscrete = 2,
+  kGpuTypeVirtual = 3,
+  kGpuTypeCpu = 4,
+  kGpuTypeMaxEnum = 0x7FFFFFFF
+};
+
 struct GPU {
   std::string id;
+  uint32_t device_id;
   std::string name;
   std::string version;
   GPUAddInfo add_info;
@@ -71,13 +89,15 @@ struct GPU {
   int64_t total_vram;
   std::string uuid;
   bool is_activated = true;
+  std::string vendor;
+  GpuType gpu_type;
 };
 
 inline Json::Value ToJson(const std::vector<GPU>& gpus) {
   Json::Value res(Json::arrayValue);
   for (size_t i = 0; i < gpus.size(); i++) {
     Json::Value gpu;
-    gpu["id"] = std::to_string(i);
+    gpu["id"] = gpus[i].id;
     gpu["name"] = gpus[i].name;
     gpu["version"] = gpus[i].version;
     Json::Value add_info;
@@ -92,7 +112,10 @@ inline Json::Value ToJson(const std::vector<GPU>& gpus) {
     gpu["total_vram"] = gpus[i].total_vram;
     gpu["uuid"] = gpus[i].uuid;
     gpu["activated"] = gpus[i].is_activated;
-    res.append(gpu);
+    gpu["vendor"] = gpus[i].vendor;
+    if (gpus[i].total_vram > 0) {
+      res.append(gpu);
+    }
   }
   return res;
 }
@@ -142,7 +165,6 @@ inline OS FromJson(const Json::Value& root) {
 }
 }  // namespace os
 
-
 struct PowerInfo {
   std::string charging_status;
   int battery_life;
@@ -164,7 +186,6 @@ inline PowerInfo FromJson(const Json::Value& root) {
           .is_power_saving = root["is_power_saving"].asBool()};
 }
 }  // namespace power
-
 
 namespace {
 int64_t ByteToMiB(int64_t b) {
@@ -214,4 +235,4 @@ inline StorageInfo FromJson(const Json::Value& root) {
           .available = root["available"].asInt64()};
 }
 }  // namespace storage
-}
+}  // namespace cortex::hw

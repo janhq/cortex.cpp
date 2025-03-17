@@ -13,10 +13,6 @@ namespace {
 std::string NormalizeEngine(const std::string& engine) {
   if (engine == kLlamaEngine) {
     return kLlamaRepo;
-  } else if (engine == kOnnxEngine) {
-    return kOnnxRepo;
-  } else if (engine == kTrtLlmEngine) {
-    return kTrtLlmRepo;
   }
   return engine;
 };
@@ -251,9 +247,9 @@ void Engines::InstallRemoteEngine(
                               .get("get_models_url", "")
                               .asString();
 
-    if (engine.empty() || type.empty() || url.empty()) {
+    if (engine.empty() || type.empty()) {
       Json::Value res;
-      res["message"] = "Engine name, type, url are required";
+      res["message"] = "Engine name, type are required";
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
       resp->setStatusCode(k400BadRequest);
       callback(resp);
@@ -379,17 +375,21 @@ void Engines::UpdateEngine(
           metadata = (*exist_engine).metadata;
         }
 
+        (void)engine_service_->UnloadEngine(engine);
+
         auto upd_res =
             engine_service_->UpsertEngine(engine, type, api_key, url, version,
                                           "all-platforms", status, metadata);
         if (upd_res.has_error()) {
           Json::Value res;
           res["message"] = upd_res.error();
+          CTL_WRN("Error: " << upd_res.error());
           auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
           resp->setStatusCode(k400BadRequest);
           callback(resp);
         } else {
           Json::Value res;
+          CTL_INF("Remote Engine update successfully!");
           res["message"] = "Remote Engine update successfully!";
           auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
           resp->setStatusCode(k200OK);
@@ -398,6 +398,7 @@ void Engines::UpdateEngine(
       } else {
         Json::Value res;
         res["message"] = "Request body is empty!";
+        CTL_WRN("Error: Request body is empty!");
         auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
         resp->setStatusCode(k400BadRequest);
         callback(resp);

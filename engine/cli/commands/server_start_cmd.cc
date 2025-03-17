@@ -3,6 +3,7 @@
 #include "services/engine_service.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/process/utils.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "utils/widechar_conv.h"
@@ -65,31 +66,31 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
   std::wstring params = L"--start-server";
-  params += L" --config_file_path " +
-            file_manager_utils::GetConfigurationPath().wstring();
-  params += L" --data_folder_path " +
-            file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --config_file_path \"" + 
+            file_manager_utils::GetConfigurationPath().wstring() + L"\"";
+  params += L" --data_folder_path \"" +
+            file_manager_utils::GetCortexDataPath().wstring() + L"\"";
   params += L" --loglevel " + cortex::wc::Utf8ToWstring(log_level_);
   std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
-  std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
-  CTL_DBG("wcmds: " << wcmds);
+  std::wstring wcmds = current_path_w + L"\\" + exe_w + L" " + params;
+  CTL_INF("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
   if (!CreateProcess(
-          NULL,  // No module name (use command line)
+          NULL,                 // No module name (use command line)
           mutable_cmds
-              .data(),  // Command line (replace with your actual executable)
-          NULL,         // Process handle not inheritable
-          NULL,         // Thread handle not inheritable
-          FALSE,        // Set handle inheritance
-          0,            // No creation flags
-          NULL,         // Use parent's environment block
-          NULL,         // Use parent's starting directory
-          &si,          // Pointer to STARTUPINFO structure
-          &pi))         // Pointer to PROCESS_INFORMATION structure
+              .data(),          // Command line (replace with your actual executable)
+          NULL,                 // Process handle not inheritable
+          NULL,                 // Thread handle not inheritable
+          FALSE,                // Set handle inheritance
+          CREATE_NO_WINDOW,     // No new console
+          NULL,                 // Use parent's environment block
+          NULL,                 // Use parent's starting directory
+          &si,                  // Pointer to STARTUPINFO structure
+          &pi))                 // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;
@@ -103,25 +104,26 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   }
 
 #else
-  // Unix-like system-specific code to fork a child process
-  pid_t pid = fork();
+  std::vector<std::string> commands;
+  // Some engines requires to add lib search path before process being created
+  auto download_srv = std::make_shared<DownloadService>();
+  auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
+  auto db_srv = std::make_shared<DatabaseService>();
+  EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
 
+  std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
+  commands.push_back(p);
+  commands.push_back("--config_file_path");
+  commands.push_back(get_config_file_path());
+  commands.push_back("--data_folder_path");
+  commands.push_back(get_data_folder_path());
+  commands.push_back("--loglevel");
+  commands.push_back(log_level_);
+  auto pid = cortex::process::SpawnProcess(commands);
   if (pid < 0) {
     // Fork failed
     std::cerr << "Could not start server: " << std::endl;
     return false;
-  } else if (pid == 0) {
-    // Some engines requires to add lib search path before process being created
-    auto download_srv = std::make_shared<DownloadService>();
-    auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
-    auto db_srv = std::make_shared<DatabaseService>();
-    EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
-
-    std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
-    execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",
-          get_config_file_path().c_str(), "--data_folder_path",
-          get_data_folder_path().c_str(), "--loglevel", log_level_.c_str(),
-          (char*)0);
   } else {
     // Parent process
     if (!TryConnectToServer(host, port)) {

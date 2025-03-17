@@ -14,6 +14,25 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   }
   function_calling_utils::PreprocessRequest(json_body);
   auto tool_choice = json_body->get("tool_choice", Json::Value::null);
+  auto model_id = json_body->get("model", "").asString();
+  if (saved_models_.find(model_id) != saved_models_.end()) {
+    // check if model is started, if not start it first
+    Json::Value root;
+    root["model"] = model_id;
+    root["engine"] = engine_type;
+    auto ir = GetModelStatus(std::make_shared<Json::Value>(root));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    if (status != drogon::k200OK) {
+      CTL_INF("Model is not loaded, start loading it: " << model_id);
+      // For remote engine, we use the updated configuration
+      if (engine_service_->IsRemoteEngine(engine_type)) {
+        (void)model_service_.lock()->StartModel(model_id, {}, false);
+      } else {
+        (void)LoadModel(saved_models_.at(model_id));
+      }
+    }
+  }
+
   auto engine_result = engine_service_->GetLoadedEngine(engine_type);
   if (engine_result.has_error()) {
     Json::Value res;
@@ -24,44 +43,52 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     return cpp::fail(std::make_pair(stt, res));
   }
 
-  {
-    auto model_id = json_body->get("model", "").asString();
-    if (!model_id.empty()) {
-      if (auto model_service = model_service_.lock()) {
-        auto metadata_ptr = model_service->GetCachedModelMetadata(model_id);
-        if (metadata_ptr != nullptr &&
-            !metadata_ptr->tokenizer->chat_template.empty()) {
-          auto tokenizer = metadata_ptr->tokenizer;
-          auto messages = (*json_body)["messages"];
-          Json::Value messages_jsoncpp(Json::arrayValue);
-          for (auto message : messages) {
-            messages_jsoncpp.append(message);
-          }
+  if (!model_id.empty()) {
+    if (auto model_service = model_service_.lock()) {
+      auto metadata_ptr = model_service->GetCachedModelMetadata(model_id);
+      if (metadata_ptr != nullptr &&
+          !metadata_ptr->tokenizer->chat_template.empty()) {
+        auto tokenizer = metadata_ptr->tokenizer;
+        auto messages = (*json_body)["messages"];
+        Json::Value messages_jsoncpp(Json::arrayValue);
+        for (auto message : messages) {
+          messages_jsoncpp.append(message);
+        }
 
-          Json::Value tools(Json::arrayValue);
-          Json::Value template_data_json;
-          template_data_json["messages"] = messages_jsoncpp;
-          // template_data_json["tools"] = tools;
+        Json::Value tools(Json::arrayValue);
+        Json::Value template_data_json;
+        template_data_json["messages"] = messages_jsoncpp;
+        // template_data_json["tools"] = tools;
 
-          auto prompt_result = jinja::RenderTemplate(
-              tokenizer->chat_template, template_data_json,
-              tokenizer->bos_token, tokenizer->eos_token,
-              tokenizer->add_bos_token, tokenizer->add_eos_token,
-              tokenizer->add_generation_prompt);
-          if (prompt_result.has_value()) {
-            (*json_body)["prompt"] = prompt_result.value();
+        auto prompt_result = jinja::RenderTemplate(
+            tokenizer->chat_template, template_data_json, tokenizer->bos_token,
+            tokenizer->eos_token, tokenizer->add_bos_token,
+            tokenizer->add_eos_token, tokenizer->add_generation_prompt);
+        if (prompt_result.has_value()) {
+          (*json_body)["prompt"] = prompt_result.value();
+          if (json_body->isMember("stop")) {
+            bool need_append = true;
+            for (auto& s : (*json_body)["stop"]) {
+              if (s.asString() == tokenizer->eos_token) {
+                need_append = false;
+              }
+            }
+            if (need_append) {
+              (*json_body)["stop"].append(tokenizer->eos_token);
+            }
+          } else {
             Json::Value stops(Json::arrayValue);
             stops.append(tokenizer->eos_token);
             (*json_body)["stop"] = stops;
-          } else {
-            CTL_ERR("Failed to render prompt: " + prompt_result.error());
           }
+        } else {
+          CTL_ERR("Failed to render prompt: " + prompt_result.error());
         }
       }
     }
   }
 
-  CTL_INF("Json body inference: " + json_body->toStyledString());
+  CTL_DBG("Json body inference: " + json_body->toStyledString());
 
   auto cb = [q, tool_choice](Json::Value status, Json::Value res) {
     if (!tool_choice.isNull()) {
@@ -205,6 +232,9 @@ InferResult InferenceService::LoadModel(
     std::get<RemoteEngineI*>(engine_result.value())
         ->LoadModel(json_body, std::move(cb));
   }
+  // Save model config to reload if needed
+  auto model_id = json_body->get("model", "").asString();
+  saved_models_[model_id] = json_body;
   return std::make_pair(stt, r);
 }
 

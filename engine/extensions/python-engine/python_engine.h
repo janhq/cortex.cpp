@@ -14,69 +14,15 @@
 #include "extensions/template_renderer.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
-
 #include "utils/curl_utils.h"
-#ifdef _WIN32
-#include <process.h>
-#include <windows.h>
-using pid_t = DWORD;
-#elif __APPLE__ || __linux__
-#include <signal.h>
-#include <spawn.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
+#include "utils/process/utils.h"
+
 // Helper for CURL response
 namespace python_engine {
 struct StreamContext {
   std::shared_ptr<std::function<void(Json::Value&&, Json::Value&&)>> callback;
   std::string buffer;
 };
-
-static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
-                                  void* userdata) {
-  auto* context = static_cast<StreamContext*>(userdata);
-  std::string chunk(ptr, size * nmemb);
-
-  context->buffer += chunk;
-
-  // Process complete lines
-  size_t pos;
-  while ((pos = context->buffer.find('\n')) != std::string::npos) {
-    std::string line = context->buffer.substr(0, pos);
-    context->buffer = context->buffer.substr(pos + 1);
-    LOG_DEBUG << "line: "<<line;
-
-    // Skip empty lines
-    if (line.empty() || line == "\r")
-      continue;
-
-    if (line == "data: [DONE]") {
-      Json::Value status;
-      status["is_done"] = true;
-      status["has_error"] = false;
-      status["is_stream"] = true;
-      status["status_code"] = 200;
-      (*context->callback)(std::move(status), Json::Value());
-      break;
-    }
-
-    // Parse the JSON
-    Json::Value chunk_json;
-    chunk_json["data"] = line + "\n\n";
-    Json::Reader reader;
-
-    Json::Value status;
-    status["is_done"] = false;
-    status["has_error"] = false;
-    status["is_stream"] = true;
-    status["status_code"] = 200;
-    (*context->callback)(std::move(status), std::move(chunk_json));
-  }
-
-  return size * nmemb;
-}
 
 struct CurlResponse {
   std::string body;
@@ -93,9 +39,8 @@ class PythonEngine : public EngineI {
   std::unordered_map<std::string, config::PythonModelConfig> models_;
   extensions::TemplateRenderer renderer_;
   std::unique_ptr<trantor::FileLogger> async_file_logger_;
-  std::unordered_map<std::string, pid_t> processMap;
+  std::unordered_map<std::string, pid_t> process_map_;
   trantor::ConcurrentTaskQueue q_;
-
 
   // Helper functions
   CurlResponse MakePostRequest(const std::string& model,
@@ -111,8 +56,6 @@ class PythonEngine : public EngineI {
       const std::function<void(Json::Value&&, Json::Value&&)>& callback);
 
   // Process manager functions
-  pid_t SpawnProcess(const std::string& model,
-                     const std::vector<std::string>& command);
   bool TerminateModelProcess(const std::string& model);
 
   // Internal model management

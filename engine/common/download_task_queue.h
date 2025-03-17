@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <condition_variable>
 #include <deque>
 #include <mutex>

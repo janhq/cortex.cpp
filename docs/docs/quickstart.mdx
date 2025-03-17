@@ -8,20 +8,16 @@ import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
 
-:::info
-Cortex.cpp is in active development. If you have any questions, please reach out to us:
-- [GitHub](https://github.com/janhq/cortex.cpp/issues/new/choose)
-- [Discord](https://discord.com/invite/FTk2MvZwJH)
-:::
-
 ## Local Installation
-Cortex has an Local Installer that packages all required dependencies, so that no internet connection is required during the installation process.
-  - [Windows](https://app.cortexcpp.com/download/latest/windows-amd64-local)
-  - [Mac (Universal)](https://app.cortexcpp.com/download/latest/mac-universal-local)
-  - [Linux](https://app.cortexcpp.com/download/latest/linux-amd64-local)
 
-## Start Cortex.cpp API Server
-This command starts the Cortex.cpp API server at `localhost:39281`.
+Cortex has a **Local Installer** with all of the required dependencies, so that once you've downloaded it, no internet connection is required during the installation process.
+- [Windows](https://app.cortexcpp.com/download/latest/windows-amd64-local)
+- [Mac (Universal)](https://app.cortexcpp.com/download/latest/mac-universal-local)
+- [Linux](https://app.cortexcpp.com/download/latest/linux-amd64-local)
+
+## Start a Cortex Server
+
+This command starts the Cortex's' API server at `localhost:39281`.
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
@@ -35,48 +31,63 @@ This command starts the Cortex.cpp API server at `localhost:39281`.
   </TabItem>
 </Tabs>
 
-## Pull a Model & Select Quantization
+## Pull Models
+
 This command allows users to download a model from these Model Hubs:
 - [Cortex Built-in Models](https://cortex.so/models)
 - [Hugging Face](https://huggingface.co) (GGUF): `cortex pull <author/ModelRepo>`
 
-It displays available quantizations, recommends a default and downloads the desired quantization. 
+It displays available quantizations, recommends a default and downloads the desired quantization.
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  The following two options will show you all of the available models under those names. Cortex will first search
+  on its own hub for models like `llama3.3`, and in huggingface for hyper specific ones like `bartowski/Meta-Llama-3.1-8B-Instruct-GGU`.
   ```sh
-  $ cortex pull llama3.2 
-  $ cortex pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+  cortex pull llama3.3
+  ```
+  or,
+
+  ```sh
+  cortex pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  $ cortex pull llama3.2 
-  $ cortex.exe pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+  cortex pull llama3.3
+  ```
+  ```sh
+  cortex.exe pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
   ```
   </TabItem>
 </Tabs>
 
 ## Run a Model
-This command downloads the default `gguf` model format from the [Cortex Hub](https://huggingface.co/cortexso), starts the model, and chat with the model.
+
+This command downloads the default `gguf` model (if not available in your file system) from the
+[Cortex Hub](https://huggingface.co/cortexso), starts the model, and chat with the model.
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  cortex run llama3.2
+  cortex run llama3.3
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  cortex.exe run llama3.2
+  cortex.exe run llama3.3
   ```
   </TabItem>
 </Tabs>
+
 :::info
 All model files are stored in the `~/cortex/models` folder.
 :::
 
 ## Using the Model
+
 ### API
-```curl
+```sh
 curl http://localhost:39281/v1/chat/completions \
 -H "Content-Type: application/json" \
 -d '{
@@ -101,7 +112,9 @@ curl http://localhost:39281/v1/chat/completions \
 Refer to our [API documentation](https://cortex.so/api-reference) for more details.
 
 ## Show the System State
-This command displays the running model and the hardware system status (RAM, Engine, VRAM, Uptime)
+
+This command displays the running model and the hardware system status (RAM, Engine, VRAM, Uptime).
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
@@ -116,22 +129,26 @@ This command displays the running model and the hardware system status (RAM, Eng
 </Tabs>
 
 ## Stop a Model
+
 This command stops the running model.
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  cortex models stop llama3.2
+  cortex models stop llama3.3
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  cortex.exe models stop llama3.2
+  cortex.exe models stop llama3.3
   ```
   </TabItem>
 </Tabs>
 
-## Stop Cortex.cpp API Server
-This command starts the Cortex.cpp API server at `localhost:39281`.
+## Stop a Cortex Server
+
+This command stops the Cortex.cpp API server at `localhost:39281` or whichever other port you used to start cortex.
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
@@ -145,31 +162,9 @@ This command starts the Cortex.cpp API server at `localhost:39281`.
   </TabItem>
 </Tabs>
 
-<!-- ## Run Different Model Variants
-<Tabs>
-  <TabItem value="MacOs/Linux" label="MacOs/Linux">
-  ```sh
-  # Run Mistral in ONNX format
-  cortex run mistral:onnx
-
-  # Run Mistral in TensorRT-LLM format
-  cortex run mistral:tensorrt-llm
-  ```
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-  ```sh
-  # Run Mistral in ONNX format
-  cortex.exe run mistral:onnx
-
-  # Run Mistral in TensorRT-LLM format
-  cortex.exe run mistral:tensorrt-llm
-  ```
-  </TabItem>
-</Tabs> -->
-
 ## What's Next?
-Now that Cortex.cpp is set up, here are the next steps to explore:
+Now that Cortex is set up, you can continue on to any of the following sections:
 
-1. Adjust the folder path and configuration using the [`.cortexrc`](/docs/architecture/cortexrc) file.
-2. Explore the Cortex.cpp [data folder](/docs/architecture/data-folder) to understand how it stores data.
-3. Learn about the structure of the [`model.yaml`](/docs/capabilities/models/model-yaml) file in Cortex.cpp.
+- Adjust the folder path and configuration using the [`.cortexrc`](/docs/architecture/cortexrc) file.
+- Explore the Cortex's [data folder](/docs/architecture/data-folder) to understand how data gets stored.
+- Learn about the structure of the [`model.yaml`](/docs/capabilities/models/model-yaml) file in Cortex.

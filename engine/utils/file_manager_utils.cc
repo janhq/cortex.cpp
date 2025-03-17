@@ -17,14 +17,15 @@
 #endif
 
 namespace file_manager_utils {
-std::filesystem::path GetExecutableFolderContainerPath() {
+
+std::filesystem::path GetExecutablePath() {
 #if defined(__APPLE__) && defined(__MACH__)
   char buffer[1024];
   uint32_t size = sizeof(buffer);
 
   if (_NSGetExecutablePath(buffer, &size) == 0) {
     // CTL_DBG("Executable path: " << buffer);
-    return std::filesystem::path{buffer}.parent_path();
+    return std::filesystem::path{buffer};
   } else {
     CTL_ERR("Failed to get executable path");
     return std::filesystem::current_path();
@@ -35,7 +36,7 @@ std::filesystem::path GetExecutableFolderContainerPath() {
   if (len != -1) {
     buffer[len] = '\0';
     // CTL_DBG("Executable path: " << buffer);
-    return std::filesystem::path{buffer}.parent_path();
+    return std::filesystem::path{buffer};
   } else {
     CTL_ERR("Failed to get executable path");
     return std::filesystem::current_path();
@@ -44,11 +45,15 @@ std::filesystem::path GetExecutableFolderContainerPath() {
   wchar_t buffer[MAX_PATH];
   GetModuleFileNameW(NULL, buffer, MAX_PATH);
   // CTL_DBG("Executable path: " << buffer);
-  return std::filesystem::path{buffer}.parent_path();
+  return std::filesystem::path{buffer};
 #else
   LOG_ERROR << "Unsupported platform!";
   return std::filesystem::current_path();
 #endif
+}
+
+std::filesystem::path GetExecutableFolderContainerPath() {
+  return GetExecutablePath().parent_path();
 }
 
 std::filesystem::path GetHomeDirectoryPath() {
@@ -189,6 +194,8 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
       .sslCertPath = "",
       .sslKeyPath = "",
       .supportedEngines = config_yaml_utils::kDefaultSupportedEngines,
+      .checkedForSyncHubAt = 0u,
+      .apiKeys = {},
   };
 }
 

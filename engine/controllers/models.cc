@@ -58,6 +58,20 @@ void Models::PullModel(const HttpRequestPtr& req,
           model_handle, desired_model_id, desired_model_name);
     } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
+      if (model_and_branch.size() == 3) {
+        auto mh = url_parser::Url{
+            .protocol = "https",
+            .host = kHuggingFaceHost,
+            .pathParams = {
+                model_and_branch[0],
+                model_and_branch[1],
+                "resolve",
+                "main",
+                model_and_branch[2],
+            }}.ToFullPath();
+        return model_service_->HandleDownloadUrlAsync(mh, desired_model_id,
+                                                      desired_model_name);
+      }
       return model_service_->DownloadModelFromCortexsoAsync(
           model_and_branch[0], model_and_branch[1], desired_model_id);
     }
@@ -205,8 +219,8 @@ void Models::ListModel(
           obj["model"] = model_entry.model;
           obj["status"] = "downloaded";
           auto es = model_service_->GetEstimation(model_entry.model);
-          if (es.has_value() && !!es.value()) {
-            obj["recommendation"] = hardware::ToJson(*(es.value()));
+          if (es.has_value()) {
+            obj["recommendation"] = hardware::ToJson(*es);
           }
           data.append(std::move(obj));
           yaml_handler.Reset();
@@ -283,9 +297,7 @@ void Models::GetModel(const HttpRequestPtr& req,
             fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto model_config = yaml_handler.GetModelConfig();
-    if (model_config.engine == kOnnxEngine ||
-        model_config.engine == kLlamaEngine ||
-        model_config.engine == kTrtLlmEngine) {
+    if (model_config.engine == kLlamaEngine) {
       auto ret = model_config.ToJsonString();
       auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
       resp->setStatusCode(drogon::k200OK);
@@ -365,15 +377,17 @@ void Models::UpdateModel(const HttpRequestPtr& req,
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     config::ModelConfig model_config = yaml_handler.GetModelConfig();
     std::string message;
-    if (model_config.engine == kOnnxEngine ||
-        model_config.engine == kLlamaEngine ||
-        model_config.engine == kTrtLlmEngine) {
+    if (model_config.engine == kLlamaEngine) {
       model_config.FromJson(json_body);
       yaml_handler.UpdateModelConfig(model_config);
       yaml_handler.WriteYamlFile(yaml_fp.string());
       message = "Successfully update model ID '" + model_id +
                 "': " + json_body.toStyledString();
     } else if (model_config.engine == kPythonEngine) {
+      // Block changes to `command`
+      if (json_body.isMember("command")) {
+        json_body.removeMember("command");
+      }
       config::PythonModelConfig python_model_config;
       python_model_config.ReadFromYaml(yaml_fp.string());
       python_model_config.FromJson(json_body);
@@ -461,6 +475,9 @@ void Models::ImportModel(
       model_config.files.push_back(modelPath);
       auto size = std::filesystem::file_size(modelPath);
       model_config.size = size;
+
+      // set this so that it doesn't nuke the original file on model deletion
+      model_entry.branch_name = "imported";
     }
     model_config.model = modelHandle;
     model_config.name = modelName.empty() ? model_config.name : modelName;
@@ -516,8 +533,8 @@ void Models::StartModel(
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
 
   std::optional<std::string> mmproj;
-  if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
-    mmproj = o.asString();
+  if (auto& o = (*(req->getJsonObject())); o.isMember("mmproj")) {
+    mmproj = o["mmproj"].asString();
   }
 
   auto bypass_llama_model_path = false;
@@ -526,6 +543,7 @@ void Models::StartModel(
   if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
     auto model_path = o.asString();
     if (auto& mp = (*(req->getJsonObject()))["model_path"]; mp.isNull()) {
+      mp = model_path;
       // Bypass if model does not exist in DB and llama_model_path exists
       if (std::filesystem::exists(model_path) &&
           !model_service_->HasModel(model_handle)) {
@@ -809,13 +827,60 @@ void Models::GetModelSources(
     resp->setStatusCode(k400BadRequest);
     callback(resp);
   } else {
-    auto const& info = res.value();
+    auto& info = res.value();
     Json::Value ret;
     Json::Value data(Json::arrayValue);
-    for (auto const& i : info) {
-      data.append(i);
+    for (auto& i : info) {
+      data.append(i.second.ToJson());
     }
     ret["data"] = data;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::GetModelSource(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& src) {
+  auto res = model_src_svc_->GetModelSource(src);
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto& info = res.value();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(info.ToJson());
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::GetRepositoryList(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    std::optional<std::string> author, std::optional<std::string> tag) {
+  if (!author.has_value())
+    author = "cortexso";
+  auto res =
+      model_src_svc_->GetRepositoryList(author.value(), tag.value_or(""));
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto& info = res.value();
+    Json::Value ret;
+    Json::Value arr(Json::arrayValue);
+    for (auto const& i : info) {
+      arr.append(i);
+    }
+    ret["data"] = arr;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);

@@ -191,7 +191,7 @@ install_cortex() {
     curl -L $url_binary -o /tmp/cortex.tar.gz
     tar -xzvf /tmp/cortex.tar.gz -C /tmp
     chmod +x /tmp/cortex/*
-    cp /tmp/cortex/* /usr/bin/
+    cp /tmp/cortex/cortex* /usr/bin/
     # Check is update or not
     if [ "$IS_UPDATE" = "false" ]; then
       su -c "$INSTALL_DIR/$CLI_BINARY_NAME engines install llama-cpp" $USER_TO_RUN_AS

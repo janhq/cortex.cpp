@@ -108,27 +108,32 @@ std::vector<GpuInfo> GetGpuInfoList() {
     auto [driver_version, cuda_version] = GetDriverAndCudaVersion();
     if (driver_version.empty() || cuda_version.empty())
       return gpuInfoList;
-
+    bool need_fallback = false;
     CommandExecutor cmd(kGpuQueryCommand);
     auto output = cmd.execute();
+    if (output.find("NVIDIA") == std::string::npos) {
+      need_fallback = true;
+      output = CommandExecutor(kGpuQueryCommandFb).execute();
+    }
 
-    const std::regex gpu_info_reg(kGpuInfoRegex);
+    std::string rg = need_fallback ? kGpuInfoRegexFb : kGpuInfoRegex;
+    const std::regex gpu_info_reg(rg);
     std::smatch match;
     std::string::const_iterator search_start(output.cbegin());
+    int rg_count = need_fallback ? 5 : 6;
 
     while (
         std::regex_search(search_start, output.cend(), match, gpu_info_reg)) {
-      GpuInfo gpuInfo = {
-          match[1].str(),              // id
-          match[2].str(),              // vram_total
-          match[3].str(),              // vram_free
-          match[4].str(),              // name
-          GetGpuArch(match[4].str()),  // arch
-          driver_version,              // driver_version
-          cuda_version,                // cuda_driver_version
-          match[5].str(),              // compute_cap
-          match[6].str()               // uuid
-      };
+      GpuInfo gpuInfo = {match[1].str(),              // id
+                         match[2].str(),              // vram_total
+                         match[3].str(),              // vram_free
+                         match[4].str(),              // name
+                         GetGpuArch(match[4].str()),  // arch
+                         driver_version,              // driver_version
+                         cuda_version,                // cuda_driver_version
+                         need_fallback ? "0" : match[5].str(),  // compute_cap
+                         match[rg_count].str(),                 // uuid
+                         "NVIDIA"};
       gpuInfoList.push_back(gpuInfo);
       search_start = match.suffix().first;
     }

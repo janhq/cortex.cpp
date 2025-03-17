@@ -1,6 +1,8 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
+#include <trantor/utils/Logger.h>
 #include <memory>
+#include <mutex>
 #include "controllers/assistants.h"
 #include "controllers/configs.h"
 #include "controllers/engines.h"
@@ -15,6 +17,7 @@
 #include "controllers/threads.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
+#include "openssl/ssl.h"
 #include "repositories/assistant_fs_repository.h"
 #include "repositories/file_fs_repository.h"
 #include "repositories/message_fs_repository.h"
@@ -35,6 +38,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
+#include "utils/task_queue.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -53,16 +57,28 @@
 #error "Unsupported platform!"
 #endif
 
+// Global var to signal drogon to shutdown
+volatile bool shutdown_signal;
+
 void RunServer(std::optional<std::string> host, std::optional<int> port,
                bool ignore_cout) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-  signal(SIGINT, SIG_IGN);
+  auto signal_handler = +[](int sig) -> void {
+    std::cout << "\rCaught interrupt signal, shutting down\n";
+    shutdown_signal = true;
+  };
+  signal(SIGINT, signal_handler);
 #elif defined(_WIN32)
   auto console_ctrl_handler = +[](DWORD ctrl_type) -> BOOL {
-    return (ctrl_type == CTRL_C_EVENT) ? true : false;
+    if (ctrl_type == CTRL_C_EVENT) {
+      std::cout << "\rCaught interrupt signal, shutting down\n";
+      shutdown_signal = true;
+      return TRUE;
+    }
+    return FALSE;
   };
   SetConsoleCtrlHandler(
-      reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
+      reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), TRUE);
 #endif
   auto config = file_manager_utils::GetCortexConfig();
   if (host.has_value() || port.has_value()) {
@@ -163,8 +179,11 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       download_service, dylib_path_manager, db_service);
   auto inference_svc = std::make_shared<InferenceService>(engine_service);
   auto model_src_svc = std::make_shared<ModelSourceService>(db_service);
-  auto model_service = std::make_shared<ModelService>(
-      db_service, hw_service, download_service, inference_svc, engine_service);
+  cortex::TaskQueue task_queue(
+      std::min(2u, std::thread::hardware_concurrency()), "background_task");
+  auto model_service =
+      std::make_shared<ModelService>(db_service, hw_service, download_service,
+                                     inference_svc, engine_service, task_queue);
   inference_svc->SetModelService(model_service);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(
@@ -201,16 +220,26 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   drogon::app().registerController(hw_ctl);
   drogon::app().registerController(config_ctl);
 
-  LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
-           << config.apiServerPort;
-  LOG_INFO << "Please load your model";
+  auto upload_path = std::filesystem::temp_directory_path() / "cortex-uploads";
+  drogon::app().setUploadPath(upload_path.string());
+
 #ifndef _WIN32
   drogon::app().enableReusePort();
 #else
   drogon::app().enableDateHeader(false);
 #endif
-  drogon::app().addListener(config.apiServerHost,
-                            std::stoi(config.apiServerPort));
+  try {
+    drogon::app().addListener(config.apiServerHost,
+                              std::stoi(config.apiServerPort));
+  } catch (const std::exception& e) {
+    LOG_ERROR << "Failed to start server: " << e.what();
+    return;
+  }
+
+  LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
+           << config.apiServerPort;
+  LOG_INFO << "Please load your model";
+
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
   drogon::app().disableSigtermHandling();
@@ -220,6 +249,54 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       .enableCompressedRequest(true)
       .setClientMaxBodySize(256 * 1024 * 1024)   // Max 256MiB body size
       .setClientMaxMemoryBodySize(1024 * 1024);  // 1MiB before writing to disk
+
+  auto validate_api_key = [config_service](const drogon::HttpRequestPtr& req) {
+    auto api_keys = config_service->GetApiServerConfiguration()->api_keys;
+    static const std::unordered_set<std::string> public_endpoints = {
+        "/openapi.json", "/healthz", "/processManager/destroy"};
+
+    // If API key is not set, skip validation
+    if (api_keys.empty()) {
+      return true;
+    }
+
+    // If path is public or is static file, skip validation
+    if (public_endpoints.find(req->path()) != public_endpoints.end() ||
+        req->path() == "/") {
+      return true;
+    }
+
+    // Check for API key in the header
+    auto auth_header = req->getHeader("Authorization");
+
+    std::string prefix = "Bearer ";
+    if (auth_header.substr(0, prefix.size()) == prefix) {
+      std::string received_api_key = auth_header.substr(prefix.size());
+      if (std::find(api_keys.begin(), api_keys.end(), received_api_key) !=
+          api_keys.end()) {
+        return true;  // API key is valid
+      }
+    }
+
+    CTL_WRN("Unauthorized: Invalid API Key\n");
+    return false;
+  };
+
+  drogon::app().registerPreRoutingAdvice(
+      [&validate_api_key](
+          const drogon::HttpRequestPtr& req,
+          std::function<void(const drogon::HttpResponsePtr&)>&& cb,
+          drogon::AdviceChainCallback&& ccb) {
+        if (!validate_api_key(req)) {
+          Json::Value ret;
+          ret["message"] = "Invalid API Key";
+          auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+          resp->setStatusCode(drogon::k401Unauthorized);
+          cb(resp);
+          return;
+        }
+        ccb();
+      });
 
   // CORS
   drogon::app().registerPostHandlingAdvice(
@@ -273,11 +350,37 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
     drogon::app().addListener(config.apiServerHost, 443, true);
   }
 
-  drogon::app().run();
+  // Fires up the server in another thread and set the shutdown signal if it somehow dies
+  std::thread([] {
+    drogon::app().run();
+    shutdown_signal = true;
+  }).detach();
+
+  // Now this thread can monitor the shutdown signal
+  while (!shutdown_signal) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
+
   if (hw_service->ShouldRestart()) {
     CTL_INF("Restart to update hardware configuration");
     hw_service->Restart(config.apiServerHost, std::stoi(config.apiServerPort));
   }
+  drogon::app().quit();
+}
+
+void print_help() {
+  std::cout << "Usage: \ncortex-server [options]\n\n";
+  std::cout << "Options:\n";
+  std::cout << "  --config_file_path      Path to the config file (default: "
+               "~/.cortexrc)\n";
+  std::cout << "  --data_folder_path      Path to the data folder (default: "
+               "~/cortexcpp)\n";
+  std::cout << "  --host                  Host name (default: 127.0.0.1)\n";
+  std::cout << "  --port                  Port number (default: 39281)\n";
+  std::cout << "  --ignore_cout           Ignore cout output\n";
+  std::cout << "  --loglevel              Set log level\n";
+
+  exit(0);
 }
 
 #if defined(_WIN32)
@@ -294,6 +397,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  SSL_library_init();
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
   // avoid printing logs to terminal
@@ -323,6 +427,8 @@ int main(int argc, char* argv[]) {
       std::wstring v = argv[i + 1];
       std::string log_level = cortex::wc::WstringToUtf8(v);
       logging_utils_helper::SetLogLevel(log_level, ignore_cout_log);
+    } else if (command == L"--help" || command == L"-h") {
+      print_help();
     }
   }
 #else
@@ -340,6 +446,8 @@ int main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "--loglevel") == 0) {
       std::string log_level = argv[i + 1];
       logging_utils_helper::SetLogLevel(log_level, ignore_cout_log);
+    } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+      print_help();
     }
   }
 #endif

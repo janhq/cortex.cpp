@@ -9,7 +9,13 @@
 #endif
 #include "cli/commands/cortex_upd_cmd.h"
 #include "database/hardware.h"
+#include "services/engine_service.h"
 #include "utils/cortex_utils.h"
+#include "utils/dylib_path_manager.h"
+#include "utils/process/utils.h"
+#if defined(__linux__)
+#include "services/download_service.h"
+#endif
 
 namespace {
 bool TryConnectToServer(const std::string& host, int port) {
@@ -32,6 +38,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 HardwareInfo HardwareService::GetHardwareInfo() {
   // append active state
+  std::lock_guard<std::mutex> l(mtx_);
   auto gpus = cortex::hw::GetGPUInfo();
   auto res = db_service_->LoadHardwareList();
   if (res.has_value()) {
@@ -45,7 +52,7 @@ HardwareInfo HardwareService::GetHardwareInfo() {
     };
   }
 
-  return HardwareInfo{.cpu = cortex::hw::GetCPUInfo(),
+  return HardwareInfo{.cpu = cpu_info_.GetCPUInfo(),
                       .os = cortex::hw::GetOSInfo(),
                       .ram = cortex::hw::GetMemoryInfo(),
                       .storage = cortex::hw::GetStorageInfo(),
@@ -57,7 +64,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
   namespace luh = logging_utils_helper;
   if (!ahc_)
     return true;
-  auto exe = commands::GetCortexServerBinary();
+  auto exe = file_manager_utils::Subtract(
+      file_manager_utils::GetExecutablePath(), cortex_utils::GetCurrentPath());
   auto get_config_file_path = []() -> std::string {
     if (file_manager_utils::cortex_config_file_path.empty()) {
       return file_manager_utils::GetConfigurationPath().string();
@@ -83,13 +91,15 @@ bool HardwareService::Restart(const std::string& host, int port) {
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   std::string cuda_visible_devices = "";
-  for (auto i : (*ahc_).gpus) {
+  auto cuda_config = GetCudaConfig();
+  for (auto i : cuda_config) {
     if (!cuda_visible_devices.empty())
       cuda_visible_devices += ",";
     cuda_visible_devices += std::to_string(i);
   }
   if (cuda_visible_devices.empty())
     cuda_visible_devices += " ";
+
   // Set the CUDA_VISIBLE_DEVICES environment variable
   if (!set_env("CUDA_VISIBLE_DEVICES", cuda_visible_devices)) {
     LOG_WARN << "Error setting CUDA_VISIBLE_DEVICES";
@@ -101,6 +111,28 @@ bool HardwareService::Restart(const std::string& host, int port) {
     LOG_INFO << "CUDA_VISIBLE_DEVICES is set to: " << value;
   } else {
     LOG_WARN << "CUDA_VISIBLE_DEVICES is not set.";
+  }
+
+  std::string vk_visible_devices = "";
+  for (auto i : (*ahc_).gpus) {
+    if (!vk_visible_devices.empty())
+      vk_visible_devices += ",";
+    vk_visible_devices += std::to_string(i);
+  }
+
+  if (vk_visible_devices.empty())
+    vk_visible_devices += " ";
+
+  if (!set_env("GGML_VK_VISIBLE_DEVICES", vk_visible_devices)) {
+    LOG_WARN << "Error setting GGML_VK_VISIBLE_DEVICES";
+    return false;
+  }
+
+  const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+  if (vk_value) {
+    LOG_INFO << "GGML_VK_VISIBLE_DEVICES is set to: " << vk_value;
+  } else {
+    LOG_WARN << "GGML_VK_VISIBLE_DEVICES is not set.";
   }
 #endif
 
@@ -114,16 +146,17 @@ bool HardwareService::Restart(const std::string& host, int port) {
   ZeroMemory(&pi, sizeof(pi));
   // TODO (sang) write a common function for this and server_start_cmd
   std::wstring params = L"--ignore_cout";
-  params += L" --config_file_path " +
-            file_manager_utils::GetConfigurationPath().wstring();
-  params += L" --data_folder_path " +
-            file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --config_file_path \"" +
+            file_manager_utils::GetConfigurationPath().wstring() + L"\"";
+  params += L" --data_folder_path \"" +
+            file_manager_utils::GetCortexDataPath().wstring() + L"\"";
   params += L" --loglevel " +
             cortex::wc::Utf8ToWstring(luh::LogLevelStr(luh::global_log_level));
-  std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
+  std::wstring exe_w = exe.wstring();
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
-  std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
+  std::wstring wcmds = current_path_w + L"\\" + exe_w + L" " + params;
+  CTL_DBG("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
@@ -149,41 +182,33 @@ bool HardwareService::Restart(const std::string& host, int port) {
   }
 
 #else
-  // Unix-like system-specific code to fork a child process
-  pid_t pid = fork();
-
+  std::vector<std::string> commands;
+  // Some engines requires to add lib search path before process being created
+  auto download_srv = std::make_shared<DownloadService>();
+  auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
+  auto db_srv = std::make_shared<DatabaseService>();
+  EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
+  std::string p = cortex_utils::GetCurrentPath() / exe;
+  commands.push_back(p);
+  commands.push_back("--ignore_cout");
+  commands.push_back("--config_file_path");
+  commands.push_back(get_config_file_path());
+  commands.push_back("--data_folder_path");
+  commands.push_back(get_data_folder_path());
+  commands.push_back("--loglevel");
+  commands.push_back(luh::LogLevelStr(luh::global_log_level));
+  auto pid = cortex::process::SpawnProcess(commands);
   if (pid < 0) {
     // Fork failed
     std::cerr << "Could not start server: " << std::endl;
     return false;
-  } else if (pid == 0) {
-    // No need to configure LD_LIBRARY_PATH for macOS
-#if !defined(__APPLE__) || !defined(__MACH__)
-    const char* name = "LD_LIBRARY_PATH";
-    auto data = getenv(name);
-    std::string v;
-    if (auto g = getenv(name); g) {
-      v += g;
-    }
-    CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
-    auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
-
-    auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
-    setenv(name, new_v.c_str(), true);
-    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
-#endif
-    std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
-    execl(p.c_str(), exe.c_str(), "--ignore_cout", "--config_file_path",
-          get_config_file_path().c_str(), "--data_folder_path",
-          get_data_folder_path().c_str(), "--loglevel",
-          luh::LogLevelStr(luh::global_log_level).c_str(), (char*)0);
   } else {
     // Parent process
     if (!TryConnectToServer(host, port)) {
       return false;
     }
   }
+
 #endif
   return true;
 }
@@ -266,8 +291,25 @@ bool HardwareService::SetActivateHardwareConfig(
 
 void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
+  CheckDependencies();
   auto gpus = cortex::hw::GetGPUInfo();
   auto b = db_service_->LoadHardwareList();
+  // delete if not exists
+  auto exists = [&gpus](const std::string& uuid) {
+    for (auto const& g : gpus) {
+      if (g.uuid == uuid)
+        return true;
+    }
+    return false;
+  };
+  for (auto const& he : b.value()) {
+    if (!exists(he.uuid)) {
+      (void)db_service_->DeleteHardwareEntry(he.uuid);
+    }
+  }
+
+  // Get updated list
+  b = db_service_->LoadHardwareList();
   std::vector<std::pair<int, int>> activated_gpu_bf;
   std::string debug_b;
   for (auto const& he : b.value()) {
@@ -277,18 +319,43 @@ void HardwareService::UpdateHardwareInfos() {
     }
   }
   CTL_INF("Activated GPUs before: " << debug_b);
+  auto has_nvidia = [&gpus] {
+    for (auto const& g : gpus) {
+      if (g.vendor == cortex::hw::kNvidiaStr) {
+        return true;
+      }
+    }
+    return false;
+  }();
+
   for (auto const& gpu : gpus) {
-    // ignore error
-    // Note: only support NVIDIA for now, so hardware_id = software_id
-    auto res =
-        db_service_->AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
-                                              .type = "gpu",
-                                              .hardware_id = std::stoi(gpu.id),
-                                              .software_id = std::stoi(gpu.id),
-                                              .activated = true,
-                                              .priority = INT_MAX});
-    if (res.has_error()) {
-      CTL_WRN(res.error());
+    if (db_service_->HasHardwareEntry(gpu.uuid)) {
+      auto res = db_service_->UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
+                                                  std::stoi(gpu.id));
+      if (res.has_error()) {
+        CTL_WRN(res.error());
+      }
+    } else {
+      // iGPU should be deactivated by default
+      // Only activate Nvidia GPUs if both AMD and Nvidia GPUs exists
+      auto activated = [&gpu, &gpus, has_nvidia] {
+        if (gpu.gpu_type != cortex::hw::GpuType::kGpuTypeDiscrete)
+          return false;
+        if (has_nvidia && gpu.vendor != cortex::hw::kNvidiaStr)
+          return false;
+        return true;
+      };
+
+      auto res = db_service_->AddHardwareEntry(
+          HwEntry{.uuid = gpu.uuid,
+                  .type = "gpu",
+                  .hardware_id = std::stoi(gpu.id),
+                  .software_id = std::stoi(gpu.id),
+                  .activated = activated(),
+                  .priority = INT_MAX});
+      if (res.has_error()) {
+        CTL_WRN(res.error());
+      }
     }
   }
 
@@ -329,6 +396,13 @@ void HardwareService::UpdateHardwareInfos() {
     } else {
       need_restart = true;
     }
+
+    const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+    if (vk_value) {
+      LOG_INFO << "GGML_VK_VISIBLE_DEVICES: " << vk_value;
+    } else {
+      need_restart = true;
+    }
   }
 #endif
 
@@ -358,4 +432,80 @@ bool HardwareService::IsValidConfig(
     }
   }
   return false;
+}
+
+void HardwareService::CheckDependencies() {
+  // search for libvulkan.so, if does not exist, pull it
+#if defined(__linux__)
+  namespace fmu = file_manager_utils;
+  auto get_vulkan_path = [](const std::string& lib_vulkan)
+      -> cpp::result<std::filesystem::path, std::string> {
+    if (std::filesystem::exists(fmu::GetExecutableFolderContainerPath() /
+                                lib_vulkan)) {
+      return fmu::GetExecutableFolderContainerPath() / lib_vulkan;
+      // fallback to deps path
+    } else if (std::filesystem::exists(fmu::GetCortexDataPath() / "deps" /
+                                       lib_vulkan)) {
+      return fmu::GetCortexDataPath() / "deps" / lib_vulkan;
+    } else {
+      CTL_WRN("Could not found " << lib_vulkan);
+      return cpp::fail("Could not found " + lib_vulkan);
+    }
+  };
+
+  if (get_vulkan_path("libvulkan.so").has_error()) {
+    if (!std::filesystem::exists(fmu::GetCortexDataPath() / "deps")) {
+      std::filesystem::create_directories(fmu::GetCortexDataPath() / "deps");
+    }
+    auto download_task{DownloadTask{
+        .id = "vulkan",
+        .type = DownloadType::Miscellaneous,
+        .items = {DownloadItem{
+            .id = "vulkan",
+            .downloadUrl = "https://catalog.jan.ai/libvulkan.so",
+            .localPath = fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+        }},
+    }};
+    auto result = DownloadService().AddDownloadTask(
+        download_task,
+        [](const DownloadTask& finishedTask) {
+          // try to unzip the downloaded file
+          CTL_INF("Downloaded libvulkan path: "
+                  << finishedTask.items[0].localPath.string());
+
+          CTL_INF("Finished!");
+        },
+        /*show_progress*/ false);
+    if (result.has_error()) {
+      CTL_WRN("Failed to download: " << result.error());
+    }
+  }
+#endif
+}
+
+std::vector<int> HardwareService::GetCudaConfig() {
+  std::vector<int> res;
+  if (!ahc_)
+    return res;
+  auto nvidia_gpus = system_info_utils::GetGpuInfoList();
+  auto all_gpus = cortex::hw::GetGPUInfo();
+  // Map id with uuid
+  std::vector<std::string> uuids;
+  for (auto i : (*ahc_).gpus) {
+    for (auto const& gpu : all_gpus) {
+      if (i == std::stoi(gpu.id)) {
+        uuids.push_back(gpu.uuid);
+      }
+    }
+  }
+
+  // Map uuid back to nvidia id
+  for (auto const& uuid : uuids) {
+    for (auto const& ngpu : nvidia_gpus) {
+      if (ngpu.uuid.find(uuid) != std::string::npos) {
+        res.push_back(std::stoi(ngpu.id));
+      }
+    }
+  }
+  return res;
 }

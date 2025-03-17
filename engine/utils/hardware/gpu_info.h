@@ -2,28 +2,63 @@
 
 #include "common/hardware_common.h"
 #include "hwinfo/hwinfo.h"
+#include "utils/hardware/gpu/vulkan/vulkan_gpu.h"
 #include "utils/system_info_utils.h"
 
 namespace cortex::hw {
 
 inline std::vector<GPU> GetGPUInfo() {
-  std::vector<GPU> res;
-  // Only support for nvidia for now
-  // auto gpus = hwinfo::getAllGPUs();
   auto nvidia_gpus = system_info_utils::GetGpuInfoList();
-  for (auto& n : nvidia_gpus) {
-    res.emplace_back(
-        GPU{.id = n.id,
-            .name = n.name,
-            .version = nvidia_gpus[0].cuda_driver_version.value_or("unknown"),
-            .add_info =
-                NvidiaAddInfo{
-                    .driver_version = n.driver_version.value_or("unknown"),
-                    .compute_cap = n.compute_cap.value_or("unknown")},
-            .free_vram = std::stoi(n.vram_free),
-            .total_vram = std::stoi(n.vram_total),
-            .uuid = n.uuid});
+  auto vulkan_gpus = VulkanGpu::GetInstance().GetGpuInfoList().value_or(
+      std::vector<cortex::hw::GPU>{});
+  auto use_vulkan_info = nvidia_gpus.empty();
+
+  // In case we have vulkan info, add more information for GPUs
+  for (size_t i = 0; i < nvidia_gpus.size(); i++) {
+    for (size_t j = 0; j < vulkan_gpus.size(); j++) {
+      if (nvidia_gpus[i].uuid.find(vulkan_gpus[j].uuid) != std::string::npos) {
+        use_vulkan_info = true;
+        vulkan_gpus[j].version =
+            nvidia_gpus[0].cuda_driver_version.value_or("unknown");
+        vulkan_gpus[j].add_info = NvidiaAddInfo{
+            .driver_version = nvidia_gpus[i].driver_version.value_or("unknown"),
+            .compute_cap = nvidia_gpus[i].compute_cap.value_or("unknown")};
+        vulkan_gpus[j].free_vram = std::stoll(nvidia_gpus[i].vram_free);
+        vulkan_gpus[j].total_vram = std::stoll(nvidia_gpus[i].vram_total);
+        vulkan_gpus[j].vendor = nvidia_gpus[i].vendor;        
+      }
+    }
   }
-  return res;
+
+  // Erase invalid GPUs
+  for (std::vector<cortex::hw::GPU>::iterator it = vulkan_gpus.begin();
+       it != vulkan_gpus.end();) {
+    if ((*it).total_vram <= 0)
+      it = vulkan_gpus.erase(it);
+    else
+      ++it;
+  }
+
+  if (use_vulkan_info) {
+    return vulkan_gpus;
+  } else {
+    std::vector<GPU> res;
+    for (auto& n : nvidia_gpus) {
+      res.emplace_back(
+          GPU{.id = n.id,
+              .name = n.name,
+              .version = nvidia_gpus[0].cuda_driver_version.value_or("unknown"),
+              .add_info =
+                  NvidiaAddInfo{
+                      .driver_version = n.driver_version.value_or("unknown"),
+                      .compute_cap = n.compute_cap.value_or("unknown")},
+              .free_vram = std::stoi(n.vram_free),
+              .total_vram = std::stoi(n.vram_total),
+              .uuid = n.uuid,
+              .vendor = n.vendor,
+              .gpu_type = GpuType::kGpuTypeDiscrete});
+    }
+    return res;
+  }
 }
 }  // namespace cortex::hw

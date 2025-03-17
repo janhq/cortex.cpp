@@ -77,7 +77,9 @@
                     "oneOf": [
                       {
                         "type": "string",
-                        "enum": ["auto"]
+                        "enum": [
+                          "auto"
+                        ]
                       },
                       {
                         "type": "object"
@@ -85,7 +87,9 @@
                     ]
                   }
                 },
-                "required": ["model"]
+                "required": [
+                  "model"
+                ]
               }
             }
           }
@@ -104,7 +108,9 @@
                     },
                     "object": {
                       "type": "string",
-                      "enum": ["assistant"],
+                      "enum": [
+                        "assistant"
+                      ],
                       "description": "The object type, which is always 'assistant'."
                     },
                     "created_at": {
@@ -175,7 +181,9 @@
                       "oneOf": [
                         {
                           "type": "string",
-                          "enum": ["auto"]
+                          "enum": [
+                            "auto"
+                          ]
                         },
                         {
                           "type": "object"
@@ -195,7 +203,9 @@
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       },
       "patch": {
         "operationId": "AssistantsController_update",
@@ -218,7 +228,9 @@
             "description": "Beta feature header.",
             "schema": {
               "type": "string",
-              "enum": ["assistants=v2"]
+              "enum": [
+                "assistants=v2"
+              ]
             }
           }
         ],
@@ -293,7 +305,9 @@
                     "oneOf": [
                       {
                         "type": "string",
-                        "enum": ["auto"]
+                        "enum": [
+                          "auto"
+                        ]
                       },
                       {
                         "type": "object"
@@ -320,7 +334,9 @@
                     },
                     "object": {
                       "type": "string",
-                      "enum": ["assistant"],
+                      "enum": [
+                        "assistant"
+                      ],
                       "description": "The object type, which is always 'assistant'."
                     },
                     "created_at": {
@@ -391,7 +407,9 @@
                       "oneOf": [
                         {
                           "type": "string",
-                          "enum": ["auto"]
+                          "enum": [
+                            "auto"
+                          ]
                         },
                         {
                           "type": "object"
@@ -411,7 +429,9 @@
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       },
       "get": {
         "operationId": "AssistantsController_list",
@@ -427,7 +447,9 @@
                   "properties": {
                     "object": {
                       "type": "string",
-                      "enum": ["list"],
+                      "enum": [
+                        "list"
+                      ],
                       "description": "The object type, which is always 'list' for a list response."
                     },
                     "data": {
@@ -441,7 +463,9 @@
                           },
                           "object": {
                             "type": "string",
-                            "enum": ["assistant"],
+                            "enum": [
+                              "assistant"
+                            ],
                             "description": "The object type, which is always 'assistant'."
                           },
                           "created_at": {
@@ -468,13 +492,18 @@
                       }
                     }
                   },
-                  "required": ["object", "data"]
+                  "required": [
+                    "object",
+                    "data"
+                  ]
                 }
               }
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       }
     },
     "/v1/assistants/{id}": {
@@ -499,7 +528,9 @@
             "description": "Beta feature header.",
             "schema": {
               "type": "string",
-              "enum": ["assistants=v2"]
+              "enum": [
+                "assistants=v2"
+              ]
             }
           }
         ],
@@ -517,7 +548,9 @@
                     },
                     "object": {
                       "type": "string",
-                      "enum": ["assistant"],
+                      "enum": [
+                        "assistant"
+                      ],
                       "description": "The object type, which is always 'assistant'."
                     },
                     "created_at": {
@@ -546,7 +579,9 @@
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       },
       "delete": {
         "operationId": "AssistantsController_remove",
@@ -577,22 +612,32 @@
                     },
                     "object": {
                       "type": "string",
-                      "enum": ["assistant.deleted"],
+                      "enum": [
+                        "assistant.deleted"
+                      ],
                       "description": "The object type for a deleted assistant."
                     },
                     "deleted": {
                       "type": "boolean",
-                      "enum": [true],
+                      "enum": [
+                        true
+                      ],
                       "description": "Indicates the assistant was successfully deleted."
                     }
                   },
-                  "required": ["id", "object", "deleted"]
+                  "required": [
+                    "id",
+                    "object",
+                    "deleted"
+                  ]
                 }
               }
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       }
     },
     "/healthz": {
@@ -609,7 +654,9 @@
             }
           }
         },
-        "tags": ["Server"]
+        "tags": [
+          "Server"
+        ]
       }
     },
     "/processManager/destroy": {
@@ -626,7 +673,9 @@
             }
           }
         },
-        "tags": ["Server"]
+        "tags": [
+          "Server"
+        ]
       }
     },
     "/v1/embeddings": {
@@ -681,11 +730,17 @@
                   "encoding_format": {
                     "type": "string",
                     "description": "The format to return the embeddings in.",
-                    "enum": ["float", "base64"],
+                    "enum": [
+                      "float",
+                      "base64"
+                    ],
                     "default": "float"
                   }
                 },
-                "required": ["input", "model"]
+                "required": [
+                  "input",
+                  "model"
+                ]
               }
             }
           }
@@ -728,7 +783,9 @@
             }
           }
         },
-        "tags": ["Embeddings"]
+        "tags": [
+          "Embeddings"
+        ]
       }
     },
     "/v1/chat/completions": {
@@ -768,7 +825,9 @@
             }
           }
         },
-        "tags": ["Chat"]
+        "tags": [
+          "Chat"
+        ]
       }
     },
     "/v1/models/pull": {
@@ -867,10 +926,14 @@
             }
           }
         },
-        "tags": ["Pulling Models"]
+        "tags": [
+          "Pulling Models"
+        ]
       },
       "delete": {
-        "tags": ["Pulling Models"],
+        "tags": [
+          "Pulling Models"
+        ],
         "summary": "Stop model download",
         "description": "Stops the download of a model with the corresponding taskId provided in the request body",
         "operationId": "ModelsController_stopModelDownload",
@@ -886,7 +949,9 @@
                     "description": "The unique identifier of the download task to be stopped"
                   }
                 },
-                "required": ["taskId"]
+                "required": [
+                  "taskId"
+                ]
               }
             }
           }
@@ -1027,7 +1092,9 @@
             }
           }
         },
-        "tags": ["Pulling Models"]
+        "tags": [
+          "Pulling Models"
+        ]
       }
     },
     "/v1/models": {
@@ -1048,7 +1115,9 @@
             }
           }
         },
-        "tags": ["Running Models"]
+        "tags": [
+          "Running Models"
+        ]
       }
     },
     "/v1/models/start": {
@@ -1081,7 +1150,9 @@
             }
           }
         },
-        "tags": ["Running Models"]
+        "tags": [
+          "Running Models"
+        ]
       }
     },
     "/v1/models/stop": {
@@ -1114,7 +1185,9 @@
             }
           }
         },
-        "tags": ["Running Models"]
+        "tags": [
+          "Running Models"
+        ]
       }
     },
     "/v1/models/{id}": {
@@ -1145,7 +1218,9 @@
             }
           }
         },
-        "tags": ["Running Models"]
+        "tags": [
+          "Running Models"
+        ]
       },
       "delete": {
         "operationId": "ModelsController_remove",
@@ -1174,7 +1249,9 @@
             }
           }
         },
-        "tags": ["Running Models"]
+        "tags": [
+          "Running Models"
+        ]
       }
     },
     "/v1/models/{model}": {
@@ -1214,7 +1291,9 @@
             }
           }
         },
-        "tags": ["Running Models"]
+        "tags": [
+          "Running Models"
+        ]
       }
     },
     "/v1/models/import": {
@@ -1255,7 +1334,9 @@
             }
           }
         },
-        "tags": ["Pulling Models"]
+        "tags": [
+          "Pulling Models"
+        ]
       }
     },
     "/v1/models/sources": {
@@ -1297,7 +1378,9 @@
             }
           }
         },
-        "tags": ["Pulling Models"]
+        "tags": [
+          "Pulling Models"
+        ]
       },
       "delete": {
         "summary": "Remove a model source",
@@ -1354,7 +1437,9 @@
             }
           }
         },
-        "tags": ["Pulling Models"]
+        "tags": [
+          "Pulling Models"
+        ]
       }
     },
     "/v1/threads": {
@@ -1419,7 +1504,11 @@
                       "description": "Type of object, always 'thread'"
                     }
                   },
-                  "required": ["created_at", "id", "object"]
+                  "required": [
+                    "created_at",
+                    "id",
+                    "object"
+                  ]
                 },
                 "example": {
                   "created_at": 1734020845,
@@ -1433,7 +1522,9 @@
             }
           }
         },
-        "tags": ["Threads"]
+        "tags": [
+          "Threads"
+        ]
       },
       "get": {
         "summary": "List Threads",
@@ -1483,11 +1574,18 @@
                             "description": "Type of object, always 'thread'"
                           }
                         },
-                        "required": ["created_at", "id", "object"]
+                        "required": [
+                          "created_at",
+                          "id",
+                          "object"
+                        ]
                       }
                     }
                   },
-                  "required": ["object", "data"]
+                  "required": [
+                    "object",
+                    "data"
+                  ]
                 },
                 "example": {
                   "data": [
@@ -1514,7 +1612,9 @@
             }
           }
         },
-        "tags": ["Threads"]
+        "tags": [
+          "Threads"
+        ]
       }
     },
     "/v1/threads/{id}": {
@@ -1567,7 +1667,11 @@
                       "description": "Type of object, always 'thread'"
                     }
                   },
-                  "required": ["created_at", "id", "object"]
+                  "required": [
+                    "created_at",
+                    "id",
+                    "object"
+                  ]
                 },
                 "example": {
                   "created_at": 1732370026,
@@ -1582,7 +1686,9 @@
             }
           }
         },
-        "tags": ["Threads"]
+        "tags": [
+          "Threads"
+        ]
       },
       "patch": {
         "summary": "Modify Thread",
@@ -1656,7 +1762,11 @@
                       "description": "Type of object, always 'thread'"
                     }
                   },
-                  "required": ["created_at", "id", "object"]
+                  "required": [
+                    "created_at",
+                    "id",
+                    "object"
+                  ]
                 },
                 "example": {
                   "created_at": 1733301054,
@@ -1670,7 +1780,9 @@
             }
           }
         },
-        "tags": ["Threads"]
+        "tags": [
+          "Threads"
+        ]
       },
       "delete": {
         "summary": "Delete Thread",
@@ -1707,7 +1819,11 @@
                       "description": "Type of object, always 'thread.deleted'"
                     }
                   },
-                  "required": ["deleted", "id", "object"]
+                  "required": [
+                    "deleted",
+                    "id",
+                    "object"
+                  ]
                 },
                 "example": {
                   "deleted": true,
@@ -1718,7 +1834,9 @@
             }
           }
         },
-        "tags": ["Threads"]
+        "tags": [
+          "Threads"
+        ]
       }
     },
     "/v1/threads/{thread_id}/messages": {
@@ -1746,14 +1864,20 @@
                   "role": {
                     "type": "string",
                     "description": "Role of the message sender",
-                    "enum": ["user", "assistant"]
+                    "enum": [
+                      "user",
+                      "assistant"
+                    ]
                   },
                   "content": {
                     "type": "string",
                     "description": "The content of the message"
                   }
                 },
-                "required": ["role", "content"]
+                "required": [
+                  "role",
+                  "content"
+                ]
               },
               "example": {
                 "role": "user",
@@ -1793,12 +1917,17 @@
                     "role": {
                       "type": "string",
                       "description": "Role of the message sender",
-                      "enum": ["user", "assistant"]
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ]
                     },
                     "status": {
                       "type": "string",
                       "description": "Status of the message",
-                      "enum": ["completed"]
+                      "enum": [
+                        "completed"
+                      ]
                     },
                     "content": {
                       "type": "array",
@@ -1808,7 +1937,9 @@
                           "type": {
                             "type": "string",
                             "description": "Type of content",
-                            "enum": ["text"]
+                            "enum": [
+                              "text"
+                            ]
                           },
                           "text": {
                             "type": "object",
@@ -1865,7 +1996,9 @@
             }
           }
         },
-        "tags": ["Messages"]
+        "tags": [
+          "Messages"
+        ]
       },
       "get": {
         "summary": "List Messages",
@@ -1896,7 +2029,10 @@
             "description": "Sort order of messages",
             "schema": {
               "type": "string",
-              "enum": ["asc", "desc"]
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           },
           {
@@ -1964,12 +2100,17 @@
                           "role": {
                             "type": "string",
                             "description": "Role of the message sender",
-                            "enum": ["assistant", "user"]
+                            "enum": [
+                              "assistant",
+                              "user"
+                            ]
                           },
                           "status": {
                             "type": "string",
                             "description": "Status of the message",
-                            "enum": ["completed"]
+                            "enum": [
+                              "completed"
+                            ]
                           },
                           "content": {
                             "type": "array",
@@ -1979,7 +2120,9 @@
                                 "type": {
                                   "type": "string",
                                   "description": "Type of content",
-                                  "enum": ["text"]
+                                  "enum": [
+                                    "text"
+                                  ]
                                 },
                                 "text": {
                                   "type": "object",
@@ -2037,7 +2180,10 @@
                       }
                     }
                   },
-                  "required": ["object", "data"]
+                  "required": [
+                    "object",
+                    "data"
+                  ]
                 },
                 "example": {
                   "data": [
@@ -2066,7 +2212,9 @@
             }
           }
         },
-        "tags": ["Messages"]
+        "tags": [
+          "Messages"
+        ]
       }
     },
     "/v1/threads/{thread_id}/messages/{message_id}": {
@@ -2120,12 +2268,17 @@
                     "role": {
                       "type": "string",
                       "description": "Role of the message sender",
-                      "enum": ["assistant", "user"]
+                      "enum": [
+                        "assistant",
+                        "user"
+                      ]
                     },
                     "status": {
                       "type": "string",
                       "description": "Status of the message",
-                      "enum": ["completed"]
+                      "enum": [
+                        "completed"
+                      ]
                     },
                     "content": {
                       "type": "array",
@@ -2135,7 +2288,9 @@
                           "type": {
                             "type": "string",
                             "description": "Type of content",
-                            "enum": ["text"]
+                            "enum": [
+                              "text"
+                            ]
                           },
                           "text": {
                             "type": "object",
@@ -2223,7 +2378,9 @@
             }
           }
         },
-        "tags": ["Messages"]
+        "tags": [
+          "Messages"
+        ]
       },
       "patch": {
         "summary": "Modify Message",
@@ -2306,12 +2463,17 @@
                     "role": {
                       "type": "string",
                       "description": "Role of the message sender",
-                      "enum": ["user", "assistant"]
+                      "enum": [
+                        "user",
+                        "assistant"
+                      ]
                     },
                     "status": {
                       "type": "string",
                       "description": "Status of the message",
-                      "enum": ["completed"]
+                      "enum": [
+                        "completed"
+                      ]
                     },
                     "content": {
                       "type": "array",
@@ -2321,7 +2483,9 @@
                           "type": {
                             "type": "string",
                             "description": "Type of content",
-                            "enum": ["text"]
+                            "enum": [
+                              "text"
+                            ]
                           },
                           "text": {
                             "type": "object",
@@ -2381,7 +2545,9 @@
             }
           }
         },
-        "tags": ["Messages"]
+        "tags": [
+          "Messages"
+        ]
       },
       "delete": {
         "summary": "Delete Message",
@@ -2427,7 +2593,11 @@
                       "description": "Type of object, always 'thread.message.deleted'"
                     }
                   },
-                  "required": ["deleted", "id", "object"]
+                  "required": [
+                    "deleted",
+                    "id",
+                    "object"
+                  ]
                 },
                 "example": {
                   "deleted": true,
@@ -2438,7 +2608,9 @@
             }
           }
         },
-        "tags": ["Messages"]
+        "tags": [
+          "Messages"
+        ]
       }
     },
     "/v1/system": {
@@ -2452,7 +2624,9 @@
             "description": ""
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       },
       "get": {
         "operationId": "SystemController_get",
@@ -2464,7 +2638,9 @@
             "description": "Ok"
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/system/events/download": {
@@ -2485,7 +2661,9 @@
             }
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/system/events/model": {
@@ -2506,7 +2684,9 @@
             }
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/system/events/resources": {
@@ -2527,7 +2707,9 @@
             }
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/engines/{name}": {
@@ -2542,7 +2724,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -2589,7 +2775,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}/releases": {
@@ -2603,7 +2791,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -2647,7 +2839,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}/releases/{version}": {
@@ -2661,7 +2855,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -2681,7 +2879,10 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["all", "compatible"],
+              "enum": [
+                "all",
+                "compatible"
+              ],
               "default": "all"
             },
             "description": "Filter the variants list. Use 'compatible' to show only variants compatible with the current system, or 'all' to show all available variants."
@@ -2725,7 +2926,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}/releases/latest": {
@@ -2739,7 +2942,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -2779,7 +2986,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}/install": {
@@ -2870,7 +3079,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       },
       "delete": {
         "summary": "Uninstall an engine",
@@ -2951,7 +3162,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}/update": {
@@ -2965,7 +3178,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
@@ -2989,7 +3206,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}/default": {
@@ -3003,7 +3222,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -3035,7 +3258,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       },
       "post": {
         "summary": "Set default engine variant",
@@ -3047,7 +3272,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -3059,7 +3288,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["version", "variant"],
+                "required": [
+                  "version",
+                  "variant"
+                ],
                 "properties": {
                   "version": {
                     "type": "string",
@@ -3094,7 +3326,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}/load": {
@@ -3138,7 +3372,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       },
       "delete": {
         "summary": "Unload engine",
@@ -3150,7 +3386,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm"
+              ],
               "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
@@ -3174,7 +3414,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/hardware": {
@@ -3216,7 +3458,9 @@
             }
           }
         },
-        "tags": ["Hardware"]
+        "tags": [
+          "Hardware"
+        ]
       }
     },
     "/v1/hardware/activate": {
@@ -3235,11 +3479,17 @@
                     "items": {
                       "type": "integer"
                     },
-                    "example": [0, 1, 2],
+                    "example": [
+                      0,
+                      1,
+                      2
+                    ],
                     "description": "An array of GPU indices to activate."
                   }
                 },
-                "required": ["gpus"]
+                "required": [
+                  "gpus"
+                ]
               }
             }
           }
@@ -3262,7 +3512,11 @@
                       "items": {
                         "type": "integer"
                       },
-                      "example": [0, 1, 2],
+                      "example": [
+                        0,
+                        1,
+                        2
+                      ],
                       "description": "List of GPU indices that were activated."
                     }
                   }
@@ -3288,7 +3542,9 @@
             }
           }
         },
-        "tags": ["Hardware"]
+        "tags": [
+          "Hardware"
+        ]
       }
     },
     "/v1/files": {
@@ -3308,11 +3564,16 @@
                   },
                   "purpose": {
                     "type": "string",
-                    "enum": ["assistants"],
+                    "enum": [
+                      "assistants"
+                    ],
                     "description": "The intended purpose of the uploaded file"
                   }
                 },
-                "required": ["file", "purpose"]
+                "required": [
+                  "file",
+                  "purpose"
+                ]
               }
             }
           }
@@ -3355,7 +3616,9 @@
             }
           }
         },
-        "tags": ["Files"]
+        "tags": [
+          "Files"
+        ]
       },
       "get": {
         "summary": "List files",
@@ -3410,7 +3673,9 @@
             }
           }
         },
-        "tags": ["Files"]
+        "tags": [
+          "Files"
+        ]
       }
     },
     "/v1/files/{id}": {
@@ -3475,7 +3740,9 @@
             }
           }
         },
-        "tags": ["Files"]
+        "tags": [
+          "Files"
+        ]
       },
       "delete": {
         "summary": "Delete File",
@@ -3512,7 +3779,11 @@
                       "description": "Type of object, always 'file'"
                     }
                   },
-                  "required": ["deleted", "id", "object"]
+                  "required": [
+                    "deleted",
+                    "id",
+                    "object"
+                  ]
                 },
                 "example": {
                   "deleted": true,
@@ -3534,7 +3805,9 @@
                       "description": "Error message describing the issue"
                     }
                   },
-                  "required": ["message"]
+                  "required": [
+                    "message"
+                  ]
                 },
                 "example": {
                   "message": "File not found: file-0001KNP26FC62D620DGYNG2R8H"
@@ -3543,7 +3816,9 @@
             }
           }
         },
-        "tags": ["Files"]
+        "tags": [
+          "Files"
+        ]
       }
     },
     "/v1/files/{id}/content": {
@@ -3595,13 +3870,17 @@
                       "description": "Error message describing the issue"
                     }
                   },
-                  "required": ["message"]
+                  "required": [
+                    "message"
+                  ]
                 }
               }
             }
           }
         },
-        "tags": ["Files"]
+        "tags": [
+          "Files"
+        ]
       }
     },
     "/v1/configs": {
@@ -3621,7 +3900,10 @@
                       "items": {
                         "type": "string"
                       },
-                      "example": ["http://127.0.0.1:39281", "https://cortex.so"]
+                      "example": [
+                        "http://127.0.0.1:39281",
+                        "https://cortex.so"
+                      ]
                     },
                     "cors": {
                       "type": "boolean",
@@ -3663,6 +3945,16 @@
                     "huggingface_token": {
                       "type": "string",
                       "example": "your_token"
+                    },
+                    "api_keys": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "api_key1",
+                        "api_key2"
+                      ]
                     }
                   }
                 },
@@ -3680,16 +3972,24 @@
                   "verify_peer_ssl": false,
                   "verify_host_ssl": false,
                   "no_proxy": "localhost",
-                  "huggingface_token": "your_token"
+                  "huggingface_token": "your_token",
+                  "api_keys": [
+                    "api_key1",
+                    "api_key2"
+                  ]
                 }
               }
             }
           }
         },
-        "tags": ["Configurations"]
+        "tags": [
+          "Configurations"
+        ]
       },
       "patch": {
-        "tags": ["Configurations"],
+        "tags": [
+          "Configurations"
+        ],
         "summary": "Update configuration settings",
         "requestBody": {
           "required": true,
@@ -3709,7 +4009,10 @@
                       "type": "string"
                     },
                     "description": "List of allowed origins.",
-                    "example": ["http://127.0.0.1:39281", "https://cortex.so"]
+                    "example": [
+                      "http://127.0.0.1:39281",
+                      "https://cortex.so"
+                    ]
                   },
                   "proxy_username": {
                     "type": "string",
@@ -3755,6 +4058,17 @@
                     "type": "string",
                     "description": "HuggingFace token to pull models.",
                     "example": "your_token"
+                  },
+                  "api_keys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of allowed origins.",
+                    "example": [
+                      "api_key1",
+                      "api_key2"
+                    ]
                   }
                 }
               }
@@ -3821,6 +4135,16 @@
                         "huggingface_token": {
                           "type": "string",
                           "example": "your_token"
+                        },
+                        "api_keys": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": [
+                            "api_key1",
+                            "api_key2"
+                          ]
                         }
                       }
                     },
@@ -3973,13 +4297,18 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["function"]
+                  "enum": [
+                    "function"
+                  ]
                 },
                 "function": {
                   "$ref": "#/components/schemas/Function"
                 }
               },
-              "required": ["type", "function"]
+              "required": [
+                "type",
+                "function"
+              ]
             }
           },
           "metadata": {
@@ -4100,7 +4429,11 @@
             "description": "Indicates whether the assistant was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       },
       "Message": {
         "type": "object",
@@ -4117,14 +4450,21 @@
         "properties": {
           "role": {
             "type": "string",
-            "enum": ["system", "user", "assistant", "tool"]
+            "enum": [
+              "system",
+              "user",
+              "assistant",
+              "tool"
+            ]
           },
           "name": {
             "type": "string",
             "description": "An optional name for the participant. Provides the model information to differentiate between participants of the same role."
           }
         },
-        "required": ["role"]
+        "required": [
+          "role"
+        ]
       },
       "SystemMessage": {
         "allOf": [
@@ -4153,7 +4493,10 @@
                 "description": "An optional name for the participant. Provides the model information to differentiate between participants of the same role."
               }
             },
-            "required": ["content", "role"]
+            "required": [
+              "content",
+              "role"
+            ]
           }
         ]
       },
@@ -4204,7 +4547,10 @@
                 "description": "An optional name for the participant. Provides the model information to differentiate between participants of the same role."
               }
             },
-            "required": ["content", "role"]
+            "required": [
+              "content",
+              "role"
+            ]
           }
         ]
       },
@@ -4316,7 +4662,10 @@
                 "type": "string"
               }
             },
-            "required": ["content", "tool_call_id"]
+            "required": [
+              "content",
+              "tool_call_id"
+            ]
           }
         ]
       },
@@ -4333,26 +4682,36 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["text"]
+            "enum": [
+              "text"
+            ]
           },
           "text": {
             "type": "string"
           }
         },
-        "required": ["type", "text"]
+        "required": [
+          "type",
+          "text"
+        ]
       },
       "ImageContentPart": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["image_url"]
+            "enum": [
+              "image_url"
+            ]
           },
           "image_url": {
             "$ref": "#/components/schemas/ImageUrl"
           }
         },
-        "required": ["type", "image_url"]
+        "required": [
+          "type",
+          "image_url"
+        ]
       },
       "AudioContentPart": {
         "type": "object",
@@ -4365,7 +4724,10 @@
             "$ref": "#/components/schemas/InputAudio"
           }
         },
-        "required": ["type", "input_audio"]
+        "required": [
+          "type",
+          "input_audio"
+        ]
       },
       "RefusalContentPart": {
         "type": "object",
@@ -4377,7 +4739,10 @@
             "type": "string"
           }
         },
-        "required": ["type", "refusal"]
+        "required": [
+          "type",
+          "refusal"
+        ]
       },
       "ImageUrl": {
         "type": "object",
@@ -4392,7 +4757,9 @@
             "description": "Specifies the detail level of the image. Defaults to `auto`."
           }
         },
-        "required": ["url"]
+        "required": [
+          "url"
+        ]
       },
       "InputAudio": {
         "type": "object",
@@ -4403,11 +4770,17 @@
           },
           "format": {
             "type": "string",
-            "enum": ["wav", "mp3"],
+            "enum": [
+              "wav",
+              "mp3"
+            ],
             "description": "The format of the encoded audio data. Currently supports `wav` and `mp3`."
           }
         },
-        "required": ["data", "format"]
+        "required": [
+          "data",
+          "format"
+        ]
       },
       "Audio": {
         "type": "object",
@@ -4418,7 +4791,9 @@
             "description": "Unique identifier for a previous audio response from the model."
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "ToolCall": {
         "type": "object",
@@ -4433,7 +4808,11 @@
             "$ref": "#/components/schemas/FunctionCall"
           }
         },
-        "required": ["id", "type", "function"]
+        "required": [
+          "id",
+          "type",
+          "function"
+        ]
       },
       "FunctionCall": {
         "type": "object",
@@ -4445,7 +4824,10 @@
             "type": "string"
           }
         },
-        "required": ["name", "arguments"]
+        "required": [
+          "name",
+          "arguments"
+        ]
       },
       "CreateChatCompletionDto": {
         "type": "object",
@@ -4499,7 +4881,9 @@
           },
           "stop": {
             "description": "Defines specific tokens or phrases that signal the model to stop producing further output.",
-            "example": ["End"],
+            "example": [
+              "End"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -4529,10 +4913,15 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["text", "audio"]
+              "enum": [
+                "text",
+                "audio"
+              ]
             },
             "description": "Specifies the modalities (types of input) supported by the model. Currently, cortex only support text modalities. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582).",
-            "example": ["text"]
+            "example": [
+              "text"
+            ]
           },
           "audio": {
             "description": "Parameters for audio output. Required when audio output is requested with `modalities: ['audio']`. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582).",
@@ -4545,10 +4934,19 @@
               "format": {
                 "type": "string",
                 "description": "Specifies the output audio format. Must be one of `wav`, `mp3`, `flac`, `opus`, or `pcm16`.",
-                "enum": ["mp3", "wav", "flac", "opus", "pcm16"]
+                "enum": [
+                  "mp3",
+                  "wav",
+                  "flac",
+                  "opus",
+                  "pcm16"
+                ]
               }
             },
-            "required": ["voice", "format"]
+            "required": [
+              "voice",
+              "format"
+            ]
           },
           "store": {
             "type": "boolean",
@@ -4595,10 +4993,16 @@
               "type": {
                 "type": "string",
                 "description": "The format of the generated output. Must be one of `text`, `json_schema` or `json_object`.",
-                "enum": ["text", "json_object", "json_schema"]
+                "enum": [
+                  "text",
+                  "json_object",
+                  "json_schema"
+                ]
               }
             },
-            "required": ["type"]
+            "required": [
+              "type"
+            ]
           },
           "seed": {
             "type": "number",
@@ -4630,27 +5034,38 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["function"]
+                  "enum": [
+                    "function"
+                  ]
                 },
                 "function": {
                   "$ref": "#/components/schemas/Function"
                 }
               },
-              "required": ["type", "function"]
+              "required": [
+                "type",
+                "function"
+              ]
             }
           },
           "tool_choice": {
             "anyOf": [
               {
                 "type": "string",
-                "enum": ["none", "auto", "required"]
+                "enum": [
+                  "none",
+                  "auto",
+                  "required"
+                ]
               },
               {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["function"]
+                    "enum": [
+                      "function"
+                    ]
                   },
                   "function": {
                     "type": "object",
@@ -4659,10 +5074,15 @@
                         "type": "string"
                       }
                     },
-                    "required": ["name"]
+                    "required": [
+                      "name"
+                    ]
                   }
                 },
-                "required": ["type", "function"]
+                "required": [
+                  "type",
+                  "function"
+                ]
               }
             ]
           },
@@ -4737,7 +5157,10 @@
             "description": "Minimum number of tokens to keep. This parameter only supported by `llama-cpp` engine."
           }
         },
-        "required": ["messages", "model"]
+        "required": [
+          "messages",
+          "model"
+        ]
       },
       "Function": {
         "type": "object",
@@ -4757,7 +5180,9 @@
             "default": false
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "MessageDto": {
         "type": "object",
@@ -4771,7 +5196,10 @@
             "description": "The role of the participant in the chat, such as 'user' or 'system', indicating who is the sender of the message."
           }
         },
-        "required": ["content", "role"]
+        "required": [
+          "content",
+          "role"
+        ]
       },
       "ChoiceDto": {
         "type": "object",
@@ -4793,7 +5221,11 @@
             ]
           }
         },
-        "required": ["finish_reason", "index", "message"]
+        "required": [
+          "finish_reason",
+          "index",
+          "message"
+        ]
       },
       "UsageDto": {
         "type": "object",
@@ -4811,7 +5243,11 @@
             "description": "The total number of tokens used in both the prompt and the completion, summarizing the entire token count of the chat operation."
           }
         },
-        "required": ["completion_tokens", "prompt_tokens", "total_tokens"]
+        "required": [
+          "completion_tokens",
+          "prompt_tokens",
+          "total_tokens"
+        ]
       },
       "ChatCompletionResponseDto": {
         "type": "object",
@@ -4838,11 +5274,17 @@
                   "type": "object",
                   "properties": {
                     "content": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "description": "The contents of the message."
                     },
                     "refusal": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "description": "The refusal message generated by the model."
                     },
                     "tool_calls": {
@@ -4871,10 +5313,17 @@
                                 "description": "The arguments to call the function with, as generated by the model in JSON format. Note that the model does not always generate valid JSON, and may hallucinate parameters not defined by your function schema. Validate the arguments in your code before calling your function."
                               }
                             },
-                            "required": ["name", "arguments"]
+                            "required": [
+                              "name",
+                              "arguments"
+                            ]
                           }
                         },
-                        "required": ["id", "type", "function"]
+                        "required": [
+                          "id",
+                          "type",
+                          "function"
+                        ]
                       }
                     },
                     "role": {
@@ -4895,7 +5344,10 @@
                           "description": "The name of the function to call."
                         }
                       },
-                      "required": ["arguments", "name"]
+                      "required": [
+                        "arguments",
+                        "name"
+                      ]
                     },
                     "audio": {
                       "type": "object",
@@ -4918,17 +5370,27 @@
                           "description": "Transcript of the audio generated by the model."
                         }
                       },
-                      "required": ["id", "expires_at", "data", "transcript"]
+                      "required": [
+                        "id",
+                        "expires_at",
+                        "data",
+                        "transcript"
+                      ]
                     }
                   },
-                  "required": ["role"]
+                  "required": [
+                    "role"
+                  ]
                 },
                 "logprobs": {
                   "type": "object",
                   "description": "Log probability information for the choice.",
                   "properties": {
                     "content": {
-                      "type": ["array", "null"],
+                      "type": [
+                        "array",
+                        "null"
+                      ],
                       "description": "A list of message content tokens with log probability information.",
                       "items": {
                         "type": "object",
@@ -4942,11 +5404,17 @@
                             "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
                           },
                           "bytes": {
-                            "type": ["array", "null"],
+                            "type": [
+                              "array",
+                              "null"
+                            ],
                             "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
                           }
                         },
-                        "required": ["token", "logprob"]
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
                       }
                     },
                     "top_logprobs": {
@@ -4964,15 +5432,24 @@
                             "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
                           },
                           "bytes": {
-                            "type": ["array", "null"],
+                            "type": [
+                              "array",
+                              "null"
+                            ],
                             "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
                           }
                         },
-                        "required": ["token", "logprob"]
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
                       }
                     },
                     "refusal": {
-                      "type": ["array", "null"],
+                      "type": [
+                        "array",
+                        "null"
+                      ],
                       "description": "A list of message refusal tokens with log probability information.",
                       "items": {
                         "type": "object",
@@ -4986,17 +5463,27 @@
                             "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
                           },
                           "bytes": {
-                            "type": ["array", "null"],
+                            "type": [
+                              "array",
+                              "null"
+                            ],
                             "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
                           }
                         },
-                        "required": ["token", "logprob"]
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
                       }
                     }
                   }
                 }
               },
-              "required": ["finish_reason", "index", "message"]
+              "required": [
+                "finish_reason",
+                "index",
+                "message"
+              ]
             }
           },
           "created": {
@@ -5008,7 +5495,10 @@
             "description": "The model used for the chat completion."
           },
           "service_tier": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "The service tier used for processing the request. This field is only included if the service_tier parameter is specified in the request."
           },
           "system_fingerprint": {
@@ -5048,7 +5538,10 @@
                     "description": "Tokens generated by the model for reasoning."
                   }
                 },
-                "required": ["audio_tokens", "reasoning_tokens"]
+                "required": [
+                  "audio_tokens",
+                  "reasoning_tokens"
+                ]
               },
               "prompt_tokens_details": {
                 "type": "object",
@@ -5063,7 +5556,10 @@
                     "description": "Cached tokens present in the prompt."
                   }
                 },
-                "required": ["audio_tokens", "cached_tokens"]
+                "required": [
+                  "audio_tokens",
+                  "cached_tokens"
+                ]
               }
             },
             "required": [
@@ -5103,7 +5599,10 @@
                   "description": "A chat completion delta generated by streamed model responses.",
                   "properties": {
                     "content": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "description": "The contents of the chunk message."
                     },
                     "function_call": {
@@ -5141,10 +5640,18 @@
                                 "description": "The arguments to call the function with, as generated by the model in JSON format. Note that the model does not always generate valid JSON, and may hallucinate parameters not defined by your function schema. Validate the arguments in your code before calling your function."
                               }
                             },
-                            "required": ["name", "arguments"]
+                            "required": [
+                              "name",
+                              "arguments"
+                            ]
                           }
                         },
-                        "required": ["index", "id", "type", "function"]
+                        "required": [
+                          "index",
+                          "id",
+                          "type",
+                          "function"
+                        ]
                       }
                     },
                     "role": {
@@ -5152,7 +5659,10 @@
                       "description": "The role of the author of this message."
                     },
                     "refusal": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "description": "The refusal message generated by the model."
                     }
                   }
@@ -5162,7 +5672,10 @@
                   "description": "Log probability information for the choice.",
                   "properties": {
                     "content": {
-                      "type": ["array", "null"],
+                      "type": [
+                        "array",
+                        "null"
+                      ],
                       "description": "A list of message content tokens with log probability information.",
                       "items": {
                         "type": "object",
@@ -5176,11 +5689,17 @@
                             "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
                           },
                           "bytes": {
-                            "type": ["array", "null"],
+                            "type": [
+                              "array",
+                              "null"
+                            ],
                             "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
                           }
                         },
-                        "required": ["token", "logprob"]
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
                       }
                     },
                     "top_logprobs": {
@@ -5198,15 +5717,24 @@
                             "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
                           },
                           "bytes": {
-                            "type": ["array", "null"],
+                            "type": [
+                              "array",
+                              "null"
+                            ],
                             "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
                           }
                         },
-                        "required": ["token", "logprob"]
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
                       }
                     },
                     "refusal": {
-                      "type": ["array", "null"],
+                      "type": [
+                        "array",
+                        "null"
+                      ],
                       "description": "A list of message refusal tokens with log probability information.",
                       "items": {
                         "type": "object",
@@ -5220,17 +5748,26 @@
                             "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
                           },
                           "bytes": {
-                            "type": ["array", "null"],
+                            "type": [
+                              "array",
+                              "null"
+                            ],
                             "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
                           }
                         },
-                        "required": ["token", "logprob"]
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
                       }
                     }
                   }
                 },
                 "finish_reason": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "description": "The reason the model stopped generating tokens. This will be stop if the model hit a natural stop point or a provided stop sequence, length if the maximum number of tokens specified in the request was reached, content_filter if content was omitted due to a flag from our content filters, tool_calls if the model called a tool, or function_call (deprecated) if the model called a function."
                 },
                 "index": {
@@ -5238,7 +5775,10 @@
                   "description": "The index of the choice in the list of choices."
                 }
               },
-              "required": ["delta", "index"]
+              "required": [
+                "delta",
+                "index"
+              ]
             }
           },
           "created": {
@@ -5250,7 +5790,10 @@
             "description": "The model used to generate the completion."
           },
           "service_tier": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "The service tier used for processing the request. This field is only included if the service_tier parameter is specified in the request."
           },
           "system_fingerprint": {
@@ -5278,7 +5821,11 @@
                 "description": "Total number of tokens used in the request (prompt + completion)."
               }
             },
-            "required": ["completion_tokens", "prompt_tokens", "total_tokens"]
+            "required": [
+              "completion_tokens",
+              "prompt_tokens",
+              "total_tokens"
+            ]
           }
         },
         "required": [
@@ -5299,7 +5846,9 @@
             "description": "The name of the embedding model to be used."
           },
           "input": {
-            "example": ["Hello World"],
+            "example": [
+              "Hello World"
+            ],
             "description": "The text or token array(s) to be embedded. This can be a single string, an array of strings, or an array of token arrays to embed multiple inputs in one request.",
             "type": "array",
             "items": {
@@ -5317,7 +5866,10 @@
             "description": "Defines the number of dimensions for the output embeddings. This feature is supported by certain models only. This field is optional."
           }
         },
-        "required": ["model", "input"]
+        "required": [
+          "model",
+          "input"
+        ]
       },
       "EmbeddingsResponseDto": {
         "type": "object",
@@ -5346,17 +5898,24 @@
             ]
           }
         },
-        "required": ["object", "model", "embedding", "usage"]
+        "required": [
+          "object",
+          "model",
+          "embedding",
+          "usage"
+        ]
       },
       "PullModelRequest": {
         "type": "object",
-        "required": ["model"],
+        "required": [
+          "model"
+        ],
         "properties": {
           "model": {
             "type": "string",
             "description": "The identifier or URL of the model to use. It can be a model ID on Cortexso (https://huggingface.co/cortexso) or a HuggingFace URL pointing to the model file. For example: 'gpt2' or 'https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf'",
             "examples": [
-              "tinyllama:gguf",
+              "tinyllama:1b",
               "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf"
             ]
           },
@@ -5507,7 +6066,9 @@
           },
           "files": {
             "description": "The URL sources from which the model downloaded or accessed.",
-            "example": ["https://huggingface.co/cortexso/mistral/tree/gguf"],
+            "example": [
+              "https://huggingface.co/cortexso/mistral/tree/gguf"
+            ],
             "oneOf": [
               {
                 "type": "array",
@@ -5527,7 +6088,9 @@
           },
           "stop": {
             "description": "Defines specific tokens or phrases that signal the model to stop producing further output.",
-            "example": ["End"],
+            "example": [
+              "End"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -5597,7 +6160,10 @@
             "default": ""
           }
         },
-        "required": ["model", "files"]
+        "required": [
+          "model",
+          "files"
+        ]
       },
       "StartModelSuccessDto": {
         "type": "object",
@@ -5611,7 +6177,10 @@
             "description": "The unique identifier of the model."
           }
         },
-        "required": ["message", "modelId"]
+        "required": [
+          "message",
+          "modelId"
+        ]
       },
       "ModelStartDto": {
         "type": "object",
@@ -5658,7 +6227,9 @@
             "example": "/tmp/model.gguf"
           }
         },
-        "required": ["model"]
+        "required": [
+          "model"
+        ]
       },
       "ModelStopDto": {
         "type": "object",
@@ -5669,7 +6240,9 @@
             "description": "A downloaded model name."
           }
         },
-        "required": ["model"]
+        "required": [
+          "model"
+        ]
       },
       "ImportModelRequest": {
         "type": "object",
@@ -5689,10 +6262,16 @@
           "option": {
             "type": "string",
             "description": "Import options such as symlink or copy.",
-            "enum": ["symlink", "copy"]
+            "enum": [
+              "symlink",
+              "copy"
+            ]
           }
         },
-        "required": ["model", "modelPath"]
+        "required": [
+          "model",
+          "modelPath"
+        ]
       },
       "ImportModelResponse": {
         "type": "object",
@@ -5711,7 +6290,11 @@
             "example": "OK"
           }
         },
-        "required": ["message", "modelHandle", "result"]
+        "required": [
+          "message",
+          "modelHandle",
+          "result"
+        ]
       },
       "CommonResponseDto": {
         "type": "object",
@@ -5721,7 +6304,9 @@
             "description": "The response success or error message."
           }
         },
-        "required": ["message"]
+        "required": [
+          "message"
+        ]
       },
       "EngineUninstallationResponseDto": {
         "type": "object",
@@ -5777,7 +6362,11 @@
             "example": "OK"
           }
         },
-        "required": ["data", "object", "result"]
+        "required": [
+          "data",
+          "object",
+          "result"
+        ]
       },
       "Engine": {
         "type": "object",
@@ -5807,7 +6396,12 @@
             "example": "0.1.34"
           }
         },
-        "required": ["description", "name", "productName", "status"]
+        "required": [
+          "description",
+          "name",
+          "productName",
+          "status"
+        ]
       },
       "CpuModeDto": {
         "type": "object",
@@ -5872,7 +6466,9 @@
             "description": "A predefined text or framework that guides the AI model's response generation."
           },
           "stop": {
-            "example": ["End"],
+            "example": [
+              "End"
+            ],
             "description": "Defines specific tokens or phrases that signal the model to stop producing further output.",
             "type": "array",
             "items": {
@@ -5988,7 +6584,9 @@
             "$ref": "#/components/schemas/RecommendDto"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "ListModelsResponseDto": {
         "type": "object",
@@ -5996,7 +6594,9 @@
           "object": {
             "type": "string",
             "example": "list",
-            "enum": ["list"]
+            "enum": [
+              "list"
+            ]
           },
           "data": {
             "description": "List of models",
@@ -6006,7 +6606,10 @@
             }
           }
         },
-        "required": ["object", "data"]
+        "required": [
+          "object",
+          "data"
+        ]
       },
       "UpdateModelDto": {
         "type": "object",
@@ -6025,7 +6628,9 @@
             "items": {
               "type": "string"
             },
-            "example": ["</s>"]
+            "example": [
+              "</s>"
+            ]
           },
           "stream": {
             "type": "boolean",
@@ -6215,7 +6820,11 @@
             "description": "Indicates whether the model was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       },
       "CreateThreadAssistantDto": {
         "type": "object",
@@ -6305,7 +6914,10 @@
           "tool_resources": {
             "type": "object",
             "example": {
-              "resources": ["database1", "database2"]
+              "resources": [
+                "database1",
+                "database2"
+              ]
             },
             "description": "Tool resources for the assistant."
           }
@@ -6333,7 +6945,9 @@
             }
           }
         },
-        "required": ["assistants"]
+        "required": [
+          "assistants"
+        ]
       },
       "ContentDto": {
         "type": "object",
@@ -6352,7 +6966,10 @@
             "description": "Text content of the message along with any annotations."
           }
         },
-        "required": ["type", "text"]
+        "required": [
+          "type",
+          "text"
+        ]
       },
       "GetMessageResponseDto": {
         "type": "object",
@@ -6526,7 +7143,13 @@
             "description": "Indicates whether there are more messages to retrieve."
           }
         },
-        "required": ["object", "data", "first_id", "last_id", "has_more"]
+        "required": [
+          "object",
+          "data",
+          "first_id",
+          "last_id",
+          "has_more"
+        ]
       },
       "CreateMessageDto": {
         "type": "object",
@@ -6542,7 +7165,10 @@
             "description": "The text contents of the message."
           }
         },
-        "required": ["role", "content"]
+        "required": [
+          "role",
+          "content"
+        ]
       },
       "UpdateMessageDto": {
         "type": "object",
@@ -6568,7 +7194,11 @@
             "description": "Indicates whether the message was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       },
       "GetThreadResponseDto": {
         "type": "object",
@@ -6589,7 +7219,9 @@
             "description": "Unix timestamp representing the creation time of the thread."
           },
           "assistants": {
-            "example": ["assistant-001"],
+            "example": [
+              "assistant-001"
+            ],
             "description": "List of assistants involved in the thread.",
             "type": "array",
             "items": {
@@ -6643,7 +7275,11 @@
             "description": "Indicates whether the thread was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       },
       "CPUDto": {
         "type": "object",
@@ -6686,7 +7322,12 @@
             "description": "The model name of the CPU."
           }
         },
-        "required": ["arch", "cores", "instructions", "model"]
+        "required": [
+          "arch",
+          "cores",
+          "instructions",
+          "model"
+        ]
       },
       "GPUDto": {
         "type": "object",
@@ -6710,7 +7351,10 @@
                 "description": "The version of the installed driver."
               }
             },
-            "required": ["compute_cap", "driver_version"]
+            "required": [
+              "compute_cap",
+              "driver_version"
+            ]
           },
           "free_vram": {
             "type": "integer",
@@ -6768,7 +7412,10 @@
             "description": "The version of the operating system."
           }
         },
-        "required": ["name", "version"]
+        "required": [
+          "name",
+          "version"
+        ]
       },
       "PowerDto": {
         "type": "object",
@@ -6789,7 +7436,11 @@
             "description": "Indicates if the power-saving mode is enabled."
           }
         },
-        "required": ["battery_life", "charging_status", "is_power_saving"]
+        "required": [
+          "battery_life",
+          "charging_status",
+          "is_power_saving"
+        ]
       },
       "RAMDto": {
         "type": "object",
@@ -6810,7 +7461,11 @@
             "description": "The type of RAM."
           }
         },
-        "required": ["available", "total", "type"]
+        "required": [
+          "available",
+          "total",
+          "type"
+        ]
       },
       "StorageDto": {
         "type": "object",
@@ -6831,7 +7486,11 @@
             "description": "The type of storage."
           }
         },
-        "required": ["available", "total", "type"]
+        "required": [
+          "available",
+          "total",
+          "type"
+        ]
       }
     }
   }
