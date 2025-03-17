@@ -560,7 +560,7 @@ void GGUFHandler::ModelConfigFromMetadata() {
   }
 
   try {
-    if (tokens.size() > (u_int64_t) eos_token) {
+    if (tokens.size() > (unsigned) eos_token) {
       eos_string = tokens[eos_token];
       stop.push_back(std::move(eos_string));
     } else {
