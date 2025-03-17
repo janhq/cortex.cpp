@@ -97,6 +97,12 @@ static const std::unordered_map<std::string, ApiConfigurationMetadata>
                                   .accept_value = "string",
                                   .default_value = "",
                                   .allow_empty = true}},
+        {"github_token", ApiConfigurationMetadata{.name = "github_token",
+                                                  .desc = "Github token",
+                                                  .group = "Token",
+                                                  .accept_value = "string",
+                                                  .default_value = "",
+                                                  .allow_empty = true}},
 };
 
 class ApiServerConfiguration {
@@ -107,7 +113,7 @@ class ApiServerConfiguration {
       const std::string& proxy_url = "", const std::string& proxy_username = "",
       const std::string& proxy_password = "", const std::string& no_proxy = "",
       bool verify_peer_ssl = true, bool verify_host_ssl = true,
-      const std::string& hf_token = "", std::vector<std::string> api_keys = {})
+      const std::string& hf_token = "", const std::string& gh_token = "", std::vector<std::string> api_keys = {})
       : cors{cors},
         allowed_origins{allowed_origins},
         verify_proxy_ssl{verify_proxy_ssl},
@@ -119,6 +125,7 @@ class ApiServerConfiguration {
         verify_peer_ssl{verify_peer_ssl},
         verify_host_ssl{verify_host_ssl},
         hf_token{hf_token},
+        gh_token{gh_token},
         api_keys{api_keys} {}
 
   // cors
@@ -139,6 +146,7 @@ class ApiServerConfiguration {
 
   // token
   std::string hf_token{""};
+  std::string gh_token{""};
 
   // authentication
   std::vector<std::string> api_keys;
@@ -159,6 +167,7 @@ class ApiServerConfiguration {
     root["verify_peer_ssl"] = verify_peer_ssl;
     root["verify_host_ssl"] = verify_host_ssl;
     root["huggingface_token"] = hf_token;
+    root["github_token"] = gh_token;
     root["api_keys"] = Json::Value(Json::arrayValue);
     for (const auto& api_key : api_keys) {
       root["api_keys"].append(api_key);
@@ -252,6 +261,15 @@ class ApiServerConfiguration {
                  return false;
                }
                hf_token = value.asString();
+               return true;
+             }},
+
+            {"github_token",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isString()) {
+                 return false;
+               }
+               gh_token = value.asString();
                return true;
              }},
 
