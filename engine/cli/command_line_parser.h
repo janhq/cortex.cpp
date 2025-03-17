@@ -25,16 +25,6 @@ class CommandLineParser {
 
   void SetupConfigsCommands();
 
-  void EngineUpdate(CLI::App* parent, const std::string& engine_name);
-
-  void EngineGet(CLI::App* parent);
-
-  void EngineUse(CLI::App* parent, const std::string& engine_name);
-
-  void EngineLoad(CLI::App* parent, const std::string& engine_name);
-
-  void EngineUnload(CLI::App* parent, const std::string& engine_name);
-
   void ModelUpdate(CLI::App* parent);
 
   CLI::App app_;
@@ -42,7 +32,6 @@ class CommandLineParser {
   std::shared_ptr<cortex::DylibPathManager> dylib_path_manager_;
   std::shared_ptr<DatabaseService> db_service_;
   std::shared_ptr<EngineService> engine_service_;
-  std::vector<std::string> supported_engines_;
 
   struct CmlData {
     std::string model_id;
