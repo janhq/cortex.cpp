@@ -465,7 +465,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   };
   std::vector<std::string> path_list(paths, std::end(paths));
   auto url_obj = url_parser::Url{
-      ./* protocol = */ "https",
+      /* .protocol = */ "https",
       /* .host = */ kNightlyHost,
       /* .pathParams = */ path_list,
       /* .queries = */ {},
