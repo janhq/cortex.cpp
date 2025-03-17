@@ -1,5 +1,6 @@
 import pytest
 import requests
+import platform
 import os
 from pathlib import Path
 from utils.test_runner import (
@@ -8,6 +9,16 @@ from utils.test_runner import (
     stop_server,
     wait_for_websocket_download_success_event,
 )
+
+
+def get_root_path():
+    if platform.system() == "Linux":
+        # For Linux, use the XDG base directory.
+        # Here we use XDG_DATA_HOME if set, otherwise default to ~/.local/share.
+        return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+    else:
+        return Path.home()
+
 
 class TestCliModel:
 
@@ -24,7 +35,7 @@ class TestCliModel:
         # Clean up
         run("Delete model", ["models", "delete", "tinyllama:1b"])
         stop_server()
-        
+
     def test_model_pull_with_direct_url_should_be_success(self):
         exit_code, output, error = run(
             "Pull model",
@@ -32,12 +43,18 @@ class TestCliModel:
                 "pull",
                 "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/blob/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf",
             ],
-            timeout=None, capture=False
+            timeout=None,
+            capture=False,
         )
-        root = Path.home()
-        assert os.path.exists(root / "cortexcpp" / "models" / "huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/tinyllama-1.1b-chat-v0.3.Q2_K.gguf")
+        root = get_root_path()
+        assert os.path.exists(
+            root
+            / "cortexcpp"
+            / "models"
+            / "huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/tinyllama-1.1b-chat-v0.3.Q2_K.gguf"
+        )
         assert exit_code == 0, f"Model pull failed with error: {error}"
-        
+
     @pytest.mark.asyncio
     async def test_models_delete_should_be_successful(self):
         json_body = {"model": "tinyllama:1b"}

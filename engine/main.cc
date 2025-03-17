@@ -63,7 +63,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
                bool ignore_cout) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   auto signal_handler = +[](int sig) -> void {
-    std::cout << "\rCaught interrupt signal, shutting down\n";
+    std::cout << "\rCaught interrupt signal:" << sig << ", shutting down\n";;
     shutdown_signal = true;
   };
   signal(SIGINT, signal_handler);
@@ -145,7 +145,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
     return;
   }
 
-  using Event = cortex::event::Event;
+  // using Event = cortex::event::Event; //unused
   using EventQueue =
       eventpp::EventQueue<EventType,
                           void(const eventpp::AnyData<eventMaxSize>&)>;

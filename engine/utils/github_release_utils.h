@@ -168,6 +168,7 @@ inline cpp::result<std::vector<GitHubRelease>, std::string> GetReleases(
   for (const auto& release : result.value()) {
     releases.push_back(GitHubRelease::FromJson(release));
   }
+  (void) allow_prerelease;
   return releases;
 }
 

@@ -93,7 +93,7 @@ inline cpp::result<Url, std::string> FromUrlString(
       .host = "",
       .pathParams = {},
   };
-  unsigned counter = 0;
+  int counter = 0;
 
   std::smatch url_match_result;
 

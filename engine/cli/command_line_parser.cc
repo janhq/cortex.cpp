@@ -439,7 +439,7 @@ void CommandLineParser::SetupConfigsCommands() {
 
     auto is_empty = true;
     for (const auto& [key, value] : config_update_opts_) {
-      if (!value.empty()) {
+      if (!value.empty() || CONFIGURATIONS.at(key).allow_empty) {
         is_empty = false;
         break;
       }
@@ -658,36 +658,47 @@ void CommandLineParser::SetupHardwareCommands() {
 void CommandLineParser::SetupSystemCommands() {
   auto start_cmd = app_.add_subcommand("start", "Start the API server");
   start_cmd->group(kSystemGroup);
-  cml_data_.port = std::stoi(cml_data_.config.apiServerPort);
-  start_cmd->add_option("-p, --port", cml_data_.port, "Server port to listen");
-  start_cmd->add_option("--loglevel", cml_data_.log_level,
-                        "Set up log level for server, accepted TRACE, DEBUG, "
-                        "INFO, WARN, ERROR");
-  if (cml_data_.log_level != "INFO" && cml_data_.log_level != "TRACE" &&
-      cml_data_.log_level != "DEBUG" && cml_data_.log_level != "WARN" &&
-      cml_data_.log_level != "ERROR") {
-    CLI_LOG("Invalid log level: " << cml_data_.log_level
-                                  << ", Set Loglevel to INFO");
-    cml_data_.log_level = "INFO";
+
+  // Add options dynamically
+  std::vector<std::pair<std::string, std::string>> option_names = {
+      {"logspath", "The directory where logs are stored"},
+      {"logsllama", "The directory where llama-cpp engine logs are stored"},
+      {"logsonnx", "The directory where onnx engine logs are stored"},
+      {"datapath", "The directory for storing data"},
+      {"loglines", "Log size limit"},
+      {"host", "The host IP for the API server"},
+      {"port", "The port used by the API server"},
+      {"hf-token", "HuggingFace authentication token"},
+      {"gh-agent", "Github user agent"},
+      {"gh-token", "Github authentication token"},
+      {"cors", "Cross-Origin Resource Sharing"},
+      {"origins", "Lists allowed origins for CORS requests"},
+      {"proxy-url", "Proxy URL"},
+      {"verify-proxy", "SSL verification for client proxy connections"},
+      {"verify-proxy-host", "SSL verification for host proxy connections"},
+      {"proxy-username", "Proxy username"},
+      {"proxy-password", "Proxy password"},
+      {"no-proxy", "Specifies exceptions for proxy usage"},
+      {"verify-ssl-peer", "SSL/TLS verification for peer connections"},
+      {"verify-ssl-host", "SSL/TLS verification for host connections"},
+      {"ssl-cert-path", "Path to SSL certificates"},
+      {"ssl-key-path", "Path to SSL and keys"},
+      {"loglevel", "Log level"}};
+  cml_data_.server_start_options["loglevel"] = "INFO";
+  for (const auto& option_name : option_names) {
+    start_cmd->add_option(
+        "--" + std::get<0>(option_name),
+        cml_data_.server_start_options[std::get<0>(option_name)],
+        std::get<1>(option_name));
   }
+
   start_cmd->callback([this] {
     if (std::exchange(executed_, true))
       return;
-    if (cml_data_.port != stoi(cml_data_.config.apiServerPort)) {
-      CTL_INF("apiServerPort changed from " << cml_data_.config.apiServerPort
-                                            << " to " << cml_data_.port);
-      auto config_path = file_manager_utils::GetConfigurationPath();
-      cml_data_.config.apiServerPort = std::to_string(cml_data_.port);
-      auto result =
-          config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
-              cml_data_.config, config_path.string());
-      if (result.has_error()) {
-        CLI_LOG("Error update " << config_path.string() << result.error());
-      }
-    }
+
     commands::ServerStartCmd ssc;
-    ssc.Exec(cml_data_.config.apiServerHost,
-             std::stoi(cml_data_.config.apiServerPort), cml_data_.log_level);
+    ssc.Exec(cml_data_.server_start_options["loglevel"],
+             cml_data_.server_start_options, cml_data_.config);
   });
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
