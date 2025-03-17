@@ -28,9 +28,10 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
   }
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "hardware"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "hardware"},
+      /* .queries = */ {},
   };
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {

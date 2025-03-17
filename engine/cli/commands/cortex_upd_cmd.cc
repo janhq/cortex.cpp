@@ -1,4 +1,5 @@
 #include "cortex_upd_cmd.h"
+#include <optional>
 #include "cli/commands/server_start_cmd.h"
 #include "server_stop_cmd.h"
 #include "utils/archive_utils.h"
@@ -27,16 +28,16 @@ std::chrono::seconds GetTimeSinceEpochMillisec() {
   return duration_cast<seconds>(system_clock::now().time_since_epoch());
 }
 
-std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
+/* std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info->os == "mac") {
     CTL_INF("Change arch from " << system_info->arch << " to universal");
     system_info->arch = "universal";
   }
   return system_info;
-}
+} */
 
-std::string GetNightlyInstallerName(const std::string& v,
+/* std::string GetNightlyInstallerName(const std::string& v,
                                     const std::string& os_arch) {
   const std::string kCortex = "cortex";
   // Remove 'v' in file name
@@ -66,7 +67,7 @@ std::string GetInstallCmd(const std::string& exe_path) {
   return "start /wait \"\" " + exe_path +
          " /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SkipPostInstall";
 #endif
-}
+} */
 
 std::string GetInstallCmdLinux(const std::string& script_path,
                                const std::string& channel,
@@ -133,6 +134,7 @@ bool InstallNewVersion(const std::filesystem::path& dst,
 
 std::optional<std::string> CheckNewUpdate(
     std::optional<std::chrono::milliseconds> timeout) {
+	(void) timeout;
   // Get info from .cortexrc
   auto should_check_update = false;
   auto config = file_manager_utils::GetCortexConfig();
@@ -152,9 +154,10 @@ std::optional<std::string> CheckNewUpdate(
   }
 
   auto url = url_parser::Url{
-      .protocol = "https",
-      .host = GetHostName(),
-      .pathParams = GetReleasePath(),
+      /* .protocol = */ "https",
+      /* .host = */ GetHostName(),
+      /* .pathParams = */ GetReleasePath(),
+      /* .queries = */ {},
   };
 
   CTL_INF("Engine release path: " << url.ToFullPath());
@@ -264,9 +267,10 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = GetHostName(),
-      .pathParams = GetReleasePath(),
+      /* .protocol = */ "https",
+      /* .host = */ GetHostName(),
+      /* .pathParams = */ GetReleasePath(),
+      /* .queries = */ {},
   };
   CTL_INF("Engine release path: " << url_obj.ToFullPath());
 
@@ -318,9 +322,10 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = GetHostName(),
-      .pathParams = GetReleasePath(),
+      /* .protocol = */ "https",
+      /* .host = */ GetHostName(),
+      /* .pathParams = */ GetReleasePath(),
+      /* queries = */ {},
   };
   CTL_INF("Engine release path: " << url_obj.ToFullPath());
   auto res = curl_utils::SimpleGetJson(url_obj.ToFullPath());
@@ -410,12 +415,16 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
         return std::nullopt;
       }
       auto download_task{DownloadTask{
-          .id = "cortex",
-          .type = DownloadType::Cortex,
-          .items = {DownloadItem{
-              .id = "cortex",
-              .downloadUrl = download_url,
-              .localPath = local_path,
+          /* .id = */ "cortex",
+          /* .status = */ DownloadTask::Status::Pending,
+          /* .type = */ DownloadType::Cortex,
+          /* .items = */ {DownloadItem{
+              /* .id = */ "cortex",
+              /* .downloadUrl = */ download_url,
+              /* .localPath = */ local_path,
+              /* .checksum = */ std::nullopt,
+							/* .bytes = */ std::nullopt,
+              /* .downloadedBytes = */ std::nullopt,
           }},
       }};
 
@@ -456,9 +465,10 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   };
   std::vector<std::string> path_list(paths, std::end(paths));
   auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = kNightlyHost,
-      .pathParams = path_list,
+      ./* protocol = */ "https",
+      /* .host = */ kNightlyHost,
+      /* .pathParams = */ path_list,
+      /* .queries = */ {},
   };
 
   CTL_INF("Cortex release path: " << url_parser::FromUrl(url_obj));
@@ -474,12 +484,16 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
     return false;
   }
   auto download_task =
-      DownloadTask{.id = "cortex",
-                   .type = DownloadType::Cortex,
-                   .items = {DownloadItem{
-                       .id = "cortex",
-                       .downloadUrl = url_parser::FromUrl(url_obj),
-                       .localPath = localPath,
+      DownloadTask{/* .id = */ "cortex",
+                   /* .status = */ DownloadTask::Status::Pending,
+                   /* .type = */ DownloadType::Cortex,
+                   ./* items = */ {DownloadItem{
+                       /* .id = */ "cortex",
+                       /* .downloadUrl = */ url_parser::FromUrl(url_obj),
+                       /* .localPath = */ localPath,
+                       /* .checksum = */ std::nullopt,
+                       /* .bytes = */ std::nullopt,
+                       /* .downloadedBytes = */ std::nullopt,
                    }}};
 
   auto result = download_service_->AddDownloadTask(
@@ -522,9 +536,10 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
                  "templates", "linux",      "install.sh"};
   }
   auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = "raw.githubusercontent.com",
-      .pathParams = path_list,
+      /* .protocol = */ "https",
+      /* .host = */ "raw.githubusercontent.com",
+      /* .pathParams = */ path_list,
+      /* .queries = */ {},
   };
 
   CTL_INF("Linux installer script path: " << url_parser::FromUrl(url_obj));
@@ -540,12 +555,16 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
     return false;
   }
   auto download_task =
-      DownloadTask{.id = "cortex",
-                   .type = DownloadType::Cortex,
-                   .items = {DownloadItem{
-                       .id = "cortex",
-                       .downloadUrl = url_parser::FromUrl(url_obj),
-                       .localPath = localPath,
+      DownloadTask{/* .id = */ "cortex",
+                   /* .status = */ DownloadTask::Status::Pending,
+                   /* .type = */ DownloadType::Cortex,
+                   /* .items = */ {DownloadItem{
+                       /* .id = */ "cortex",
+                       /* .downloadUrl = */ url_parser::FromUrl(url_obj),
+                       /* .localPath = */ localPath,
+                       /* .checksum = */ std::nullopt,
+                       /* .bytes = */ std::nullopt,
+                       /* .downloadedBytes = */ std::nullopt,
                    }}};
 
   auto result = download_service_->AddDownloadTask(

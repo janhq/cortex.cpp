@@ -5,6 +5,7 @@
 void Hardware::GetHardwareInfo(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+	(void) req;
   auto hw_inf = hw_svc_->GetHardwareInfo();
   Json::Value ret;
   ret["cpu"] = cortex::hw::ToJson(hw_inf.cpu);

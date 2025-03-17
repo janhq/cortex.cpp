@@ -8,8 +8,10 @@ namespace cortex::hw {
 
 inline OS GetOSInfo() {
   hwinfo::OS os;
-  return OS{.name = os.name(),
-            .version = os.version(),
-            .arch = os.is32bit() ? "32 bit" : "64 bit"};
+  return OS{
+      os.name(),                          //name
+      os.version(),                       //version
+      os.is32bit() ? "32 bit" : "64 bit"  //arch
+  };
 }
 }  // namespace cortex::hw

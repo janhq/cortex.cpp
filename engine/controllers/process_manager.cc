@@ -7,6 +7,7 @@
 void ProcessManager::destroy(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+	(void) req;
   auto loaded_engines = engine_service_->GetSupportedEngineNames();
   for (const auto& engine : loaded_engines.value()) {
     auto result = engine_service_->UnloadEngine(engine);

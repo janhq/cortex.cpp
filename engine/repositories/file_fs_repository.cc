@@ -89,6 +89,8 @@ cpp::result<void, std::string> FileFsRepository::StoreFile(
 cpp::result<std::vector<OpenAi::File>, std::string> FileFsRepository::ListFiles(
     const std::string& purpose, uint8_t limit, const std::string& order,
     const std::string& after) const {
+	(void) purpose;
+	(void) after;
   auto res = db_service_->GetFileList();
   if (res.has_error()) {
     return cpp::fail(res.error());

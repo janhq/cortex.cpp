@@ -69,6 +69,7 @@ void Assistants::RetrieveAssistantV2(
       callback(resp);
     }
   }
+  (void) req;
 }
 
 void Assistants::CreateAssistantV2(
@@ -300,6 +301,7 @@ void Assistants::ListAssistants(
   auto response = cortex_utils::CreateCortexHttpJsonResponse(root);
   response->setStatusCode(k200OK);
   callback(response);
+  (void) req;
 }
 
 void Assistants::DeleteAssistant(
@@ -324,4 +326,5 @@ void Assistants::DeleteAssistant(
       cortex_utils::CreateCortexHttpJsonResponse(response.ToJson().value());
   resp->setStatusCode(k200OK);
   callback(resp);
+  (void) req;
 }

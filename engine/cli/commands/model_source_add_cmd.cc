@@ -14,9 +14,10 @@ bool ModelSourceAddCmd::Exec(const std::string& host, int port, const std::strin
   }
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", "sources"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", "sources"},
+      /* .queries = */ {},
   };
 
   Json::Value json_data;

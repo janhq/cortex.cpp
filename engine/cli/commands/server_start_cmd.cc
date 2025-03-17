@@ -188,7 +188,7 @@ void ServerStartCmd::UpdateConfig(CortexConfig& data, const std::string& key,
            }},
           {"port",
            [](CortexConfig& data, const std::string& k, const std::string& v) {
-             data.apiServerPort = v;
+             data.apiServerPort = v; (void) k;
            }},
           {"hf-token",
            [](CortexConfig& data, const std::string&, const std::string& v) {
@@ -283,6 +283,7 @@ void ServerStartCmd::UpdateVectorField(
     tokens.push_back(token);
   }
   setter(tokens);
+	(void) key;
 }
 
 void ServerStartCmd::UpdateNumericField(const std::string& key,
@@ -301,6 +302,7 @@ void ServerStartCmd::UpdateBooleanField(const std::string& key,
                                         std::function<void(bool)> setter) {
   bool bool_value = (value == "true" || value == "1");
   setter(bool_value);
+	(void) key;
 }
 
 };  // namespace commands

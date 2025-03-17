@@ -9,6 +9,7 @@ void Threads::ListThreads(
     std::function<void(const HttpResponsePtr&)>&& callback,
     std::optional<std::string> limit, std::optional<std::string> order,
     std::optional<std::string> after, std::optional<std::string> before) const {
+	(void) req;
   CTL_INF("ListThreads");
   auto res = thread_service_->ListThreads(
       std::stoi(limit.value_or("20")), order.value_or("desc"),
@@ -101,6 +102,7 @@ void Threads::RetrieveThread(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& thread_id) const {
+	(void) req;
   auto res = thread_service_->RetrieveThread(thread_id);
   if (res.has_error()) {
     Json::Value ret;
@@ -208,6 +210,7 @@ void Threads::DeleteThread(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& thread_id) {
+	(void) req;
   auto res = thread_service_->DeleteThread(thread_id);
   if (res.has_error()) {
     Json::Value ret;

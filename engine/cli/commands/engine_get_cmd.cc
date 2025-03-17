@@ -29,9 +29,10 @@ void EngineGetCmd::Exec(const std::string& host, int port,
   table.add_row({"#", "Name", "Version", "Variant", "Status"});
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "engines", engine_name},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "engines", engine_name},
+      /* .queries = */ {}
   };
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {
@@ -50,9 +51,10 @@ void EngineGetCmd::Exec(const std::string& host, int port,
   auto installed_variants = result.value();
   for (const auto& variant : installed_variants) {
     output.push_back(EngineVariantResponse{
-        .name = variant["name"].asString(),
-        .version = variant["version"].asString(),
-        .engine = engine_name,
+        /* .name = */ variant["name"].asString(),
+        /* .version = */ variant["version"].asString(),
+        /* .engine = */ engine_name,
+				/* .type = */ "", 
     });
   }
 

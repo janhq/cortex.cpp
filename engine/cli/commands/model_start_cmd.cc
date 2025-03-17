@@ -50,9 +50,10 @@ bool ModelStartCmd::Exec(
   }
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", "start"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", "start"},
+      /* .queries = */ {},
   };
 
   Json::Value json_data;

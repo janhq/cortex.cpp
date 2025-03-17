@@ -52,12 +52,12 @@ HardwareInfo HardwareService::GetHardwareInfo() {
     };
   }
 
-  return HardwareInfo{.cpu = cpu_info_.GetCPUInfo(),
-                      .os = cortex::hw::GetOSInfo(),
-                      .ram = cortex::hw::GetMemoryInfo(),
-                      .storage = cortex::hw::GetStorageInfo(),
-                      .gpus = gpus,
-                      .power = cortex::hw::GetPowerInfo()};
+  return HardwareInfo{/* .cpu = */ cpu_info_.GetCPUInfo(),
+                      /* .os = */ cortex::hw::GetOSInfo(),
+                      /* .ram = */ cortex::hw::GetMemoryInfo(),
+                      /* .storage = */ cortex::hw::GetStorageInfo(),
+                      /* .gpus = */ gpus,
+                      /* .power = */ cortex::hw::GetPowerInfo()};
 }
 
 bool HardwareService::Restart(const std::string& host, int port) {
@@ -283,7 +283,7 @@ bool HardwareService::SetActivateHardwareConfig(
       for (size_t i = 0; i < ahc_gpus.size(); i++) {
         // if activated id or priority changes
         if (ahc_gpus[i] != activated_ids[i].first ||
-            i != activated_ids[i].second)
+            i != (uint64_t) activated_ids[i].second)
           need_update = true;
         break;
       }
@@ -366,12 +366,12 @@ void HardwareService::UpdateHardwareInfos() {
       };
 
       auto res = db_service_->AddHardwareEntry(
-          HwEntry{.uuid = gpu.uuid,
-                  .type = "gpu",
-                  .hardware_id = std::stoi(gpu.id),
-                  .software_id = std::stoi(gpu.id),
-                  .activated = activated(),
-                  .priority = INT_MAX});
+          HwEntry{/* .uuid = */ gpu.uuid,
+                  /* .type = */ "gpu",
+                  /* .hardware_id = */ std::stoi(gpu.id),
+                  /* .software_id = */ std::stoi(gpu.id),
+                  /* .activated = */ activated(),
+                  /* .priority = */ INT_MAX});
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
@@ -448,7 +448,7 @@ void HardwareService::UpdateHardwareInfos() {
     for (auto const& p : activated_gpu_af) {
       gpus.push_back(p.first);
     }
-    ahc_ = {.gpus = gpus};
+    ahc_ = {/* .gpus = */ gpus};
   }
 }
 
@@ -494,12 +494,16 @@ void HardwareService::CheckDependencies() {
       std::filesystem::create_directories(fmu::GetCortexDataPath() / "deps");
     }
     auto download_task{DownloadTask{
-        .id = "vulkan",
-        .type = DownloadType::Miscellaneous,
-        .items = {DownloadItem{
-            .id = "vulkan",
-            .downloadUrl = "https://catalog.jan.ai/libvulkan.so",
-            .localPath = fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+        /* .id = */ "vulkan",
+        /* .status = */ DownloadTask::Status::Pending,
+        /* .type = */ DownloadType::Miscellaneous,
+        /* .items = */ {DownloadItem{
+            /* .id = */ "vulkan",
+            /* .downloadUrl = */ "https://catalog.jan.ai/libvulkan.so",
+            /* .localPath = */ fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+            /* .checksum = */ std::nullopt,
+            /* .bytes = */ std::nullopt,
+            /* .downloadedBytes = */ std::nullopt,
         }},
     }};
     auto result = DownloadService().AddDownloadTask(

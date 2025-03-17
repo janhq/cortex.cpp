@@ -224,8 +224,7 @@ class DownloadService {
           if (should_emit_event) {
             dl_srv->event_queue_->enqueue(
                 EventType::DownloadEvent,
-                DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
-                              .download_task_ = *task});
+                DownloadEvent{{}, DownloadEventType::DownloadUpdated, *task});
             dl_srv->event_emit_map_[task->id] =
                 std::chrono::steady_clock::now();
           }

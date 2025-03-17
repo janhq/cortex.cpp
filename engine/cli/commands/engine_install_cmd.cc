@@ -47,9 +47,10 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     });
 
     auto releases_url = url_parser::Url{
-        .protocol = "http",
-        .host = host_ + ":" + std::to_string(port_),
-        .pathParams = {"v1", "engines", engine, "releases"},
+        /* .protocol = */ "http",
+        /* .host = */ host_ + ":" + std::to_string(port_),
+        /* .pathParams = */ {"v1", "engines", engine, "releases"},
+        /* .queries = */ {},
     };
     auto releases_result = curl_utils::SimpleGetJson(releases_url.ToFullPath());
     if (releases_result.has_error()) {
@@ -70,9 +71,9 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     std::cout << "Selected version: " << selected_release.value() << std::endl;
 
     auto variant_url = url_parser::Url{
-        .protocol = "http",
-        .host = host_ + ":" + std::to_string(port_),
-        .pathParams =
+        /* .protocol = */ "http",
+        /* .host = */ host_ + ":" + std::to_string(port_),
+        /* .pathParams = */
             {
                 "v1",
                 "engines",
@@ -80,6 +81,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
                 "releases",
                 selected_release.value(),
             },
+        /* queries = */ {},
     };
     auto variant_result = curl_utils::SimpleGetJson(variant_url.ToFullPath());
     if (variant_result.has_error()) {
@@ -117,15 +119,16 @@ bool EngineInstallCmd::Exec(const std::string& engine,
               << selected_release.value() << std::endl;
 
     auto install_url = url_parser::Url{
-        .protocol = "http",
-        .host = host_ + ":" + std::to_string(port_),
-        .pathParams =
+        /* .protocol = */ "http",
+        /* .host = */ host_ + ":" + std::to_string(port_),
+        /* .pathParams = */
             {
                 "v1",
                 "engines",
                 engine,
                 "install",
             },
+        /* queries = */ {},
     };
     Json::Value body;
     body["version"] = selected_release.value();
@@ -160,15 +163,16 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   });
 
   auto install_url = url_parser::Url{
-      .protocol = "http",
-      .host = host_ + ":" + std::to_string(port_),
-      .pathParams =
+      /* .protocol = */ "http",
+      /* .host = */ host_ + ":" + std::to_string(port_),
+      /* .pathParams = */
           {
               "v1",
               "engines",
               engine,
               "install",
           },
+      /* .queries = */ {},
   };
 
   Json::Value body;

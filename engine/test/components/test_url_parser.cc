@@ -16,9 +16,10 @@ TEST_F(UrlParserTestSuite, TestParseUrlCorrectly) {
 
 TEST_F(UrlParserTestSuite, ConstructUrlCorrectly) {
   auto url = url_parser::Url{
-      .protocol = "https",
-      .host = "jan.ai",
-      .pathParams = {"path1", "path2"},
+      /* .protocol = */ "https",
+      /* .host = */ "jan.ai",
+      /* .pathParams = */ {"path1", "path2"},
+      /* .queries = */ {},
   };
   auto url_str = url_parser::FromUrl(url);
 
@@ -27,10 +28,10 @@ TEST_F(UrlParserTestSuite, ConstructUrlCorrectly) {
 
 TEST_F(UrlParserTestSuite, ConstructUrlWithQueryCorrectly) {
   auto url = url_parser::Url{
-      .protocol = "https",
-      .host = "jan.ai",
-      .pathParams = {"path1", "path2"},
-      .queries = {{"key1", "value1"}, {"key2", 2}, {"key3", true}},
+      /* .protocol = */ "https",
+      /* .host = */ "jan.ai",
+      /* .pathParams = */ {"path1", "path2"},
+      /* .queries = */ {{"key1", "value1"}, {"key2", 2}, {"key3", true}},
   };
   auto url_str = url_parser::FromUrl(url);
 
@@ -45,9 +46,10 @@ TEST_F(UrlParserTestSuite, ConstructUrlWithQueryCorrectly) {
 
 TEST_F(UrlParserTestSuite, ConstructUrlWithEmptyPathCorrectly) {
   auto url = url_parser::Url{
-      .protocol = "https",
-      .host = "jan.ai",
-      .pathParams = {},
+      /* .protocol = */ "https",
+      /* .host = */ "jan.ai",
+      /* .pathParams = */ {},
+      /* .queries = */ {},
   };
   auto url_str = url_parser::FromUrl(url);
 
@@ -62,9 +64,10 @@ TEST_F(UrlParserTestSuite, GetProtocolAndHostCorrectly) {
 
 TEST_F(UrlParserTestSuite, GetPathAndQueryCorrectly) {
   auto url = url_parser::Url{
-      .protocol = "https",
-      .host = "jan.ai",
-      .pathParams = {"path1", "path2"},
+      /* .protocol = */ "https",
+      /* .host = */ "jan.ai",
+      /* .pathParams = */ {"path1", "path2"},
+      /* .queries = */ {},
   };
   auto path_and_query = url.GetPathAndQuery();
   EXPECT_EQ(path_and_query, "/path1/path2");

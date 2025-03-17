@@ -234,7 +234,7 @@ ModelSourceService::GetRepositoryList(std::string_view hub_author,
     return get_repo_list();
   }
 
-  const auto begin = std::chrono::high_resolution_clock::now();
+/*   const auto begin = std::chrono::high_resolution_clock::now(); */
   auto res =
       curl_utils::SimpleGet("https://huggingface.co/api/models?author=" + as);
   if (res.has_value()) {
@@ -353,16 +353,16 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
       std::string model_id =
           hub_author + ":" + model_name + ":" + sibling.rfilename;
       cortex::db::ModelEntry e = {
-          .model = model_id,
-          .author_repo_id = hub_author,
-          .branch_name = "main",
-          .path_to_model_yaml = "",
-          .model_alias = "",
-          .model_format = "hf-gguf",
-          .model_source = model_source,
-          .status = cortex::db::ModelStatus::Downloadable,
-          .engine = "llama-cpp",
-          .metadata = json_helper::DumpJsonString(meta_json)};
+          /* .model = */ model_id,
+          /* .author_repo_id = */ hub_author,
+          /* .branch_name = */ "main",
+          /* .path_to_model_yaml = */ "",
+          /* .model_alias = */ "",
+          /* .model_format = */ "hf-gguf",
+          /* .model_source = */ model_source,
+          /* .status = */ cortex::db::ModelStatus::Downloadable,
+          /* .engine = */ "llama-cpp",
+          /* .metadata = */ json_helper::DumpJsonString(meta_json)};
       if (!db_service_->HasModel(model_id)) {
         if (auto add_res = db_service_->AddModelEntry(e); add_res.has_error()) {
           CTL_INF(add_res.error());
@@ -488,9 +488,10 @@ cpp::result<std::string, std::string> ModelSourceService::AddCortexsoRepoBranch(
     const std::string& model_name, const std::string& branch,
     const std::string& metadata, const std::string& desc) {
   url_parser::Url url = {
-      .protocol = "https",
-      .host = kHuggingFaceHost,
-      .pathParams = {"api", "models", "cortexso", model_name, "tree", branch},
+      /* .protocol = */ "https",
+      /* .host = */ kHuggingFaceHost,
+      /* .pathParams = */ {"api", "models", "cortexso", model_name, "tree", branch},
+			/* .queries = */ {},
   };
 
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
@@ -516,16 +517,16 @@ cpp::result<std::string, std::string> ModelSourceService::AddCortexsoRepoBranch(
     meta_json["description"] = desc;
     std::string model_id = model_name + ":" + branch;
     cortex::db::ModelEntry e = {
-        .model = model_id,
-        .author_repo_id = author,
-        .branch_name = branch,
-        .path_to_model_yaml = "",
-        .model_alias = "",
-        .model_format = "cortexso",
-        .model_source = model_source,
-        .status = cortex::db::ModelStatus::Downloadable,
-        .engine = "llama-cpp",
-        .metadata = json_helper::DumpJsonString(meta_json)};
+        /* .model = */ model_id,
+        /* .author_repo_id = */ author,
+        /* .branch_name = */ branch,
+        /* .path_to_model_yaml = */ "",
+        /* .model_alias = */ "",
+        /* .model_format = */ "cortexso",
+        /* .model_source = */ model_source,
+        /* .status = */ cortex::db::ModelStatus::Downloadable,
+        /* .engine = */ "llama-cpp",
+        /* .metadata = */ json_helper::DumpJsonString(meta_json)};
     if (!db_service_->HasModel(model_id)) {
       CTL_INF("Adding model to db: " << model_name << ":" << branch);
       if (auto res = db_service_->AddModelEntry(e);

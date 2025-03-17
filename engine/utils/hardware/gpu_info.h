@@ -21,8 +21,8 @@ inline std::vector<GPU> GetGPUInfo() {
         vulkan_gpus[j].version =
             nvidia_gpus[0].cuda_driver_version.value_or("unknown");
         vulkan_gpus[j].add_info = NvidiaAddInfo{
-            .driver_version = nvidia_gpus[i].driver_version.value_or("unknown"),
-            .compute_cap = nvidia_gpus[i].compute_cap.value_or("unknown")};
+            nvidia_gpus[i].driver_version.value_or("unknown"), //driver_version
+            nvidia_gpus[i].compute_cap.value_or("unknown")}; //compute_cap
         vulkan_gpus[j].free_vram = std::stoll(nvidia_gpus[i].vram_free);
         vulkan_gpus[j].total_vram = std::stoll(nvidia_gpus[i].vram_total);
         vulkan_gpus[j].vendor = nvidia_gpus[i].vendor;        
@@ -45,18 +45,22 @@ inline std::vector<GPU> GetGPUInfo() {
     std::vector<GPU> res;
     for (auto& n : nvidia_gpus) {
       res.emplace_back(
-          GPU{.id = n.id,
-              .name = n.name,
-              .version = nvidia_gpus[0].cuda_driver_version.value_or("unknown"),
-              .add_info =
-                  NvidiaAddInfo{
-                      .driver_version = n.driver_version.value_or("unknown"),
-                      .compute_cap = n.compute_cap.value_or("unknown")},
-              .free_vram = std::stoi(n.vram_free),
-              .total_vram = std::stoi(n.vram_total),
-              .uuid = n.uuid,
-              .vendor = n.vendor,
-              .gpu_type = GpuType::kGpuTypeDiscrete});
+        GPU{
+            n.id,                                                     // id
+            0,                                                        // device_id (not specified in original)
+            n.name,                                                   // name
+            nvidia_gpus[0].cuda_driver_version.value_or("unknown"),   // version
+            NvidiaAddInfo{                                            // add_info
+                n.driver_version.value_or("unknown"),                 // driver_version
+                n.compute_cap.value_or("unknown")                     // compute_cap
+            },
+            std::stoi(n.vram_free),                                   // free_vram
+            std::stoi(n.vram_total),                                  // total_vram
+            n.uuid,                                                   // uuid
+            true,                                                     // is_activated (default value)
+            n.vendor,                                                 // vendor
+            GpuType::kGpuTypeDiscrete                                 // gpu_type
+        });
     }
     return res;
   }

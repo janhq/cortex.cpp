@@ -188,11 +188,11 @@ struct CpuInfo {
     auto cpu = res[0];
     cortex::cpuid::CpuInfo inst;
     auto usage = static_cast<float>(GetCPUUsage());
-    return CPU{.cores = cpu.numPhysicalCores(),
-               .arch = std::string(GetArch()),
-               .model = cpu.modelName(),
-               .usage = usage,
-               .instructions = inst.instructions()};
+    return CPU{cpu.numPhysicalCores(),
+               std::string(GetArch()),
+               cpu.modelName(),
+               usage,
+               inst.instructions()};
   }
 };
 }  // namespace cortex::hw

@@ -265,6 +265,7 @@ cpp::result<bool, std::string> DownloadService::Download(
 
   fclose(file);
   curl_easy_cleanup(curl);
+  (void) download_id;
   return true;
 }
 
@@ -325,7 +326,7 @@ void DownloadService::Shutdown() {
 }
 
 void DownloadService::WorkerThread(int worker_id) {
-  auto& worker_data = worker_data_[worker_id];
+  // auto& worker_data = worker_data_[worker_id];
 
   while (!stop_flag_) {
     std::unique_lock<std::mutex> lock(task_mutex_);
@@ -383,9 +384,9 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
       return;
     }
     auto dl_data_ptr = std::make_shared<DownloadingData>(DownloadingData{
-        .task_id = task.id,
-        .item_id = item.id,
-        .download_service = this,
+        task.id,
+        item.id,
+        this,
     });
     worker_data->downloading_data_map[item.id] = dl_data_ptr;
 
@@ -438,9 +439,9 @@ cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
     auto result = ProcessCompletedTransfers(multi_handle);
     if (result.has_error()) {
       return cpp::fail(ProcessDownloadFailed{
-          .message = result.error(),
-          .task_id = task.id,
-          .type = DownloadEventType::DownloadError,
+          result.error(),
+          task.id,
+          DownloadEventType::DownloadError,
       });
     }
 
@@ -448,12 +449,13 @@ cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
       CTL_INF("IsTaskTerminated " + std::to_string(IsTaskTerminated(task.id)));
       CTL_INF("stop_flag_ " + std::to_string(stop_flag_));
       return cpp::fail(ProcessDownloadFailed{
-          .message = result.error(),
-          .task_id = task.id,
-          .type = DownloadEventType::DownloadStopped,
+          result.error(),
+          task.id,
+          DownloadEventType::DownloadStopped,
       });
     }
   } while (still_running);
+  (void) handles;
   return {};
 }
 
@@ -510,16 +512,16 @@ void DownloadService::RemoveTaskFromStopList(const std::string& task_id) {
 void DownloadService::EmitTaskStarted(const DownloadTask& task) {
   event_queue_->enqueue(
       EventType::DownloadEvent,
-      DownloadEvent{.type_ = DownloadEventType::DownloadStarted,
-                    .download_task_ = task});
+      DownloadEvent{{}, DownloadEventType::DownloadStarted,
+                    task});
 }
 
 void DownloadService::EmitTaskStopped(const std::string& task_id) {
   if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
     event_queue_->enqueue(
         EventType::DownloadEvent,
-        DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
-                      .download_task_ = *it->second});
+        DownloadEvent{{}, DownloadEventType::DownloadStopped,
+                      *it->second});
   }
 }
 
@@ -527,8 +529,8 @@ void DownloadService::EmitTaskError(const std::string& task_id) {
   if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
     event_queue_->enqueue(
         EventType::DownloadEvent,
-        DownloadEvent{.type_ = DownloadEventType::DownloadError,
-                      .download_task_ = *it->second});
+        DownloadEvent{{}, DownloadEventType::DownloadError,
+                      *it->second});
   }
 }
 
@@ -540,8 +542,8 @@ void DownloadService::EmitTaskCompleted(const std::string& task_id) {
     }
     event_queue_->enqueue(
         EventType::DownloadEvent,
-        DownloadEvent{.type_ = DownloadEventType::DownloadSuccess,
-                      .download_task_ = *it->second});
+        DownloadEvent{{}, DownloadEventType::DownloadSuccess,
+                      *it->second});
   }
 }
 
