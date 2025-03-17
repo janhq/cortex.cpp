@@ -80,7 +80,7 @@ inline std::optional<std::string> PrintModelSelection(
   // deal with out of range numeric values
   std::optional<int> numeric_value = GetNumericValue(selection);
   
-  if (!numeric_value.has_value() || (u_int64_t) numeric_value.value() > availables.size() || numeric_value.value() < 1) {
+  if (!numeric_value.has_value() || (unsigned) numeric_value.value() > availables.size() || numeric_value.value() < 1) {
     return std::nullopt;
   }
 
@@ -107,7 +107,7 @@ inline std::optional<std::string> PrintSelection(
   
   // deal with out of range numeric values
   std::optional<int> numeric_value = GetNumericValue(selection);
-  if (!numeric_value.has_value() ||(u_int64_t) numeric_value.value() > options.size() || numeric_value.value() < 1) {
+  if (!numeric_value.has_value() ||(unsigned) numeric_value.value() > options.size() || numeric_value.value() < 1) {
     return std::nullopt;
   }
 
