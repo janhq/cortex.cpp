@@ -53,8 +53,8 @@ cpp::result<void, std::string> VllmEngine::Download(
   std::filesystem::create_directories(vllm_path);
   const auto vllm_path_str = vllm_path.string();
 
-  {
-    // initialize venv
+  // initialize venv
+  if (!std::filesystem::exists(vllm_path / ".venv")) {
     std::vector<std::string> cmd =
         python_utils::BuildUvCommand("venv", vllm_path_str);
     auto result = cortex::process::SpawnProcess(cmd);
@@ -65,8 +65,9 @@ cpp::result<void, std::string> VllmEngine::Download(
     // NOTE: these are not async
     cortex::process::WaitProcess(result.value());
   }
+
+  // install vLLM
   {
-    // install vLLM
     std::vector<std::string> cmd =
         python_utils::BuildUvCommand("pip", vllm_path_str);
     cmd.push_back("install");
@@ -90,15 +91,19 @@ void VllmEngine::Unload(EngineUnloadOption opts) {};
 void VllmEngine::HandleChatCompletion(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
+
 void VllmEngine::HandleEmbedding(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
+
 void VllmEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
+
 void VllmEngine::UnloadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
+
 void VllmEngine::GetModelStatus(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
@@ -124,9 +129,11 @@ void VllmEngine::StopInferencing(const std::string& model_id) {};
 Json::Value VllmEngine::GetRemoteModels() {
   return Json::Value{};
 };
+
 void VllmEngine::HandleRouteRequest(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
+
 void VllmEngine::HandleInference(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};

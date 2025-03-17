@@ -44,12 +44,16 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     dp.Connect(host_, port_);
     bool need_cuda_download = NeedCudaDownload(engine);
     // engine can be small, so need to start ws first
-    auto dp_res = std::async(std::launch::deferred, [&dp, need_cuda_download] {
-      if (need_cuda_download) {
+    auto dp_res = std::async(std::launch::deferred, [&dp, need_cuda_download, engine] {
+      // if (need_cuda_download) {
+      //   return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
+      // } else {
+      //   return dp.Handle({DownloadType::Engine});
+      // }
+      if (engine == kLlamaRepo)
         return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
-      } else {
-        return dp.Handle({DownloadType::Engine});
-      }
+      else
+        return dp.Handle({});
     });
 
     auto releases_url = url_parser::Url{
@@ -156,12 +160,16 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   dp.Connect(host_, port_);
   bool need_cuda_download = NeedCudaDownload(engine);
   // engine can be small, so need to start ws first
-  auto dp_res = std::async(std::launch::deferred, [&dp, need_cuda_download] {
-    if (need_cuda_download) {
+  auto dp_res = std::async(std::launch::deferred, [&dp, need_cuda_download, engine] {
+    // if (need_cuda_download) {
+    //   return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
+    // } else {
+    //   return dp.Handle({DownloadType::Engine});
+    // }
+    if (engine == kLlamaRepo)
       return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
-    } else {
-      return dp.Handle({DownloadType::Engine});
-    }
+    else
+      return dp.Handle({});
   });
 
   auto install_url = url_parser::Url{
