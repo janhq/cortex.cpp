@@ -487,7 +487,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       DownloadTask{/* .id = */ "cortex",
                    /* .status = */ DownloadTask::Status::Pending,
                    /* .type = */ DownloadType::Cortex,
-                   ./* items = */ {DownloadItem{
+                   /* .items = */ {DownloadItem{
                        /* .id = */ "cortex",
                        /* .downloadUrl = */ url_parser::FromUrl(url_obj),
                        /* .localPath = */ localPath,
