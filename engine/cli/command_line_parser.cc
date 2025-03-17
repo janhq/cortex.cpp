@@ -51,9 +51,7 @@ CommandLineParser::CommandLineParser()
       dylib_path_manager_{std::make_shared<cortex::DylibPathManager>()},
       db_service_{std::make_shared<DatabaseService>()},
       engine_service_{std::make_shared<EngineService>(
-          download_service_, dylib_path_manager_, db_service_)} {
-  supported_engines_ = engine_service_->GetSupportedEngineNames().value();
-}
+          download_service_, dylib_path_manager_, db_service_)} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   app_.usage("Usage:\n" + commands::GetCortexBinary() +
@@ -482,104 +480,141 @@ void CommandLineParser::SetupEngineCommands() {
   install_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                      " engines install [engine_name] [options]");
   install_cmd->group(kSubcommands);
+  install_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
+  install_cmd->add_option("-v, --version", cml_data_.engine_version,
+                          "Engine version to download");
+  install_cmd->add_option("-s, --source", cml_data_.engine_src,
+                          "Install engine by local path");
+  install_cmd->add_flag("-m, --menu", cml_data_.show_menu,
+                        "Display menu for engine variant selection");
+
   install_cmd->callback([this, install_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (install_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(install_cmd->help());
+    try {
+      commands::EngineInstallCmd(
+          engine_service_, cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.show_menu)
+          .Exec(cml_data_.engine_name, cml_data_.engine_version,
+                cml_data_.engine_src);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
     }
   });
-
-  for (const auto& engine : supported_engines_) {
-    EngineInstall(install_cmd, engine, cml_data_.engine_version,
-                  cml_data_.engine_src);
-  }
 
   auto uninstall_cmd =
       engines_cmd->add_subcommand("uninstall", "Uninstall engine");
   uninstall_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                        " engines uninstall [engine_name] [options]");
+  uninstall_cmd->group(kSubcommands);
+  uninstall_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
   uninstall_cmd->callback([this, uninstall_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (uninstall_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(uninstall_cmd->help());
+    try {
+      commands::EngineUninstallCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.engine_name);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
     }
   });
-  uninstall_cmd->group(kSubcommands);
-  for (const auto& engine : supported_engines_) {
-    EngineUninstall(uninstall_cmd, engine);
-  }
 
   auto engine_upd_cmd = engines_cmd->add_subcommand("update", "Update engine");
   engine_upd_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                         " engines update [engine_name]");
+  engine_upd_cmd->group(kSubcommands);
+  engine_upd_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
   engine_upd_cmd->callback([this, engine_upd_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (engine_upd_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(engine_upd_cmd->help());
+    try {
+      commands::EngineUpdateCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.engine_name);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
     }
   });
-  engine_upd_cmd->group(kSubcommands);
-  for (const auto& engine : supported_engines_) {
-    EngineUpdate(engine_upd_cmd, engine);
-  }
 
   auto engine_use_cmd =
       engines_cmd->add_subcommand("use", "Set engine as default");
   engine_use_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                         " engines use [engine_name]");
+  engine_use_cmd->group(kSubcommands);
+  engine_use_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
   engine_use_cmd->callback([this, engine_use_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (engine_use_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(engine_use_cmd->help());
+    auto result = commands::EngineUseCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.engine_name);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
+    } else {
+      CTL_INF("Engine " << cml_data_.engine_name << " is set as default");
     }
   });
-  engine_use_cmd->group(kSubcommands);
-  for (const auto& engine : supported_engines_) {
-    EngineUse(engine_use_cmd, engine);
-  }
 
   auto engine_load_cmd = engines_cmd->add_subcommand("load", "Load engine");
   engine_load_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                          " engines load [engine_name]");
+  engine_load_cmd->group(kSubcommands);
+  engine_load_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
   engine_load_cmd->callback([this, engine_load_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (engine_load_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(engine_load_cmd->help());
+    auto result = commands::EngineLoadCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.engine_name);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
     }
   });
-  engine_load_cmd->group(kSubcommands);
-  for (const auto& engine : supported_engines_) {
-    EngineLoad(engine_load_cmd, engine);
-  }
 
   auto engine_unload_cmd =
       engines_cmd->add_subcommand("unload", "Unload engine");
   engine_unload_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                            " engines unload [engine_name]");
+  engine_unload_cmd->group(kSubcommands);
+  engine_unload_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
   engine_unload_cmd->callback([this, engine_unload_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (engine_unload_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(engine_unload_cmd->help());
+    auto result = commands::EngineUnloadCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.engine_name);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
     }
   });
-  engine_unload_cmd->group(kSubcommands);
-  for (const auto& engine : supported_engines_) {
-    EngineUnload(engine_unload_cmd, engine);
-  }
 
-  EngineGet(engines_cmd);
+  auto engine_get_cmd = engines_cmd->add_subcommand("get", "Get engine info");
+  engine_get_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                        " engines get [engine_name] [options]");
+  engine_get_cmd->group(kSubcommands);
+  engine_get_cmd
+      ->add_option("name", cml_data_.engine_name, "Engine name e.g. llama-cpp")
+      ->required();
+  engine_get_cmd->callback([this, engine_get_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    commands::EngineGetCmd().Exec(cml_data_.config.apiServerHost,
+                                  std::stoi(cml_data_.config.apiServerPort),
+                                  cml_data_.engine_name);
+  });
 }
 
 void CommandLineParser::SetupHardwareCommands() {
@@ -735,167 +770,6 @@ void CommandLineParser::SetupSystemCommands() {
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
   });
-}
-
-void CommandLineParser::EngineInstall(CLI::App* parent,
-                                      const std::string& engine_name,
-                                      std::string& version, std::string& src) {
-  auto install_engine_cmd = parent->add_subcommand(engine_name, "");
-  install_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                            " engines install " + engine_name + " [options]");
-  install_engine_cmd->group(kEngineGroup);
-
-  install_engine_cmd->add_option("-v, --version", version,
-                                 "Engine version to download");
-
-  install_engine_cmd->add_option("-s, --source", src,
-                                 "Install engine by local path");
-
-  install_engine_cmd->add_flag("-m, --menu", cml_data_.show_menu,
-                               "Display menu for engine variant selection");
-
-  install_engine_cmd->callback([this, engine_name, &version, &src] {
-    if (std::exchange(executed_, true))
-      return;
-    try {
-      commands::EngineInstallCmd(
-          engine_service_, cml_data_.config.apiServerHost,
-          std::stoi(cml_data_.config.apiServerPort), cml_data_.show_menu)
-          .Exec(engine_name, version, src);
-    } catch (const std::exception& e) {
-      CTL_ERR(e.what());
-    }
-  });
-}
-
-void CommandLineParser::EngineUninstall(CLI::App* parent,
-                                        const std::string& engine_name) {
-  auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
-  uninstall_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                              " engines install " + engine_name + " [options]");
-  uninstall_engine_cmd->group(kEngineGroup);
-
-  uninstall_engine_cmd->callback([this, engine_name] {
-    if (std::exchange(executed_, true))
-      return;
-    try {
-      commands::EngineUninstallCmd().Exec(
-          cml_data_.config.apiServerHost,
-          std::stoi(cml_data_.config.apiServerPort), engine_name);
-    } catch (const std::exception& e) {
-      CTL_ERR(e.what());
-    }
-  });
-}
-
-void CommandLineParser::EngineUpdate(CLI::App* parent,
-                                     const std::string& engine_name) {
-  auto engine_update_cmd = parent->add_subcommand(engine_name, "");
-  engine_update_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                           " engines update " + engine_name);
-  engine_update_cmd->group(kEngineGroup);
-
-  engine_update_cmd->callback([this, engine_name] {
-    if (std::exchange(executed_, true))
-      return;
-    try {
-      commands::EngineUpdateCmd().Exec(
-          cml_data_.config.apiServerHost,
-          std::stoi(cml_data_.config.apiServerPort), engine_name);
-    } catch (const std::exception& e) {
-      CTL_ERR(e.what());
-    }
-  });
-}
-
-void CommandLineParser::EngineUnload(CLI::App* parent,
-                                     const std::string& engine_name) {
-  auto sub_cmd = parent->add_subcommand(engine_name, "");
-  sub_cmd->usage("Usage:\n" + commands::GetCortexBinary() + " engines unload " +
-                 engine_name);
-  sub_cmd->group(kEngineGroup);
-
-  sub_cmd->callback([this, engine_name] {
-    if (std::exchange(executed_, true))
-      return;
-    auto result = commands::EngineUnloadCmd().Exec(
-        cml_data_.config.apiServerHost,
-        std::stoi(cml_data_.config.apiServerPort), engine_name);
-    if (result.has_error()) {
-      CTL_ERR(result.error());
-    }
-  });
-}
-
-void CommandLineParser::EngineLoad(CLI::App* parent,
-                                   const std::string& engine_name) {
-  auto sub_cmd = parent->add_subcommand(engine_name, "");
-  sub_cmd->usage("Usage:\n" + commands::GetCortexBinary() + " engines load " +
-                 engine_name);
-  sub_cmd->group(kEngineGroup);
-
-  sub_cmd->callback([this, engine_name] {
-    if (std::exchange(executed_, true))
-      return;
-    auto result = commands::EngineLoadCmd().Exec(
-        cml_data_.config.apiServerHost,
-        std::stoi(cml_data_.config.apiServerPort), engine_name);
-    if (result.has_error()) {
-      CTL_ERR(result.error());
-    }
-  });
-}
-
-void CommandLineParser::EngineUse(CLI::App* parent,
-                                  const std::string& engine_name) {
-  auto engine_use_cmd = parent->add_subcommand(engine_name, "");
-  engine_use_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                        " engines use " + engine_name);
-  engine_use_cmd->group(kEngineGroup);
-
-  engine_use_cmd->callback([this, engine_name] {
-    if (std::exchange(executed_, true))
-      return;
-    auto result = commands::EngineUseCmd().Exec(
-        cml_data_.config.apiServerHost,
-        std::stoi(cml_data_.config.apiServerPort), engine_name);
-    if (result.has_error()) {
-      CTL_ERR(result.error());
-    } else {
-      CTL_INF("Engine " << engine_name << " is set as default");
-    }
-  });
-}
-
-void CommandLineParser::EngineGet(CLI::App* parent) {
-  auto get_cmd = parent->add_subcommand("get", "Get engine info");
-  get_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                 " engines get [engine_name] [options]");
-  get_cmd->group(kSubcommands);
-  get_cmd->callback([this, get_cmd] {
-    if (std::exchange(executed_, true))
-      return;
-    if (get_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(get_cmd->help());
-    }
-  });
-
-  for (const auto& engine : supported_engines_) {
-    std::string desc = "Get " + engine + " status";
-
-    auto engine_get_cmd = get_cmd->add_subcommand(engine, desc);
-    engine_get_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                          " engines get " + engine + " [options]");
-    engine_get_cmd->group(kEngineGroup);
-    engine_get_cmd->callback([this, engine] {
-      if (std::exchange(executed_, true))
-        return;
-      commands::EngineGetCmd().Exec(cml_data_.config.apiServerHost,
-                                    std::stoi(cml_data_.config.apiServerPort),
-                                    engine);
-    });
-  }
 }
 
 void CommandLineParser::ModelUpdate(CLI::App* parent) {
