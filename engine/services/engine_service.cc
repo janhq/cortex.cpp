@@ -474,8 +474,8 @@ cpp::result<std::vector<EngineService::EngineRelease>, std::string>
 EngineService::GetEngineReleases(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
   auto ggml_org = github_release_utils::GetReleases("ggml-org", ne);
-  auto janhq = github_release_utils::GetReleases("janhq", ne);
-  if (ggml_org.has_error() && janhq.has_error()) {
+  auto menlo = github_release_utils::GetReleases("menloresearch", ne);
+  if (ggml_org.has_error() && menlo.has_error()) {
     return cpp::fail(ggml_org.error());
   }
   auto comparator = [](const EngineService::EngineRelease& e1,
@@ -487,8 +487,8 @@ EngineService::GetEngineReleases(const std::string& engine) const {
     s.insert(ggml_org.value().begin(), ggml_org.value().end());
   }
 
-  if (janhq.has_value()) {
-    s.insert(janhq.value().begin(), janhq.value().end());
+  if (menlo.has_value()) {
+    s.insert(menlo.value().begin(), menlo.value().end());
   }
   std::vector<EngineService::EngineRelease> res;
   std::copy(s.begin(), s.end(), std::back_inserter(res));
@@ -500,17 +500,17 @@ EngineService::GetEngineVariants(const std::string& engine,
                                  const std::string& version,
                                  bool filter_compatible_only) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  auto engine_release_janhq =
-      github_release_utils::GetReleaseByVersion("janhq", ne, version);
+  auto engine_release_menlo =
+      github_release_utils::GetReleaseByVersion("menloresearch", ne, version);
   auto engine_release_ggml =
       github_release_utils::GetReleaseByVersion("ggml-org", ne, version);
 
-  if (engine_release_janhq.has_error() && engine_release_ggml.has_error()) {
+  if (engine_release_menlo.has_error() && engine_release_ggml.has_error()) {
     return cpp::fail("Failed to get engine release: " +
-                     engine_release_janhq.error());
+      engine_release_menlo.error());
   }
-  if (engine_release_janhq.has_error()) {
-    CTL_WRN("Failed to get engine release: " << engine_release_janhq.error());
+  if (engine_release_menlo.has_error()) {
+    CTL_WRN("Failed to get engine release: " << engine_release_menlo.error());
   }
 
   if (engine_release_ggml.has_error()) {
@@ -519,10 +519,10 @@ EngineService::GetEngineVariants(const std::string& engine,
 
   std::vector<EngineVariant> compatible_variants;
   std::vector<github_release_utils::GitHubAsset> assets;
-  if (engine_release_janhq.has_value()) {
+  if (engine_release_menlo.has_value()) {
     assets.insert(std::end(assets),
-                  std::begin(engine_release_janhq.value().assets),
-                  std::end(engine_release_janhq.value().assets));
+                  std::begin(engine_release_menlo.value().assets),
+                  std::end(engine_release_menlo.value().assets));
   }
   if (engine_release_ggml.has_value()) {
     assets.insert(std::end(assets),
@@ -906,7 +906,8 @@ std::vector<EngineV> EngineService::GetLoadedEngines() {
 cpp::result<github_release_utils::GitHubRelease, std::string>
 EngineService::GetLatestEngineVersion(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  auto res = github_release_utils::GetReleaseByVersion("janhq", ne, "latest");
+  auto res =
+      github_release_utils::GetReleaseByVersion("menloresearch", ne, "latest");
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine " + engine + " latest version!");
   }

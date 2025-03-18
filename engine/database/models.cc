@@ -310,7 +310,8 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::GetModelSources()
         "SELECT model_id, author_repo_id, branch_name, "
         "path_to_model_yaml, model_alias, model_format, "
         "model_source, status, engine, metadata FROM models "
-        "WHERE model_source != \"\" AND (status = \"downloaded\" OR status = "
+        "WHERE model_source != \"\" AND model_source != \"imported\" AND "
+        "(status = \"downloaded\" OR status = "
         "\"downloadable\")");
     while (query.executeStep()) {
       ModelEntry entry;

@@ -289,8 +289,8 @@ jobs:
         run: |
           mkdir -p engine/templates/macos/Scripts/dependencies
           cd engine/templates/macos/Scripts/dependencies
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-mac-arm64.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-mac-amd64.tar.gz
+          wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-mac-arm64.tar.gz
+          wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-mac-amd64.tar.gz
 
           cd ../../
           chmod +x create_pkg_local.sh

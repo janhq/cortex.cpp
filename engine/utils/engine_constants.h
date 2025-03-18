@@ -3,10 +3,6 @@
 constexpr const auto kLlamaEngine = "llama-cpp";
 constexpr const auto kPythonEngine = "python-engine";
 
-constexpr const auto kOpenAiEngine = "openai";
-constexpr const auto kAnthropicEngine = "anthropic";
-
-
 constexpr const auto kRemote = "remote";
 constexpr const auto kLocal = "local";
 
