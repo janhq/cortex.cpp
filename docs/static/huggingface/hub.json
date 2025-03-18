@@ -11,7 +11,7 @@
     {
       "url": "https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
       "author": "Mistral AI",
-      "logo": "https://raw.githubusercontent.com/janhq/cortex-web/main/static/img/logos/mistral.svg",
+      "logo": "https://raw.githubusercontent.com/menloresearch/cortex-web/main/static/img/logos/mistral.svg",
       "model_name": "Mistral 7B Instruct v0.3 Q4_K_M GGUF",
       "note": "Small + Chat"
     },

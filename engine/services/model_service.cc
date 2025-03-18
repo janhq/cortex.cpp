@@ -155,8 +155,8 @@ ModelService::ModelService(std::shared_ptr<DatabaseService> db_service,
       inference_svc_(inference_service),
       engine_svc_(engine_svc),
       task_queue_(task_queue) {
-  ProcessBgrTasks();
-};
+        // ProcessBgrTasks();
+      };
 
 void ModelService::ForceIndexingModelList() {
   CTL_INF("Force indexing model list");
@@ -320,10 +320,6 @@ ModelService::EstimateModel(const std::string& model_handle,
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    auto file_path = fmu::ToAbsoluteCortexDataPath(
-                         fs::path(model_entry.value().path_to_model_yaml))
-                         .parent_path() /
-                     "model.gguf";
     yaml_handler.ModelConfigFromFile(
         fmu::ToAbsoluteCortexDataPath(
             fs::path(model_entry.value().path_to_model_yaml))
@@ -340,13 +336,14 @@ ModelService::EstimateModel(const std::string& model_handle,
     free_vram_MiB = hw_info.ram.available_MiB;
 #endif
 
-    return hardware::EstimateLLaMACppRun(file_path.string(),
-                                         {.ngl = mc.ngl,
-                                          .ctx_len = mc.ctx_len,
-                                          .n_batch = n_batch,
-                                          .n_ubatch = n_ubatch,
-                                          .kv_cache_type = kv_cache,
-                                          .free_vram_MiB = free_vram_MiB});
+    return hardware::EstimateLLaMACppRun(
+        fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string(),
+        {.ngl = mc.ngl,
+         .ctx_len = mc.ctx_len,
+         .n_batch = n_batch,
+         .n_ubatch = n_ubatch,
+         .kv_cache_type = kv_cache,
+         .free_vram_MiB = free_vram_MiB});
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
@@ -528,12 +525,17 @@ cpp::result<void, std::string> ModelService::DeleteModel(
         fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     auto mc = yaml_handler.GetModelConfig();
-    // Remove yaml files
-    for (const auto& entry :
-         std::filesystem::directory_iterator(yaml_fp.parent_path())) {
-      if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
-        std::filesystem::remove(entry);
-        CTL_INF("Removed: " << entry.path().string());
+    if (engine_svc_->IsRemoteEngine(mc.engine)) {
+      std::filesystem::remove(yaml_fp);
+      CTL_INF("Removed: " << yaml_fp.string());
+    } else {
+      // Remove yaml files
+      for (const auto& entry :
+           std::filesystem::directory_iterator(yaml_fp.parent_path())) {
+        if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
+          std::filesystem::remove(entry);
+          CTL_INF("Removed: " << entry.path().string());
+        }
       }
     }
 
@@ -718,10 +720,20 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};
       }
+      if (!mc.mmproj.empty()) {
+#if defined(_WIN32)
+        json_data["mmproj"] = cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).wstring());
+#else
+        json_data["mmproj"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).string();
+#endif
+      }
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
       json_data["ctx_len"] = std::min(kDefautlContextLength, mc.ctx_len);
+      json_data["max_tokens"] = std::min(kDefautlContextLength, mc.ctx_len);
       max_model_context_length = mc.ctx_len;
     } else {
       bypass_stop_check_set_.insert(model_handle);
@@ -746,6 +758,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     if (ctx_len) {
       json_data["ctx_len"] =
           std::min(ctx_len.value(), max_model_context_length);
+      json_data["max_tokens"] =
+          std::min(ctx_len.value(), max_model_context_length);
     }
     CTL_INF(json_data.toStyledString());
     auto may_fallback_res = MayFallbackToCpu(json_data["model_path"].asString(),
@@ -764,16 +778,18 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     auto data = std::get<1>(ir);
 
     if (status == drogon::k200OK) {
-      // start model successfully, we store the metadata so we can use
+      // start model successfully, in case not vision model, we store the metadata so we can use
       // for each inference
-      auto metadata_res = GetModelMetadata(model_handle);
-      if (metadata_res.has_value()) {
-        loaded_model_metadata_map_.emplace(model_handle,
-                                           std::move(metadata_res.value()));
-        CTL_INF("Successfully stored metadata for model " << model_handle);
-      } else {
-        CTL_WRN("Failed to get metadata for model " << model_handle << ": "
-                                                    << metadata_res.error());
+      if (!json_data.isMember("mmproj") || json_data["mmproj"].isNull()) {
+        auto metadata_res = GetModelMetadata(model_handle);
+        if (metadata_res.has_value()) {
+          loaded_model_metadata_map_.emplace(model_handle,
+                                             std::move(metadata_res.value()));
+          CTL_INF("Successfully stored metadata for model " << model_handle);
+        } else {
+          CTL_WRN("Failed to get metadata for model " << model_handle << ": "
+                                                      << metadata_res.error());
+        }
       }
 
       return StartModelResult{.success = true,
@@ -1208,5 +1224,5 @@ void ModelService::ProcessBgrTasks() {
 
   auto clone = cb;
   task_queue_.RunInQueue(std::move(cb));
-  task_queue_.RunEvery(std::chrono::seconds(10), std::move(clone));
+  task_queue_.RunEvery(std::chrono::seconds(60), std::move(clone));
 }

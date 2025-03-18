@@ -2,12 +2,12 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <iostream>
 #include <regex>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <filesystem>
 
 #ifdef _WIN32
 #include <io.h>
@@ -70,7 +70,7 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
 
 #else
   file_size_ = std::filesystem::file_size(file_path);
- 
+
   int file_descriptor = open(file_path.c_str(), O_RDONLY);
   // Memory-map the file
   data_ = static_cast<uint8_t*>(
@@ -105,7 +105,8 @@ std::pair<std::size_t, std::string> GGUFHandler::ReadString(
   std::memcpy(&length, data_ + offset, sizeof(uint64_t));
 
   if (offset + 8 + length > file_size_) {
-    throw std::runtime_error("GGUF metadata string length exceeds file size.\n");
+    throw std::runtime_error(
+        "GGUF metadata string length exceeds file size.\n");
   }
 
   std::string value(reinterpret_cast<const char*>(data_ + offset + 8), length);
@@ -578,9 +579,8 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.model = name;
   model_config_.id = name;
   model_config_.version = std::to_string(version);
-  model_config_.max_tokens =
-      std::min<int>(kDefaultMaxContextLength, max_tokens);
-  model_config_.ctx_len = std::min<int>(kDefaultMaxContextLength, max_tokens);
+  model_config_.max_tokens = max_tokens;
+  model_config_.ctx_len = max_tokens;
   model_config_.ngl = ngl;
 }
 

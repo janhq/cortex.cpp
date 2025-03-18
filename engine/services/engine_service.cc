@@ -18,11 +18,11 @@
 #include "utils/file_manager_utils.h"
 #include "utils/github_release_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/normalize_engine.h"
 #include "utils/result.hpp"
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
-#include "utils/normalize_engine.h"
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -436,7 +436,7 @@ std::string EngineService::GetMatchedVariant(
 cpp::result<std::vector<EngineService::EngineRelease>, std::string>
 EngineService::GetEngineReleases(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  return github_release_utils::GetReleases("janhq", ne);
+  return github_release_utils::GetReleases("menloresearch", ne);
 }
 
 cpp::result<std::vector<EngineService::EngineVariant>, std::string>
@@ -445,7 +445,7 @@ EngineService::GetEngineVariants(const std::string& engine,
                                  bool filter_compatible_only) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
   auto engine_release =
-      github_release_utils::GetReleaseByVersion("janhq", ne, version);
+      github_release_utils::GetReleaseByVersion("menloresearch", ne, version);
 
   if (engine_release.has_error()) {
     return cpp::fail("Failed to get engine release: " + engine_release.error());
@@ -884,7 +884,8 @@ std::vector<EngineV> EngineService::GetLoadedEngines() {
 cpp::result<github_release_utils::GitHubRelease, std::string>
 EngineService::GetLatestEngineVersion(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  auto res = github_release_utils::GetReleaseByVersion("janhq", ne, "latest");
+  auto res =
+      github_release_utils::GetReleaseByVersion("menloresearch", ne, "latest");
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine " + engine + " latest version!");
   }

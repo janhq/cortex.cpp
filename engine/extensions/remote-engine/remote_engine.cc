@@ -30,11 +30,16 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   Json::Value check_error;
   Json::Reader reader;
   context->chunks += chunk;
-  if (reader.parse(context->chunks, check_error) ||
-      (reader.parse(chunk, check_error) &&
-       chunk.find("error") != std::string::npos)) {
+
+  long http_code = k200OK;
+  if (context->curl) {
+    curl_easy_getinfo(context->curl, CURLINFO_RESPONSE_CODE, &http_code);
+  }
+  if (http_code != k200OK && (reader.parse(context->chunks, check_error) ||
+                              (chunk.find("error") != std::string::npos &&
+                               reader.parse(chunk, check_error)))) {
     CTL_WRN(context->chunks);
-    CTL_WRN(chunk);
+    CTL_WRN("http code: " << http_code << " - " << chunk);
     CTL_INF("Request: " << context->last_request);
     Json::Value status;
     status["is_done"] = true;
@@ -116,11 +121,6 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   }
 
   std::string full_url = chat_url_;
-
-  if (config.transform_req["chat_completions"]["url"]) {
-    full_url =
-        config.transform_req["chat_completions"]["url"].as<std::string>();
-  }
   CTL_DBG("full_url: " << full_url);
 
   struct curl_slist* headers = nullptr;
@@ -134,12 +134,6 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   headers = curl_slist_append(headers, "Connection: keep-alive");
 
   std::string stream_template = chat_res_template_;
-  if (config.transform_resp["chat_completions"] &&
-      config.transform_resp["chat_completions"]["template"]) {
-    // Model level overrides engine level
-    stream_template =
-        config.transform_resp["chat_completions"]["template"].as<std::string>();
-  }
 
   StreamContext context{
       std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
@@ -150,7 +144,9 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
       renderer_,
       stream_template,
       true,
-      body};
+      body,
+      "",
+      curl};
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -256,11 +252,14 @@ CurlResponse RemoteEngine::MakeGetModelsRequest(
     return response;
   }
 
-  std::string api_key_header =
-      ReplaceApiKeyPlaceholder(header_template, api_key);
+  std::unordered_map<std::string, std::string> replacements = {
+      {"api_key", api_key}};
+  auto hs = ReplaceHeaderPlaceholders(header_template, replacements);
 
   struct curl_slist* headers = nullptr;
-  headers = curl_slist_append(headers, api_key_header.c_str());
+  for (auto const& h : hs) {
+    headers = curl_slist_append(headers, h.c_str());
+  }
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -295,11 +294,6 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
     return response;
   }
   std::string full_url = chat_url_;
-
-  if (config.transform_req["chat_completions"]["url"]) {
-    full_url =
-        config.transform_req["chat_completions"]["url"].as<std::string>();
-  }
   CTL_DBG("full_url: " << full_url);
 
   struct curl_slist* headers = nullptr;
@@ -341,7 +335,6 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
 
     ModelConfig model_config;
     model_config.model = model;
-    model_config.api_key = body["api_key"].asString();
     // model_config.url = ;
     // Optional fields
     if (auto s = config["header_template"]; s && !s.as<std::string>().empty()) {
@@ -349,16 +342,6 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
       for (auto const& h : header_) {
         CTL_DBG("header: " << h);
       }
-    }
-    if (config["transform_req"]) {
-      model_config.transform_req = config["transform_req"];
-    } else {
-      LOG_WARN << "Missing transform_req in config for model " << model;
-    }
-    if (config["transform_resp"]) {
-      model_config.transform_resp = config["transform_resp"];
-    } else {
-      LOG_WARN << "Missing transform_resp in config for model " << model;
     }
 
     model_config.is_loaded = true;
@@ -414,9 +397,10 @@ void RemoteEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
   if (!json_body->isMember("model") || !json_body->isMember("model_path") ||
-      !json_body->isMember("api_key")) {
+      !json_body->isMember("api_key") || !json_body->isMember("metadata")) {
     Json::Value error;
-    error["error"] = "Missing required fields: model or model_path";
+    error["error"] =
+        "Missing required fields: model, model_path, api_key or metadata";
     Json::Value status;
     status["is_done"] = true;
     status["has_error"] = true;
@@ -428,43 +412,41 @@ void RemoteEngine::LoadModel(
 
   const std::string& model = (*json_body)["model"].asString();
   const std::string& model_path = (*json_body)["model_path"].asString();
-  const std::string& api_key = (*json_body)["api_key"].asString();
 
-  if (json_body->isMember("metadata")) {
-    metadata_ = (*json_body)["metadata"];
-    if (!metadata_["transform_req"].isNull() &&
-        !metadata_["transform_req"]["chat_completions"].isNull() &&
-        !metadata_["transform_req"]["chat_completions"]["template"].isNull()) {
-      chat_req_template_ =
-          metadata_["transform_req"]["chat_completions"]["template"].asString();
-      CTL_INF(chat_req_template_);
-    }
-
-    if (!metadata_["transform_resp"].isNull() &&
-        !metadata_["transform_resp"]["chat_completions"].isNull() &&
-        !metadata_["transform_resp"]["chat_completions"]["template"].isNull()) {
-      chat_res_template_ =
-          metadata_["transform_resp"]["chat_completions"]["template"]
-              .asString();
-      CTL_INF(chat_res_template_);
-    }
-
-    if (!metadata_["transform_req"].isNull() &&
-        !metadata_["transform_req"]["chat_completions"].isNull() &&
-        !metadata_["transform_req"]["chat_completions"]["url"].isNull()) {
-      chat_url_ =
-          metadata_["transform_req"]["chat_completions"]["url"].asString();
-      CTL_INF(chat_url_);
-    }
+  metadata_ = (*json_body)["metadata"];
+  if (!metadata_["transform_req"].isNull() &&
+      !metadata_["transform_req"]["chat_completions"].isNull() &&
+      !metadata_["transform_req"]["chat_completions"]["template"].isNull()) {
+    chat_req_template_ =
+        metadata_["transform_req"]["chat_completions"]["template"].asString();
+    CTL_INF(chat_req_template_);
+  } else {
+    CTL_WRN("Required transform_req");
   }
 
-  if (json_body->isMember("metadata")) {
-    if (!metadata_["header_template"].isNull()) {
-      header_ = ReplaceHeaderPlaceholders(
-          metadata_["header_template"].asString(), *json_body);
-      for (auto const& h : header_) {
-        CTL_DBG("header: " << h);
-      }
+  if (!metadata_["transform_resp"].isNull() &&
+      !metadata_["transform_resp"]["chat_completions"].isNull() &&
+      !metadata_["transform_resp"]["chat_completions"]["template"].isNull()) {
+    chat_res_template_ =
+        metadata_["transform_resp"]["chat_completions"]["template"].asString();
+    CTL_INF(chat_res_template_);
+  } else {
+    CTL_WRN("Required transform_resp");
+  }
+
+  if (!metadata_["transform_req"].isNull() &&
+      !metadata_["transform_req"]["chat_completions"].isNull() &&
+      !metadata_["transform_req"]["chat_completions"]["url"].isNull()) {
+    chat_url_ =
+        metadata_["transform_req"]["chat_completions"]["url"].asString();
+    CTL_INF(chat_url_);
+  }
+
+  if (!metadata_["header_template"].isNull()) {
+    header_ = ReplaceHeaderPlaceholders(metadata_["header_template"].asString(),
+                                        *json_body);
+    for (auto const& h : header_) {
+      CTL_DBG("header: " << h);
     }
   }
 
@@ -568,13 +550,8 @@ void RemoteEngine::HandleChatCompletion(
     if (!chat_req_template_.empty()) {
       CTL_DBG("Use engine transform request template: " << chat_req_template_);
       template_str = chat_req_template_;
-    }
-    if (model_config->transform_req["chat_completions"] &&
-        model_config->transform_req["chat_completions"]["template"]) {
-      // Model level overrides engine level
-      template_str = model_config->transform_req["chat_completions"]["template"]
-                         .as<std::string>();
-      CTL_DBG("Use model transform request template: " << template_str);
+    } else {
+      CTL_WRN("Required transform request template");
     }
 
     // Render with error handling
@@ -634,14 +611,8 @@ void RemoteEngine::HandleChatCompletion(
         CTL_DBG(
             "Use engine transform response template: " << chat_res_template_);
         template_str = chat_res_template_;
-      }
-      if (model_config->transform_resp["chat_completions"] &&
-          model_config->transform_resp["chat_completions"]["template"]) {
-        // Model level overrides engine level
-        template_str =
-            model_config->transform_resp["chat_completions"]["template"]
-                .as<std::string>();
-        CTL_DBG("Use model transform request template: " << template_str);
+      } else {
+        CTL_WRN("Required transform response template");
       }
 
       try {
@@ -731,25 +702,7 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
                                           const std::string& api_key,
                                           const std::string& header_template) {
   if (url.empty()) {
-    if (engine_name_ == kAnthropicEngine) {
-      Json::Value json_resp;
-      Json::Value model_array(Json::arrayValue);
-      for (const auto& m : kAnthropicModels) {
-        Json::Value val;
-        val["id"] = std::string(m);
-        val["engine"] = "anthropic";
-        val["created"] = "_";
-        val["object"] = "model";
-        model_array.append(val);
-      }
-
-      json_resp["object"] = "list";
-      json_resp["data"] = model_array;
-      CTL_INF("Remote models responded");
-      return json_resp;
-    } else {
-      return Json::Value();
-    }
+    return Json::Value();
   } else {
     auto response = MakeGetModelsRequest(url, api_key, header_template);
     if (response.error) {
@@ -760,8 +713,22 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
     }
     CTL_DBG(response.body);
     auto body_json = json_helper::ParseJsonString(response.body);
-    if (body_json.isMember("error")) {
+    if (body_json.isMember("error") && !body_json["error"].isNull()) {
       return body_json["error"];
+    }
+
+    // hardcode for cohere
+    if (url.find("api.cohere.ai") != std::string::npos) {
+      if (body_json.isMember("models")) {
+        for (auto& model : body_json["models"]) {
+          if (model.isMember("name")) {
+            model["id"] = model["name"];
+            model.removeMember("name");
+          }
+        }
+        body_json["data"] = body_json["models"];
+        body_json.removeMember("models");
+      }
     }
     return body_json;
   }

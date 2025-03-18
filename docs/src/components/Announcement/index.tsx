@@ -7,7 +7,7 @@ const Announcement = () => {
       <div className="flex items-center gap-2">
         <span>🎉</span>
         <p className="mb-0 text-neutral-100 font-medium">
-          <a href="https://github.com/janhq/cortex.cpp/releases/tag/v1.0.1" className="no-underline hover:no-underline">
+          <a href="https://github.com/menloresearch/cortex.cpp/releases/tag/v1.0.1" className="no-underline hover:no-underline">
             {" "}
             Cortex.cpp v1.0 is now live on GitHub. Check it out!
           </a>
