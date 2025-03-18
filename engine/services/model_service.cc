@@ -309,19 +309,21 @@ cpp::result<DownloadTask, std::string> ModelService::DownloadHfModelAsync(
       model_entry->status == cortex::db::ModelStatus::Downloaded)
     return cpp::fail("Please delete the model before downloading again");
 
-  const std::string branch = "main";
   auto download_task = GetCloneRepoDownloadTask(
-      author_id, model_id, branch, {"huggingface.co", author_id, model_id},
+      author_id, model_id, "main", {"huggingface.co", author_id, model_id},
       unique_model_id);
   if (download_task.has_error())
     return download_task;
 
-  auto on_finished = [&, this](const DownloadTask& finishedTask) {
+  // TODO: validate that this is a vllm-compatible model
+  auto on_finished = [this, author_id,
+                      unique_model_id](const DownloadTask& finishedTask) {
     if (!db_service_->HasModel(unique_model_id)) {
+      CTL_INF("Before creating model entry");
       cortex::db::ModelEntry model_entry{
           .model = unique_model_id,
           .author_repo_id = author_id,
-          .branch_name = branch,
+          .branch_name = "main",
           .path_to_model_yaml = "",
           .model_alias = unique_model_id,
           .status = cortex::db::ModelStatus::Downloaded,
