@@ -25,7 +25,7 @@ docker pull menloltd/cortex:nightly-1.0.1-224
 - Build and Run Cortex Docker Container from Dockerfile
 
 ```bash
-git clone https://github.com/janhq/cortex.cpp.git
+git clone https://github.com/menloresearch/cortex.cpp.git
 cd cortex.cpp
 git submodule update --init
 

@@ -145,20 +145,20 @@ jobs:
           message: |
             Cortex.cpp beta build artifact version ${{ env.VERSION }}:
             - Windows:
-              - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-windows-amd64-network-installer.exe
-              - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-windows-amd64-local-installer.exe
-              - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-windows-amd64.tar.gz
+              - Network Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-windows-amd64-network-installer.exe
+              - Local Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-windows-amd64-local-installer.exe
+              - Binary: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-windows-amd64.tar.gz
             - macOS Universal:
-              - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal-network-installer.pkg
-              - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal-local-installer.pkg
-              - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal.tar.gz
+              - Network Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal-network-installer.pkg
+              - Local Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal-local-installer.pkg
+              - Binary: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal.tar.gz
             - Linux amd64 Deb:
-              - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-network-installer.deb
-              - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
-              - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64.tar.gz
+              - Network Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-network-installer.deb
+              - Local Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
+              - Binary: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64.tar.gz
             - Linux arm64 Deb:
-              - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-network-installer.deb
-              - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-local-installer.deb
-              - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64.tar.gz
+              - Network Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-network-installer.deb
+              - Local Installer: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-local-installer.deb
+              - Binary: https://github.com/menloresearch/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64.tar.gz
             - Docker: menloltd/cortex:beta-${{ env.VERSION }}
-            - Github Release: https://github.com/janhq/cortex.cpp/releases/tag/v${{ env.VERSION }}
+            - Github Release: https://github.com/menloresearch/cortex.cpp/releases/tag/v${{ env.VERSION }}

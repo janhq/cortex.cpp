@@ -139,7 +139,7 @@ fi
 
 # Construct GitHub API URL and get latest version if not specified
 if [ "$VERSION" == "latest" ]; then
-    API_URL="https://api.github.com/repos/janhq/cortex/releases/latest"
+    API_URL="https://api.github.com/repos/menloresearch/cortex/releases/latest"
     VERSION=$(curl -s $API_URL | jq -r ".tag_name" | sed 's/^v//')
 fi
 
@@ -167,7 +167,7 @@ case $OS in
         ;;
 esac
 
-DOWNLOAD_URL="https://github.com/janhq/cortex/releases/download/v${VERSION}/${FILE_NAME}"
+DOWNLOAD_URL="https://github.com/menloresearch/cortex/releases/download/v${VERSION}/${FILE_NAME}"
 
 # Check AVX support
 if [ -z "$AVX" ] && [ "$OS" == "Linux" ]; then

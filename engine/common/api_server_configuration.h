@@ -113,7 +113,8 @@ class ApiServerConfiguration {
       const std::string& proxy_url = "", const std::string& proxy_username = "",
       const std::string& proxy_password = "", const std::string& no_proxy = "",
       bool verify_peer_ssl = true, bool verify_host_ssl = true,
-      const std::string& hf_token = "", const std::string& gh_token = "", std::vector<std::string> api_keys = {})
+      const std::string& hf_token = "", const std::string& gh_token = "",
+      std::vector<std::string> api_keys = {})
       : cors{cors},
         allowed_origins{allowed_origins},
         verify_proxy_ssl{verify_proxy_ssl},
