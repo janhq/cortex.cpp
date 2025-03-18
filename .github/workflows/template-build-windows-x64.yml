@@ -205,21 +205,21 @@ jobs:
         run: |
           mkdir dependencies
           cd dependencies
-          # wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx-cuda-11-7.tar.gz
-          # wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx-cuda-12-0.tar.gz
-          # wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2-cuda-11-7.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2-cuda-12-0.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2.tar.gz
-          # wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512-cuda-11-7.tar.gz
-          # wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512-cuda-12-0.tar.gz
-          # wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx-cuda-11-7.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx-cuda-12-0.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-vulkan.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-11-7-windows-amd64.tar.gz
-          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-12-0-windows-amd64.tar.gz
+          # wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx-cuda-11-7.tar.gz
+          # wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx-cuda-12-0.tar.gz
+          # wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2-cuda-11-7.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2-cuda-12-0.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2.tar.gz
+          # wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512-cuda-11-7.tar.gz
+          # wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512-cuda-12-0.tar.gz
+          # wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx-cuda-11-7.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx-cuda-12-0.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-vulkan.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-11-7-windows-amd64.tar.gz
+          wget.exe https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-12-0-windows-amd64.tar.gz
 
       - name: Enable long paths
         run: |

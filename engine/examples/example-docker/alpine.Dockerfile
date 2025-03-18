@@ -11,7 +11,7 @@ WORKDIR /work
 RUN apk add --no-cache git cmake g++ make util-linux-dev zlib-dev
 
 # Clone code
-RUN git clone --recurse-submodules -j2 --depth 1 --branch v${NITRO_VERSION} --single-branch https://github.com/janhq/nitro.git
+RUN git clone --recurse-submodules -j2 --depth 1 --branch v${NITRO_VERSION} --single-branch https://github.com/menloresearch/nitro.git
 
 # Build
 RUN cd nitro && \
