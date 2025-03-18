@@ -11,10 +11,16 @@
 #include "utils/task_queue.h"
 
 namespace cortex::local {
+using http_callback = std::function<void(Json::Value&&, Json::Value&&)>;
+
 struct ServerAddress {
   std::string host;
   int port;
   cortex::process::ProcessInfo process_info;
+  std::string pre_prompt;
+  std::string user_prompt;
+  std::string ai_prompt;
+  std::string system_prompt;
 };
 class LocalEngine : public EngineI {
  public:
@@ -26,26 +32,20 @@ class LocalEngine : public EngineI {
 
   void Unload(EngineUnloadOption opts) final {}
 
-  void HandleChatCompletion(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
-  void HandleEmbedding(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
-  void LoadModel(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
-  void UnloadModel(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
-  void GetModelStatus(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
+  void HandleChatCompletion(std::shared_ptr<Json::Value> json_body,
+                            http_callback&& callback) final;
+  void HandleEmbedding(std::shared_ptr<Json::Value> json_body,
+                       http_callback&& callback) final;
+  void LoadModel(std::shared_ptr<Json::Value> json_body,
+                 http_callback&& callback) final;
+  void UnloadModel(std::shared_ptr<Json::Value> json_body,
+                   http_callback&& callback) final;
+  void GetModelStatus(std::shared_ptr<Json::Value> json_body,
+                      http_callback&& callback) final;
 
   // Get list of running models
-  void GetModels(
-      std::shared_ptr<Json::Value> jsonBody,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final;
+  void GetModels(std::shared_ptr<Json::Value> jsonBody,
+                 http_callback&& callback) final;
 
   bool SetFileLogger(int max_log_lines, const std::string& log_path) final {
     return true;
@@ -55,13 +55,20 @@ class LocalEngine : public EngineI {
   // Stop inflight chat completion in stream mode
   void StopInferencing(const std::string& model_id) final {}
 
-  void HandleRouteRequest(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final {}
+  void HandleRouteRequest(std::shared_ptr<Json::Value> json_body,
+                          http_callback&& callback) final {}
 
-  void HandleInference(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) final {}
+  void HandleInference(std::shared_ptr<Json::Value> json_body,
+                       http_callback&& callback) final {}
+
+ private:
+  void HandleOpenAiChatCompletion(std::shared_ptr<Json::Value> json_body,
+                                  http_callback&& callback,
+                                  const std::string& model);
+
+  void HandleNonOpenAiChatCompletion(std::shared_ptr<Json::Value> json_body,
+                                     http_callback&& callback,
+                                     const std::string& model);
 
  private:
   std::unordered_map<std::string, ServerAddress> server_map_;

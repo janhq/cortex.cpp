@@ -21,6 +21,12 @@ inline std::string RTrim(const std::string& str) {
   return (end == std::string::npos) ? "" : str.substr(0, end + 1);
 }
 
+inline void LTrim(std::string& s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+          }));
+};
+
 inline void Trim(std::string& s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
             return !std::isspace(ch);
