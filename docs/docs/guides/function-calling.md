@@ -318,5 +318,5 @@ Use enums to improve function accuracy:
 - Function calling accuracy depends on model quality. Smaller models (8B-12B) work best with simple use cases.
 - Cortex.cpp implements function calling through prompt engineering, injecting system prompts when tools are specified.
 - Best compatibility with llama3.1 and derivatives (mistral-nemo, qwen)
-- System prompts can be customized for specific use cases (see [implementation details](https://github.com/janhq/cortex.cpp/pull/1472/files))
-- For complete implementation examples, refer to our [detailed guide](https://github.com/janhq/models/issues/16#issuecomment-2381129322)
+- System prompts can be customized for specific use cases (see [implementation details](https://github.com/menloresearch/cortex.cpp/pull/1472/files))
+- For complete implementation examples, refer to our [detailed guide](https://github.com/menloresearch/models/issues/16#issuecomment-2381129322)

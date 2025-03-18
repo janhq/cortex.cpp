@@ -17,7 +17,7 @@ Cortex.cpp can be used in a Python application with the `cortex.py` library. Cor
 ## Installation
 
 ```py
-pip install @janhq/cortex-python
+pip install @menloresearch/cortex-python
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ pip install @janhq/cortex-python
 
 ```diff
 - from openai import OpenAI
-+ from @janhq/cortex-python import Cortex
++ from @menloresearch/cortex-python import Cortex
 ```
 
 2. Modify the initialization of the client to use Cortex.cpp:
@@ -40,7 +40,7 @@ pip install @janhq/cortex-python
 ### Example Usage
 
 ```py
-from @janhq/cortex-python import Cortex
+from @menloresearch/cortex-python import Cortex
 
 client = OpenAI(base_url="http://localhost:3928", api_key="cortex")
 

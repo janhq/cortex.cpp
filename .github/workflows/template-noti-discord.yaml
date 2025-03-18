@@ -43,4 +43,4 @@ jobs:
               - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/linux-amd64/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
               - Binary: https://delta.jan.ai/cortex/v${{ env.VERSION }}/linux-amd64/cortex-nightly.tar.gz
             - Docker: menloltd/cortex:nightly-${{ env.VERSION }}
-            - Github action run: https://github.com/janhq/cortex.cpp/actions/runs/${{ env.RUNNER_ID }}
+            - Github action run: https://github.com/menloresearch/cortex.cpp/actions/runs/${{ env.RUNNER_ID }}
