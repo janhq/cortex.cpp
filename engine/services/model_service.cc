@@ -650,7 +650,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     }
 
     assert(!!inference_svc_);
-    // Check if python engine
 
     auto ir =
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));

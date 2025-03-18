@@ -290,15 +290,6 @@ InferResult InferenceService::GetModels(
   return std::make_pair(stt, root);
 }
 
-InferResult InferenceService::FineTuning(
-    std::shared_ptr<Json::Value> json_body) {
-  Json::Value r;
-  Json::Value stt;
-  r["message"] = "Method is not supported yet";
-  stt["status_code"] = drogon::k500InternalServerError;
-  return std::make_pair(stt, r);
-}
-
 bool InferenceService::StopInferencing(const std::string& engine_name,
                                        const std::string& model_id) {
   CTL_DBG("Stop inferencing");

@@ -121,17 +121,6 @@ void server::GetModels(const HttpRequestPtr& req,
   LOG_TRACE << "Done get models";
 }
 
-void server::FineTuning(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_->FineTuning(req->getJsonObject());
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
-  resp->setStatusCode(
-      static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));
-  callback(resp);
-  LOG_TRACE << "Done fine-tuning";
-}
-
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto ir = inference_svc_->LoadModel(req->getJsonObject());
