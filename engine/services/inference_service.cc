@@ -350,51 +350,10 @@ InferResult InferenceService::GetModels(
 
 InferResult InferenceService::FineTuning(
     std::shared_ptr<Json::Value> json_body) {
-  std::string ne = kPythonRuntimeRepo;
   Json::Value r;
   Json::Value stt;
-
-  // TODO: namh refactor this
-  // if (engines_.find(ne) == engines_.end()) {
-  //   try {
-  //     std::string abs_path =
-  //         (getenv("ENGINE_PATH")
-  //              ? getenv("ENGINE_PATH")
-  //              : file_manager_utils::GetCortexDataPath().string()) +
-  //         kPythonRuntimeLibPath;
-  //     engines_[ne].dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
-  //   } catch (const cortex_cpp::dylib::load_error& e) {
-  //
-  //     LOG_ERROR << "Could not load engine: " << e.what();
-  //     engines_.erase(ne);
-  //
-  //     Json::Value res;
-  //     r["message"] = "Could not load engine " + ne;
-  //     stt["status_code"] = drogon::k500InternalServerError;
-  //     return std::make_pair(stt, r);
-  //   }
-  //
-  //   auto func =
-  //       engines_[ne].dl->get_function<CortexPythonEngineI*()>("get_engine");
-  //   engines_[ne].engine = func();
-  //   LOG_INFO << "Loaded engine: " << ne;
-  // }
-  //
-  // LOG_TRACE << "Start to fine-tuning";
-  // auto& en = std::get<CortexPythonEngineI*>(engines_[ne].engine);
-  // if (en->IsSupported("HandlePythonFileExecutionRequest")) {
-  //   en->HandlePythonFileExecutionRequest(
-  //       json_body, [&r, &stt](Json::Value status, Json::Value res) {
-  //         r = res;
-  //         stt = status;
-  //       });
-  // } else {
-  //   LOG_WARN << "Method is not supported yet";
   r["message"] = "Method is not supported yet";
   stt["status_code"] = drogon::k500InternalServerError;
-  //   return std::make_pair(stt, r);
-  // }
-  // LOG_TRACE << "Done fine-tuning";
   return std::make_pair(stt, r);
 }
 

@@ -9,7 +9,6 @@
 
 #include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
-#include "cortex-common/cortexpythoni.h"
 #include "cortex-common/remote_enginei.h"
 #include "database/engines.h"
 #include "services/database_service.h"
@@ -37,7 +36,7 @@ struct EngineUpdateResult {
   }
 };
 
-using EngineV = std::variant<EngineI*, CortexPythonEngineI*, RemoteEngineI*>;
+using EngineV = std::variant<EngineI*, RemoteEngineI*>;
 
 class EngineService : public EngineServiceI {
  private:
