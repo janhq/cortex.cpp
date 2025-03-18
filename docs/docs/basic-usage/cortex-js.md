@@ -7,7 +7,7 @@ description: How to use the Cortex.js Library
 🚧 Cortex.js is currently under development, and this page is a stub for future development.
 :::
 
-[Cortex.js](https://github.com/janhq/cortex.js) is a Typescript client library that can be used to
+[Cortex.js](https://github.com/menloresearch/cortex.js) is a Typescript client library that can be used to
 interact with the Cortex API. It is a fork of the OpenAI Typescript library with additional methods for Local AI.
 
 This is still a work in progress, and we will let the community know once a stable version is available.
@@ -20,7 +20,7 @@ Cortex.cpp can be used in a Typescript application with the `cortex.js` library.
 ## Installation
 
 ```ts
-npm install @janhq/cortexso-node
+npm install @menloresearch/cortexso-node
 ```
 
 ## Usage
@@ -29,7 +29,7 @@ npm install @janhq/cortexso-node
 
 ```diff
 - import OpenAI from 'openai';
-+ import Cortex from '@janhq/cortexso-node';
++ import Cortex from '@menloresearch/cortexso-node';
 ```
 
 2. Modify the initialization of the client to use Cortex.cpp:
@@ -46,7 +46,7 @@ npm install @janhq/cortexso-node
 ### Example Usage
 
 ```js
-import Cortex from "@janhq/cortexso-node";
+import Cortex from "@menloresearch/cortexso-node";
 
 async function inference() {
   const cortex = new Cortex({

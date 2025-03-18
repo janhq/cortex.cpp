@@ -214,7 +214,7 @@ const config: Config = {
         async contentLoaded({ content, actions }) {
           const { setGlobalData } = actions;
           const fetchRepoInfo = await fetch(
-            "https://api.github.com/repos/janhq/cortex.cpp"
+            "https://api.github.com/repos/menloresearch/cortex.cpp"
           );
           const repoInfo = await fetchRepoInfo.json();
           setGlobalData(repoInfo);
@@ -227,7 +227,7 @@ const config: Config = {
         async contentLoaded({ content, actions }) {
           const { setGlobalData } = actions;
           const fetchLatestRelease = await fetch(
-            "https://api.github.com/repos/janhq/cortex.cpp/releases/latest"
+            "https://api.github.com/repos/menloresearch/cortex.cpp/releases/latest"
           );
           const latestRelease = await fetchLatestRelease.json();
           setGlobalData(latestRelease);
@@ -310,7 +310,7 @@ const config: Config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "janhq", // Usually your GitHub org/user name.
+  organizationName: "menloresearch", // Usually your GitHub org/user name.
   projectName: "cortex", // Usually your repo name.
 
   onBrokenLinks: "throw",
@@ -342,7 +342,7 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: "https://github.com/janhq/cortex.cpp/blob/dev/docs/",
+          editUrl: "https://github.com/menloresearch/cortex.cpp/blob/dev/docs/",
         },
         sitemap: {
           changefreq: "daily",
@@ -451,7 +451,7 @@ const config: Config = {
           items: [
             {
               label: "Github",
-              href: "https://github.com/janhq/cortex.cpp",
+              href: "https://github.com/menloresearch/cortex.cpp",
             },
             {
               label: "Discord",

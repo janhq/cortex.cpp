@@ -1,9 +1,9 @@
 # Build Cortex.cpp from source
 
-Firstly, clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp) and initialize the submodules:
+Firstly, clone the Cortex.cpp repository [here](https://github.com/menloresearch/cortex.cpp) and initialize the submodules:
 
 ```bash
-git clone https://github.com/janhq/cortex.cpp
+git clone https://github.com/menloresearch/cortex.cpp
 cd cortex.cpp
 git submodule update --init --recursive
 ```
@@ -73,7 +73,7 @@ make -j4
 
 1. Open Cortex.cpp repository in Codespaces or local devcontainer
 
-    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/janhq/cortex.cpp?quickstart=1)
+    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/menloresearch/cortex.cpp?quickstart=1)
 
     ```sh
     devcontainer up --workspace-folder .

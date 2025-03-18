@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
       auto get_latest_version = []() -> cpp::result<std::string, std::string> {
         try {
           auto res = github_release_utils::GetReleaseByVersion(
-              "janhq", "cortex.llamacpp", "latest");
+              "menloresearch", "cortex.llamacpp", "latest");
           if (res.has_error()) {
             CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
             return cpp::fail("Failed to get latest llama.cpp version: " +
