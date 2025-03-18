@@ -65,10 +65,9 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
   }
   auto download_url = res.value()["downloadUrl"].asString();
 
-  // TODO: when will these 2 be empty?
   if (downloaded.empty() && avails.empty()) {
     if (res.value()["modelSource"].asString() == "huggingface") {
-      model = "hf:" + id;
+      model = id;
     } else {
       model_id = id;
       model = download_url;

@@ -99,7 +99,7 @@ void ParseGguf(DatabaseService& db_service,
 
 cpp::result<DownloadTask, std::string> GetCloneRepoDownloadTask(
     const std::string& author_id, const std::string& modelId,
-    const std::string& branch, const std::string& save_dir,
+    const std::string& branch, const std::vector<std::string>& save_dir,
     const std::string& task_id) {
   url_parser::Url url = {
       .protocol = "https",
@@ -113,8 +113,9 @@ cpp::result<DownloadTask, std::string> GetCloneRepoDownloadTask(
   }
 
   std::vector<DownloadItem> download_items{};
-  auto model_container_path = file_manager_utils::GetModelsContainerPath() /
-                              save_dir / modelId / branch;
+  auto model_container_path = file_manager_utils::GetModelsContainerPath();
+  for (auto subdir : save_dir)
+    model_container_path /= subdir;
   file_manager_utils::CreateDirectoryRecursively(model_container_path.string());
 
   for (const auto& value : result.value()) {
@@ -300,19 +301,18 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 }
 
 cpp::result<DownloadTask, std::string> ModelService::DownloadHfModelAsync(
-    const std::string& author_id, const std::string& model_id,
-    std::optional<std::string> temp_model_id) {
+    const std::string& author_id, const std::string& model_id) {
 
-  const std::string unique_model_id =
-      temp_model_id.value_or(author_id + ":" + model_id);
+  const std::string unique_model_id = author_id + "/" + model_id;
   auto model_entry = db_service_->GetModelInfo(unique_model_id);
   if (model_entry.has_value() &&
       model_entry->status == cortex::db::ModelStatus::Downloaded)
     return cpp::fail("Please delete the model before downloading again");
 
   const std::string branch = "main";
-  auto download_task = GetCloneRepoDownloadTask(author_id, model_id, branch,
-                                                author_id, unique_model_id);
+  auto download_task = GetCloneRepoDownloadTask(
+      author_id, model_id, branch, {"huggingface.co", author_id, model_id},
+      unique_model_id);
   if (download_task.has_error())
     return download_task;
 
@@ -410,18 +410,20 @@ bool ModelService::HasModel(const std::string& id) const {
 
 cpp::result<DownloadTask, std::string>
 ModelService::DownloadModelFromCortexsoAsync(
-    const std::string& name, const std::string& branch,
+    const std::string& model_name, const std::string& branch,
     std::optional<std::string> temp_model_id) {
 
-  std::string unique_model_id = temp_model_id.value_or(name + ":" + branch);
+  std::string unique_model_id =
+      temp_model_id.value_or(model_name + ":" + branch);
   auto model_entry = db_service_->GetModelInfo(unique_model_id);
   if (model_entry.has_value() &&
       model_entry->status == cortex::db::ModelStatus::Downloaded) {
     return cpp::fail("Please delete the model before downloading again");
   }
 
-  auto download_task = GetCloneRepoDownloadTask("cortexso", name, branch,
-                                                "cortex.so", unique_model_id);
+  auto download_task = GetCloneRepoDownloadTask(
+      "cortexso", model_name, branch, {"cortex.so", model_name, branch},
+      unique_model_id);
   if (download_task.has_error()) {
     return cpp::fail(download_task.error());
   }
@@ -928,7 +930,7 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
       // we will download the whole repo
       if (repo_info->library_name.value_or("") == "transformers") {
         return ModelPullInfo{
-            .id = author + ":" + model_name,
+            .id = author + "/" + model_name,
             .model_source = "huggingface",
         };
       }
@@ -991,6 +993,15 @@ cpp::result<DownloadTask, std::string> ModelService::PullModel(
     return HandleDownloadUrlAsync(model_handle, desired_model_id,
                                   desired_model_name);
 
+  // HF model handle
+  if (model_handle.find("/") != std::string::npos) {
+    const auto author_model = string_utils::SplitBy(model_handle, "/");
+    if (author_model.size() != 2)
+      return cpp::fail("Invalid model handle");
+
+    return DownloadHfModelAsync(author_model[0], author_model[1]);
+  }
+
   if (model_handle.find(":") == std::string::npos)
     return cpp::fail("Invalid model handle or not supported!");
 
@@ -1002,13 +1013,6 @@ cpp::result<DownloadTask, std::string> ModelService::PullModel(
         model_and_branch[0], model_and_branch[1], desired_model_id);
 
   if (model_and_branch.size() == 3) {
-    // HF model
-    // hf:author_id:model_name
-    // NOTE: this may confuse with the format below, where author_id = "hf"
-    // https://huggingface.co/hf
-    if (model_and_branch[0] == "hf")
-      return DownloadHfModelAsync(model_and_branch[1], model_and_branch[2]);
-
     // single GGUF file
     // author_id:model_name:filename
     auto mh = url_parser::Url{

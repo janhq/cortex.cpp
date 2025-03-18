@@ -95,8 +95,7 @@ class ModelService {
       std::optional<std::string> temp_model_id = std::nullopt);
 
   cpp::result<DownloadTask, std::string> DownloadHfModelAsync(
-      const std::string& author_id, const std::string& model_id,
-      std::optional<std::string> temp_model_id = std::nullopt);
+      const std::string& author_id, const std::string& model_id);
 
   cpp::result<std::optional<std::string>, std::string> MayFallbackToCpu(
       const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
