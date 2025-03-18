@@ -560,7 +560,7 @@ void GGUFHandler::ModelConfigFromMetadata() {
   }
 
   try {
-    if (tokens.size() > (unsigned) eos_token) {
+    if (tokens.size() > (unsigned)eos_token) {
       eos_string = tokens[eos_token];
       stop.push_back(std::move(eos_string));
     } else {
@@ -582,7 +582,7 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.max_tokens = max_tokens;
   model_config_.ctx_len = max_tokens;
   model_config_.ngl = ngl;
-  (void) bos_token;
+  (void)bos_token;
 }
 
 const ModelConfig& GGUFHandler::GetModelConfig() const {

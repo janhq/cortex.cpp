@@ -63,7 +63,7 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
     if (std::filesystem::exists(cortex_tmp)) {
       try {
         auto n = std::filesystem::remove_all(cortex_tmp);
-				(void) n;
+        (void)n;
         // CTL_INF("Deleted " << n << " files or directories");
       } catch (const std::exception& e) {
         CTL_WRN(e.what());

@@ -103,11 +103,11 @@ void ParseGguf(DatabaseService& db_service,
 
 cpp::result<DownloadTask, std::string> GetDownloadTask(
     const std::string& modelId, const std::string& branch = "main") {
-  url_parser::Url url = {
-      /* .protocol = */ "https",
-      /* .host = */ kHuggingFaceHost,
-      /* .pathParams = */ {"api", "models", "cortexso", modelId, "tree", branch},
-  {}};
+  url_parser::Url url = {/* .protocol = */ "https",
+                         /* .host = */ kHuggingFaceHost,
+                         /* .pathParams = */
+                         {"api", "models", "cortexso", modelId, "tree", branch},
+                         {}};
 
   auto result = curl_utils::SimpleGetJsonRecursive(url.ToFullPath());
   if (result.has_error()) {
@@ -130,20 +130,20 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
         /* .protocol = */ "https",
         /* .host = */ kHuggingFaceHost,
         /* .pathParams = */ {"cortexso", modelId, "resolve", branch, path},
-      {}};
+        {}};
 
     auto local_path = model_container_path / path;
     if (!std::filesystem::exists(local_path.parent_path())) {
       std::filesystem::create_directories(local_path.parent_path());
     }
-    download_items.push_back(
-        DownloadItem{/* .id = */ path,
-                     /* .downloadUrl = */ download_url.ToFullPath(),
-                     /* .localPath = */ local_path,
-                    /*.checksum = */ std::nullopt,
-                    /* .bytes = */ std::nullopt,
-                    /* .downloadedBytes = */ std::nullopt,
-                  });
+    download_items.push_back(DownloadItem{
+        /* .id = */ path,
+        /* .downloadUrl = */ download_url.ToFullPath(),
+        /* .localPath = */ local_path,
+        /*.checksum = */ std::nullopt,
+        /* .bytes = */ std::nullopt,
+        /* .downloadedBytes = */ std::nullopt,
+    });
   }
 
   return DownloadTask{
@@ -442,9 +442,11 @@ ModelService::DownloadModelFromCortexsoAsync(
           /* .branch_name = */ branch,
           /* .path_to_model_yaml = */ rel.string(),
           /* .model_alias = */ unique_model_id,
-          "", "",
+          "",
+          "",
           /* .status = */ cortex::db::ModelStatus::Downloaded,
-          /* .engine = */ mc.engine, ""};
+          /* .engine = */ mc.engine,
+          ""};
       auto result = db_service_->AddModelEntry(model_entry);
 
       if (result.has_error()) {
@@ -709,7 +711,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     } else if (status == drogon::k409Conflict) {
       CTL_INF("Model '" + model_handle + "' is already loaded");
       return StartModelResult{
-          /* .success = */ true, /* .warning = */ may_fallback_res.value_or(std::nullopt)};
+          /* .success = */ true,
+          /* .warning = */ may_fallback_res.value_or(std::nullopt)};
     } else {
       // only report to user the error
       CTL_ERR("Model failed to start with status code: " << status);
@@ -844,12 +847,13 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
           /* .model_source = */ "",
           /* .download_url = */ url_parser::FromUrl(url_obj.value())};
     }
-    return ModelPullInfo{/* .id = */ author + ":" + model_id + ":" + file_name,
-                         /* .default_branch = */ "main",
-                         /* .downloaded_models = */ {},
-                         /* .available_models = */ {},
-                         /* .model_source = */ "",
-                         /* .download_url = */ url_parser::FromUrl(url_obj.value())};
+    return ModelPullInfo{
+        /* .id = */ author + ":" + model_id + ":" + file_name,
+        /* .default_branch = */ "main",
+        /* .downloaded_models = */ {},
+        /* .available_models = */ {},
+        /* .model_source = */ "",
+        /* .download_url = */ url_parser::FromUrl(url_obj.value())};
   }
 
   if (input.find(":") != std::string::npos) {
@@ -899,9 +903,9 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
           /* .default_branch = */ "main",
           /* .downloaded_models = */ {},
           /* .available_models = */ options,
-          /* .model_source = */"",
+          /* .model_source = */ "",
           /* .download_url = */
-              huggingface_utils::GetDownloadableUrl(author, model_name, "")};
+          huggingface_utils::GetDownloadableUrl(author, model_name, "")};
     }
   }
   auto branches =
@@ -940,12 +944,13 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
   string_utils::SortStrings(downloaded_model_ids);
   string_utils::SortStrings(avai_download_opts);
 
-  return ModelPullInfo{/* .id = */ model_name,
-                       /* .default_branch = */ normalized_def_branch.value_or(""),
-                       /* .downloaded_models = */ downloaded_model_ids,
-                       /* .available_models = */ avai_download_opts,
-                       /* .model_source = */ "cortexso",
-                      /* .download_url = */ ""};
+  return ModelPullInfo{
+      /* .id = */ model_name,
+      /* .default_branch = */ normalized_def_branch.value_or(""),
+      /* .downloaded_models = */ downloaded_model_ids,
+      /* .available_models = */ avai_download_opts,
+      /* .model_source = */ "cortexso",
+      /* .download_url = */ ""};
 }
 
 cpp::result<std::string, std::string> ModelService::AbortDownloadModel(

@@ -265,7 +265,7 @@ cpp::result<bool, std::string> DownloadService::Download(
 
   fclose(file);
   curl_easy_cleanup(curl);
-  (void) download_id;
+  (void)download_id;
   return true;
 }
 
@@ -455,7 +455,7 @@ cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
       });
     }
   } while (still_running);
-  (void) handles;
+  (void)handles;
   return {};
 }
 
@@ -512,16 +512,14 @@ void DownloadService::RemoveTaskFromStopList(const std::string& task_id) {
 void DownloadService::EmitTaskStarted(const DownloadTask& task) {
   event_queue_->enqueue(
       EventType::DownloadEvent,
-      DownloadEvent{{}, DownloadEventType::DownloadStarted,
-                    task});
+      DownloadEvent{{}, DownloadEventType::DownloadStarted, task});
 }
 
 void DownloadService::EmitTaskStopped(const std::string& task_id) {
   if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
     event_queue_->enqueue(
         EventType::DownloadEvent,
-        DownloadEvent{{}, DownloadEventType::DownloadStopped,
-                      *it->second});
+        DownloadEvent{{}, DownloadEventType::DownloadStopped, *it->second});
   }
 }
 
@@ -529,8 +527,7 @@ void DownloadService::EmitTaskError(const std::string& task_id) {
   if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
     event_queue_->enqueue(
         EventType::DownloadEvent,
-        DownloadEvent{{}, DownloadEventType::DownloadError,
-                      *it->second});
+        DownloadEvent{{}, DownloadEventType::DownloadError, *it->second});
   }
 }
 
@@ -542,8 +539,7 @@ void DownloadService::EmitTaskCompleted(const std::string& task_id) {
     }
     event_queue_->enqueue(
         EventType::DownloadEvent,
-        DownloadEvent{{}, DownloadEventType::DownloadSuccess,
-                      *it->second});
+        DownloadEvent{{}, DownloadEventType::DownloadSuccess, *it->second});
   }
 }
 

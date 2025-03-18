@@ -210,8 +210,7 @@ GetGpuUsage() {
             auto vram_total = get_vram(vram_total_path, 10) / 1024 / 1024;
             auto vram_usage = get_vram(vram_used_path, 10) / 1024 / 1024;
             auto device_id = get_vram(device_id_path, 16);
-            res[device_id] = AmdGpuUsage{vram_total,
-                                         vram_usage};
+            res[device_id] = AmdGpuUsage{vram_total, vram_usage};
           }
         } else {
           return cpp::fail("Error: Unable to open " + vendor_path.string());
@@ -456,17 +455,17 @@ class VulkanGpu {
       if (device_properties.vendorID == kNvidiaVendor ||
           device_properties.vendorID == kAmdVendor) {
         gpus.emplace_back(cortex::hw::GPU{
-            std::to_string(id),                                   // id
-            device_properties.deviceID,                           // device_id
-            device_properties.deviceName,                         // name
-            std::to_string(device_properties.driverVersion),      // version
-            cortex::hw::AmdAddInfo{},                             // add_info (GPUAddInfo)
-            free_vram_MiB,                                        // free_vram
-            total_vram_MiB,                                       // total_vram
-            uuid_to_string(device_id_properties.deviceUUID),      // uuid
-            true,                                                 // is_activated (default value)
-            GetVendorStr(device_properties.vendorID),             // vendor
-            static_cast<GpuType>(device_properties.deviceType)    // gpu_type
+            std::to_string(id),                               // id
+            device_properties.deviceID,                       // device_id
+            device_properties.deviceName,                     // name
+            std::to_string(device_properties.driverVersion),  // version
+            cortex::hw::AmdAddInfo{},  // add_info (GPUAddInfo)
+            free_vram_MiB,             // free_vram
+            total_vram_MiB,            // total_vram
+            uuid_to_string(device_id_properties.deviceUUID),  // uuid
+            true,  // is_activated (default value)
+            GetVendorStr(device_properties.vendorID),           // vendor
+            static_cast<GpuType>(device_properties.deviceType)  // gpu_type
         });
       }
       id++;

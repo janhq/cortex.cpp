@@ -97,7 +97,7 @@ cpp::result<OpenAi::Message, std::string> MessageService::ModifyMessage(
 
     msg->content = std::move(content_list);
   }
-/*   auto ptr = &msg.value(); */
+  /*   auto ptr = &msg.value(); */
 
   auto res = message_repository_->ModifyMessage(msg.value());
   if (res.has_error()) {

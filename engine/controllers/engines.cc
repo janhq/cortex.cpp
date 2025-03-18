@@ -5,9 +5,9 @@
 #include "utils/engine_constants.h"
 #include "utils/http_util.h"
 #include "utils/logging_utils.h"
+#include "utils/normalize_engine.h"
 #include "utils/scope_exit.h"
 #include "utils/string_utils.h"
-#include "utils/normalize_engine.h"
 
 void Engines::ListEngine(
     const HttpRequestPtr& req,
@@ -42,7 +42,7 @@ void Engines::ListEngine(
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);
-  (void) req;
+  (void)req;
 }
 
 void Engines::UninstallEngine(
@@ -114,7 +114,7 @@ void Engines::GetEngineReleases(
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);
   resp->setStatusCode(k200OK);
   callback(resp);
-  (void) req;
+  (void)req;
 }
 
 void Engines::GetEngineVariants(
@@ -122,7 +122,7 @@ void Engines::GetEngineVariants(
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine, const std::string& version,
     std::optional<std::string> show) const {
-      (void) req;
+  (void)req;
   if (engine.empty()) {
     Json::Value res;
     res["message"] = "Engine name is required";
@@ -149,7 +149,8 @@ void Engines::GetEngineVariants(
   auto normalize_version = string_utils::RemoveSubstring(version, "v");
   Json::Value releases(Json::arrayValue);
   for (const auto& release : result.value()) {
-    auto json = release.ToApiJson(cortex::engine::NormalizeEngine(engine), normalize_version);
+    auto json = release.ToApiJson(cortex::engine::NormalizeEngine(engine),
+                                  normalize_version);
     if (json != std::nullopt) {
       releases.append(json.value());
     }
@@ -297,7 +298,7 @@ void Engines::GetInstalledEngineVariants(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) const {
-      (void) req;
+  (void)req;
 
   if (engine_service_->IsRemoteEngine(engine)) {
     auto remote_engines = engine_service_->GetEngines();
@@ -421,7 +422,7 @@ void Engines::GetLatestEngineVersion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) {
-      (void) req;
+  (void)req;
   auto result = engine_service_->GetLatestEngineVersion(engine);
   if (result.has_error()) {
     Json::Value res;
@@ -492,7 +493,7 @@ void Engines::GetDefaultEngineVariant(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) const {
-      (void) req;
+  (void)req;
   auto result = engine_service_->GetDefaultEngineVariant(engine);
   if (result.has_error()) {
     Json::Value res;
@@ -511,7 +512,7 @@ void Engines::GetDefaultEngineVariant(
 void Engines::LoadEngine(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
                          const std::string& engine) {
-                          (void) req;
+  (void)req;
   auto result = engine_service_->LoadEngine(engine);
   if (result.has_error()) {
     Json::Value res;
@@ -532,7 +533,7 @@ void Engines::UnloadEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) {
-      (void) req;
+  (void)req;
   auto result = engine_service_->UnloadEngine(engine);
   if (result.has_error()) {
     Json::Value res;

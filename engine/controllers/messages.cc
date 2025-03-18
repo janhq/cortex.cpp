@@ -14,7 +14,7 @@ void Messages::ListMessages(
     std::optional<std::string> order, std::optional<std::string> after,
     std::optional<std::string> before,
     std::optional<std::string> run_id) const {
-	(void) req;
+  (void)req;
   auto res = message_service_->ListMessages(
       thread_id, std::stoi(limit.value_or("20")), order.value_or("desc"),
       after.value_or(""), before.value_or(""), run_id.value_or(""));
@@ -173,7 +173,7 @@ void Messages::RetrieveMessage(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& thread_id, const std::string& message_id) const {
-	(void) req;
+  (void)req;
   auto res = message_service_->RetrieveMessage(thread_id, message_id);
   if (res.has_error()) {
     Json::Value ret;
@@ -324,7 +324,7 @@ void Messages::DeleteMessage(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& thread_id, const std::string& message_id) {
-	(void) req;
+  (void)req;
   auto res = message_service_->DeleteMessage(thread_id, message_id);
   if (res.has_error()) {
     Json::Value ret;

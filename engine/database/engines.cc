@@ -4,7 +4,9 @@
 
 namespace cortex::db {
 
-void CreateTable(SQLite::Database& db) {(void) db; }
+void CreateTable(SQLite::Database& db) {
+  (void)db;
+}
 
 Engines::Engines() : db_(cortex::db::Database::GetInstance().db()) {
   CreateTable(db_);

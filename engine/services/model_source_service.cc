@@ -234,7 +234,7 @@ ModelSourceService::GetRepositoryList(std::string_view hub_author,
     return get_repo_list();
   }
 
-/*   const auto begin = std::chrono::high_resolution_clock::now(); */
+  /*   const auto begin = std::chrono::high_resolution_clock::now(); */
   auto res =
       curl_utils::SimpleGet("https://huggingface.co/api/models?author=" + as);
   if (res.has_value()) {
@@ -490,8 +490,9 @@ cpp::result<std::string, std::string> ModelSourceService::AddCortexsoRepoBranch(
   url_parser::Url url = {
       /* .protocol = */ "https",
       /* .host = */ kHuggingFaceHost,
-      /* .pathParams = */ {"api", "models", "cortexso", model_name, "tree", branch},
-			/* .queries = */ {},
+      /* .pathParams = */
+      {"api", "models", "cortexso", model_name, "tree", branch},
+      /* .queries = */ {},
   };
 
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());

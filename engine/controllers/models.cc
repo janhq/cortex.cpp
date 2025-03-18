@@ -15,7 +15,7 @@
 
 namespace {
 std::string ToJsonStringWithPrecision(Json::Value& input, int precision = 2) {
-	(void) precision;
+  (void)precision;
   Json::StreamWriterBuilder wbuilder;
   wbuilder.settings_["precision"] = 2;
   return Json::writeString(wbuilder, input);
@@ -63,15 +63,17 @@ void Models::PullModel(const HttpRequestPtr& req,
         auto mh = url_parser::Url{
             /* .protocol = */ "https",
             /* .host = */ kHuggingFaceHost,
-            /* .pathParams = */ {
+            /* .pathParams = */
+            {
                 model_and_branch[0],
                 model_and_branch[1],
                 "resolve",
                 "main",
                 model_and_branch[2],
             },
-					 /* queries= */ {},	
-				}.ToFullPath();
+            /* queries= */ {},
+        }
+                      .ToFullPath();
         return model_service_->HandleDownloadUrlAsync(mh, desired_model_id,
                                                       desired_model_name);
       }
@@ -174,7 +176,7 @@ void Models::AbortPullModel(
 void Models::ListModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
-	(void) req;
+  (void)req;
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   Json::Value ret;
@@ -267,7 +269,7 @@ void Models::ListModel(
 void Models::GetModel(const HttpRequestPtr& req,
                       std::function<void(const HttpResponsePtr&)>&& callback,
                       const std::string& model_id) const {
-	(void) req;
+  (void)req;
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   LOG_DEBUG << "GetModel, Model handle: " << model_id;
@@ -329,7 +331,7 @@ void Models::GetModel(const HttpRequestPtr& req,
 void Models::DeleteModel(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
                          const std::string& model_id) {
-	(void) req;
+  (void)req;
   auto result = model_service_->DeleteModel(model_id);
   if (result.has_error()) {
     Json::Value ret;
@@ -426,7 +428,7 @@ void Models::ImportModel(
     cortex::db::ModelEntry model_entry{
         modelHandle, "",      "",         yaml_rel_path.string(),
         modelHandle, "local", "imported", cortex::db::ModelStatus::Downloaded,
-        "", ""};
+        "",          ""};
 
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
@@ -605,7 +607,7 @@ void Models::GetModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& model_id) {
-	(void) req;
+  (void)req;
   auto result = model_service_->GetModelStatus(model_id);
   if (result.has_error()) {
     Json::Value ret;
@@ -626,7 +628,7 @@ void Models::GetRemoteModels(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine_id) {
-	(void) req;
+  (void)req;
   if (!engine_service_->IsRemoteEngine(engine_id)) {
     Json::Value ret;
     ret["message"] = "Not a remote engine: " + engine_id;
@@ -696,7 +698,7 @@ void Models::AddRemoteModel(
     cortex::db::ModelEntry model_entry{
         model_handle, "",       "",         yaml_rel_path.string(),
         model_handle, "remote", "imported", cortex::db::ModelStatus::Remote,
-        engine_name, ""};
+        engine_name,  ""};
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
     if (db_service_->AddModelEntry(model_entry).value()) {
@@ -756,7 +758,7 @@ void Models::AddModelSource(
     resp->setStatusCode(k400BadRequest);
     callback(resp);
   } else {
-/*     auto const& info = res.value(); */
+    /*     auto const& info = res.value(); */
     Json::Value ret;
     ret["message"] = "Model source is added successfully!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -781,7 +783,7 @@ void Models::DeleteModelSource(
     resp->setStatusCode(k400BadRequest);
     callback(resp);
   } else {
-/*     auto const& info = res.value(); */
+    /*     auto const& info = res.value(); */
     Json::Value ret;
     ret["message"] = "Model source is deleted successfully!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -793,7 +795,7 @@ void Models::DeleteModelSource(
 void Models::GetModelSources(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-	(void) req;
+  (void)req;
   auto res = model_src_svc_->GetModelSources();
   if (res.has_error()) {
     Json::Value ret;
@@ -819,7 +821,7 @@ void Models::GetModelSource(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& src) {
-	(void) req;
+  (void)req;
   auto res = model_src_svc_->GetModelSource(src);
   if (res.has_error()) {
     Json::Value ret;
@@ -839,7 +841,7 @@ void Models::GetRepositoryList(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     std::optional<std::string> author, std::optional<std::string> tag) {
-	(void) req;
+  (void)req;
   if (!author.has_value())
     author = "cortexso";
   auto res =

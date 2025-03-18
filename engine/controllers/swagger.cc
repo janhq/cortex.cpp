@@ -19,7 +19,7 @@ Json::Value SwaggerController::GenerateOpenApiSpec() const {
 void SwaggerController::serveSwaggerUI(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback) const {
-	(void) req;
+  (void)req;
   auto resp = cortex_utils::CreateCortexHttpResponse();
   resp->setBody(ScalarUi);
   resp->setContentTypeCode(drogon::CT_TEXT_HTML);
@@ -29,7 +29,7 @@ void SwaggerController::serveSwaggerUI(
 void SwaggerController::serveOpenAPISpec(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback) const {
-	(void) req;
+  (void)req;
   auto spec = GenerateOpenApiSpec();
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(spec);
   callback(resp);

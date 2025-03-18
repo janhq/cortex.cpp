@@ -54,11 +54,7 @@ inline CPU FromJson(const Json::Value& root) {
   for (auto const& i : root["instructions"]) {
     insts.emplace_back(i.asString());
   }
-  return {cores,
-          arch,
-          model,
-          usage,
-          insts};
+  return {cores, arch, model, usage, insts};
 }
 }  // namespace cpu
 
@@ -180,8 +176,7 @@ inline Json::Value ToJson(const PowerInfo& pi) {
 
 namespace power {
 inline PowerInfo FromJson(const Json::Value& root) {
-  return {root["charging_status"].asString(),
-          root["battery_life"].asInt(),
+  return {root["charging_status"].asString(), root["battery_life"].asInt(),
           root["is_power_saving"].asBool()};
 }
 }  // namespace power
@@ -207,8 +202,7 @@ inline Json::Value ToJson(const Memory& m) {
 
 namespace memory {
 inline Memory FromJson(const Json::Value& root) {
-  return {root["total"].asInt64(),
-          root["available"].asInt64(),
+  return {root["total"].asInt64(), root["available"].asInt64(),
           root["type"].asString()};
 }
 }  // namespace memory
@@ -229,8 +223,7 @@ inline Json::Value ToJson(const StorageInfo& si) {
 
 namespace storage {
 inline StorageInfo FromJson(const Json::Value& root) {
-  return {root["type"].asString(),
-          root["total"].asInt64(),
+  return {root["type"].asString(), root["total"].asInt64(),
           root["available"].asInt64()};
 }
 }  // namespace storage

@@ -36,7 +36,7 @@ std::string GetSuitableCudaVersion(const std::string& engine,
   } else if (cuda_driver_semver.major == 12) {
     suitable_toolkit_version = "12.0";
   }
-  (void) engine;
+  (void)engine;
   return suitable_toolkit_version;
 }
 
@@ -150,7 +150,7 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
   }
-  (void) version;
+  (void)version;
 
   return true;
 }
@@ -339,18 +339,19 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     CTL_INF("Finished!");
   };
 
-  auto downloadTask =
-      DownloadTask{/* .id = */ selected_variant->name,
-        /* .status = */ DownloadTask::Status::Pending,
-                   /* .type = */ DownloadType::Engine,
-                   /* .items = */ {DownloadItem{
-                       /* .id = */ selected_variant->name,
-                       /* .downloadUrl = */ selected_variant->browser_download_url,
-                       /* .localPath = */ variant_path,
-                       /* .checksum = */ std::nullopt,
-                       /* .bytes = */ std:: nullopt,
-                       /* .downloadedBytes = */ std::nullopt,
-                   }}};
+  auto downloadTask = DownloadTask{
+      /* .id = */ selected_variant->name,
+      /* .status = */ DownloadTask::Status::Pending,
+      /* .type = */ DownloadType::Engine,
+      /* .items = */
+      {DownloadItem{
+          /* .id = */ selected_variant->name,
+          /* .downloadUrl = */ selected_variant->browser_download_url,
+          /* .localPath = */ variant_path,
+          /* .checksum = */ std::nullopt,
+          /* .bytes = */ std::nullopt,
+          /* .downloadedBytes = */ std::nullopt,
+      }}};
 
   auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
   if (add_task_result.has_error()) {
@@ -381,8 +382,9 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
   auto url_obj = url_parser::Url{
       /* .protocol = */ "https",
       /* .host = */ jan_host,
-      /* .pathParams = */ {"dist", "cuda-dependencies", suitable_toolkit_version,
-                     hw_inf_.sys_inf->os, cuda_toolkit_file_name},
+      /* .pathParams = */
+      {"dist", "cuda-dependencies", suitable_toolkit_version,
+       hw_inf_.sys_inf->os, cuda_toolkit_file_name},
       /* .queries = */ {},
   };
 
@@ -398,13 +400,15 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
       /* .id = */ download_id,
       /* .status = */ DownloadTask::Status::Pending,
       /* .type = */ DownloadType::CudaToolkit,
-      /* .items = */ {DownloadItem{/* .id = */ download_id,
-                             /* .downloadUrl = */ cuda_toolkit_url,
-                             /* .localPath = */ cuda_toolkit_local_path,
-                            /* .checksum = */ std::nullopt,
-                            /* .bytes = */ std::nullopt,
-                            /* .downloadedBytes = */ std::nullopt,
-                          }},
+      /* .items = */
+      {DownloadItem{
+          /* .id = */ download_id,
+          /* .downloadUrl = */ cuda_toolkit_url,
+          /* .localPath = */ cuda_toolkit_local_path,
+          /* .checksum = */ std::nullopt,
+          /* .bytes = */ std::nullopt,
+          /* .downloadedBytes = */ std::nullopt,
+      }},
   }};
 
   auto on_finished = [engine](const DownloadTask& finishedTask) {
@@ -576,7 +580,7 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
     CLI_LOG("Installed: name: " + installed_engine.name +
             ", version: " + installed_engine.version);
     if ((installed_engine.name == variant &&
-            installed_engine.version == normalized_version) ||
+         installed_engine.version == normalized_version) ||
         installed_engine.version == "v" + normalized_version) {
       return true;
     }
@@ -982,10 +986,10 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   auto res = InstallEngineAsync(engine, latest_version->tag_name,
                                 default_variant->variant);
 
-  return EngineUpdateResult{/*.engine =*/ engine,
-                            /*.variant =*/ default_variant->variant,
-                            /*.from =*/ default_variant->version,
-                            /*.to =*/ latest_version->tag_name};
+  return EngineUpdateResult{/*.engine =*/engine,
+                            /*.variant =*/default_variant->variant,
+                            /*.from =*/default_variant->version,
+                            /*.to =*/latest_version->tag_name};
 }
 
 cpp::result<std::vector<cortex::db::EngineEntry>, std::string>

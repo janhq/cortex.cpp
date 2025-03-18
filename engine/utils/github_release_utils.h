@@ -101,17 +101,16 @@ struct GitHubRelease {
     }
 
     return GitHubRelease{
-      json["url"].asString(),
-      json["id"].asInt(),
-      json["tag_name"].asString(),
-      json["name"].asString(),
-      json["draft"].asBool(),
-      json["prerelease"].asBool(),
-      json["created_at"].asString(),
-      json["published_at"].asString(),
-      assets,
-  };
-  
+        json["url"].asString(),
+        json["id"].asInt(),
+        json["tag_name"].asString(),
+        json["name"].asString(),
+        json["draft"].asBool(),
+        json["prerelease"].asBool(),
+        json["created_at"].asString(),
+        json["published_at"].asString(),
+        assets,
+    };
   }
 
   Json::Value ToApiJson() const {
@@ -168,7 +167,7 @@ inline cpp::result<std::vector<GitHubRelease>, std::string> GetReleases(
   for (const auto& release : result.value()) {
     releases.push_back(GitHubRelease::FromJson(release));
   }
-  (void) allow_prerelease;
+  (void)allow_prerelease;
   return releases;
 }
 
@@ -193,7 +192,7 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
       /* .protocol = */ "https",
       /* .host = */ kGitHubHost,
       /* .pathParams = */ path_params,
-			/* .queries = */ {},
+      /* .queries = */ {},
   };
 
   // CTL_DBG("GetReleaseByVersion: " << url.ToFullPath());

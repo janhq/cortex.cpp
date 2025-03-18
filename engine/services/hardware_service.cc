@@ -283,7 +283,7 @@ bool HardwareService::SetActivateHardwareConfig(
       for (size_t i = 0; i < ahc_gpus.size(); i++) {
         // if activated id or priority changes
         if (ahc_gpus[i] != activated_ids[i].first ||
-            i != (uint64_t) activated_ids[i].second)
+            i != (uint64_t)activated_ids[i].second)
           need_update = true;
         break;
       }
@@ -497,10 +497,12 @@ void HardwareService::CheckDependencies() {
         /* .id = */ "vulkan",
         /* .status = */ DownloadTask::Status::Pending,
         /* .type = */ DownloadType::Miscellaneous,
-        /* .items = */ {DownloadItem{
+        /* .items = */
+        {DownloadItem{
             /* .id = */ "vulkan",
             /* .downloadUrl = */ "https://catalog.jan.ai/libvulkan.so",
-            /* .localPath = */ fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+            /* .localPath = */ fmu::GetCortexDataPath() / "deps" /
+                "libvulkan.so",
             /* .checksum = */ std::nullopt,
             /* .bytes = */ std::nullopt,
             /* .downloadedBytes = */ std::nullopt,

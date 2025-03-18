@@ -74,13 +74,13 @@ bool EngineInstallCmd::Exec(const std::string& engine,
         /* .protocol = */ "http",
         /* .host = */ host_ + ":" + std::to_string(port_),
         /* .pathParams = */
-            {
-                "v1",
-                "engines",
-                engine,
-                "releases",
-                selected_release.value(),
-            },
+        {
+            "v1",
+            "engines",
+            engine,
+            "releases",
+            selected_release.value(),
+        },
         /* queries = */ {},
     };
     auto variant_result = curl_utils::SimpleGetJson(variant_url.ToFullPath());
@@ -122,12 +122,12 @@ bool EngineInstallCmd::Exec(const std::string& engine,
         /* .protocol = */ "http",
         /* .host = */ host_ + ":" + std::to_string(port_),
         /* .pathParams = */
-            {
-                "v1",
-                "engines",
-                engine,
-                "install",
-            },
+        {
+            "v1",
+            "engines",
+            engine,
+            "install",
+        },
         /* queries = */ {},
     };
     Json::Value body;
@@ -166,12 +166,12 @@ bool EngineInstallCmd::Exec(const std::string& engine,
       /* .protocol = */ "http",
       /* .host = */ host_ + ":" + std::to_string(port_),
       /* .pathParams = */
-          {
-              "v1",
-              "engines",
-              engine,
-              "install",
-          },
+      {
+          "v1",
+          "engines",
+          engine,
+          "install",
+      },
       /* .queries = */ {},
   };
 

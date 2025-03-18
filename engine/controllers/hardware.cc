@@ -5,7 +5,7 @@
 void Hardware::GetHardwareInfo(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-	(void) req;
+  (void)req;
   auto hw_inf = hw_svc_->GetHardwareInfo();
   Json::Value ret;
   ret["cpu"] = cortex::hw::ToJson(hw_inf.cpu);
@@ -39,7 +39,7 @@ void Hardware::Activate(
       ahc.gpus.push_back(g.asInt());
     }
   }
-  
+
   if (!hw_svc_->IsValidConfig(ahc)) {
     Json::Value ret;
     ret["message"] = "Invalid GPU index provided.";

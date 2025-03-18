@@ -15,3 +15,4 @@ inline OS GetOSInfo() {
   };
 }
 }  // namespace cortex::hw
+

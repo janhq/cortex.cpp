@@ -64,7 +64,7 @@ void Files::ListFiles(const HttpRequestPtr& req,
                       std::optional<std::string> limit,
                       std::optional<std::string> order,
                       std::optional<std::string> after) const {
-                        (void) req;
+  (void)req;
   auto res = file_service_->ListFiles(
       purpose.value_or(""), std::stoi(limit.value_or("20")),
       order.value_or("desc"), after.value_or(""));
@@ -98,7 +98,7 @@ void Files::RetrieveFile(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
                          const std::string& file_id,
                          std::optional<std::string> thread_id) const {
-                          (void) req;
+  (void)req;
   // this code part is for backward compatible. remove it later on
   if (thread_id.has_value()) {
     auto msg_res =
@@ -171,7 +171,7 @@ void Files::RetrieveFile(const HttpRequestPtr& req,
 void Files::DeleteFile(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback,
                        const std::string& file_id) {
-                        (void) req;
+  (void)req;
   auto res = file_service_->DeleteFileLocal(file_id);
   if (res.has_error()) {
     Json::Value ret;
@@ -196,7 +196,7 @@ void Files::RetrieveFileContent(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& file_id, std::optional<std::string> thread_id) {
-      (void) req;
+  (void)req;
   if (thread_id.has_value()) {
     auto msg_res =
         message_service_->RetrieveMessage(thread_id.value(), file_id);

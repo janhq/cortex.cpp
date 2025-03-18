@@ -18,7 +18,7 @@ void Configs::GetConfigurations(
       get_config_result.value().ToJson());
   resp->setStatusCode(drogon::k200OK);
   callback(resp);
-  (void) req;
+  (void)req;
   return;
 }
 

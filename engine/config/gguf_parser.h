@@ -68,4 +68,4 @@ class GGUFHandler {
   std::unordered_map<std::string, std::vector<std::string>>
       metadata_array_string_;
 };
-}
+}  // namespace config

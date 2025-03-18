@@ -49,7 +49,7 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
           /* .name = */ variant["name"].asString(),
           /* .version = */ variant["version"].asString(),
           /* .engine = */ engine,
-					/* .type = */ "",
+          /* .type = */ "",
       });
     }
   }

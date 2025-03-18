@@ -11,9 +11,9 @@ namespace remote_engine {
 namespace {
 constexpr const int k200OK = 200;
 constexpr const int k400BadRequest = 400;
-[[maybe_unused]]constexpr const int k409Conflict = 409;
-constexpr const int k500InternalServerError = 500;
-[[maybe_unused]]constexpr const int kFileLoggerOption = 0;
+[[maybe_unused]] constexpr const int k409Conflict = 409;
+[[maybe_unused]] constexpr const int k500InternalServerError = 500;
+[[maybe_unused]] constexpr const int kFileLoggerOption = 0;
 
 [[maybe_unused]]constexpr const std::array<std::string_view, 5> kAnthropicModels = {
     "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
@@ -392,7 +392,7 @@ void RemoteEngine::GetModels(
   status["status_code"] = 200;
   callback(std::move(status), std::move(json_resp));
   CTL_INF("Running models responded");
-  (void) json_body;
+  (void)json_body;
 }
 
 void RemoteEngine::LoadModel(

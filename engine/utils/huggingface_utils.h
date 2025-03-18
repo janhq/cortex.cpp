@@ -89,7 +89,7 @@ GetSiblingsFileSize(const std::string& author, const std::string& model_name,
                                      /* .pathParams = */
                                      {"api", "models", author, model_name,
                                       "tree", branch, j["path"].asString()},
-                                    /* .queries = */ {}};
+                                     /* .queries = */ {}};
 
       auto rd = curl_utils::SimpleGetJson(url_obj.ToFullPath());
       if (rd.has_value()) {
@@ -140,7 +140,7 @@ struct HuggingFaceGgufInfo {
     }
     try {
       return HuggingFaceGgufInfo{
-         /*  .total = */ json["total"].asUInt64(),
+          /*  .total = */ json["total"].asUInt64(),
           /* .architecture = */ json["architecture"].asString(),
       };
     } catch (const std::exception& e) {

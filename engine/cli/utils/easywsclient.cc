@@ -112,15 +112,15 @@ socket_t hostname_connect(const std::string& hostname, int port) {
 
 class _DummyWebSocket : public easywsclient::WebSocket {
  public:
-  void poll(int timeout) {(void) timeout;}
-  void send(const std::string& message) {(void) message;}
-  void sendBinary(const std::string& message) {(void) message;}
-  void sendBinary(const std::vector<uint8_t>& message) {(void) message;}
+  void poll(int timeout) { (void)timeout; }
+  void send(const std::string& message) { (void)message; }
+  void sendBinary(const std::string& message) { (void)message; }
+  void sendBinary(const std::vector<uint8_t>& message) { (void)message; }
   void sendPing() {}
   void close() {}
   readyStateValues getReadyState() const { return CLOSED; }
-  void _dispatch(Callback_Imp& callable) {(void) callable;}
-  void _dispatchBinary(BytesCallback_Imp& callable) {(void) callable;}
+  void _dispatch(Callback_Imp& callable) { (void)callable; }
+  void _dispatchBinary(BytesCallback_Imp& callable) { (void)callable; }
 };
 
 class _RealWebSocket : public easywsclient::WebSocket {

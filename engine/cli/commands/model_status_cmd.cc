@@ -20,7 +20,7 @@ bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
       /* .protocol = */ "http",
       /* .host = */ host + ":" + std::to_string(port),
       /* .pathParams = */ {"v1", "models", "status", model_handle},
-			/* .queries= */ {},
+      /* .queries= */ {},
   };
 
   auto res = curl_utils::SimpleGetJson(url.ToFullPath());

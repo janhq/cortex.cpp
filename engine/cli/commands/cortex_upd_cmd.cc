@@ -28,7 +28,8 @@ std::chrono::seconds GetTimeSinceEpochMillisec() {
   return duration_cast<seconds>(system_clock::now().time_since_epoch());
 }
 
-[[maybe_unused]] std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
+[[maybe_unused]] std::unique_ptr<system_info_utils::SystemInfo>
+GetSystemInfoWithUniversal() {
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info->os == "mac") {
     CTL_INF("Change arch from " << system_info->arch << " to universal");
@@ -37,8 +38,8 @@ std::chrono::seconds GetTimeSinceEpochMillisec() {
   return system_info;
 }
 
-[[maybe_unused]] std::string GetNightlyInstallerName(const std::string& v,
-                                    const std::string& os_arch) {
+[[maybe_unused]] std::string GetNightlyInstallerName(
+    const std::string& v, const std::string& os_arch) {
   const std::string kCortex = "cortex";
   // Remove 'v' in file name
   std::string version = v == "latest" ? "" : (v.substr(1) + "-");
@@ -134,7 +135,7 @@ bool InstallNewVersion(const std::filesystem::path& dst,
 
 std::optional<std::string> CheckNewUpdate(
     std::optional<std::chrono::milliseconds> timeout) {
-	(void) timeout;
+  (void)timeout;
   // Get info from .cortexrc
   auto should_check_update = false;
   auto config = file_manager_utils::GetCortexConfig();
@@ -418,12 +419,13 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
           /* .id = */ "cortex",
           /* .status = */ DownloadTask::Status::Pending,
           /* .type = */ DownloadType::Cortex,
-          /* .items = */ {DownloadItem{
+          /* .items = */
+          {DownloadItem{
               /* .id = */ "cortex",
               /* .downloadUrl = */ download_url,
               /* .localPath = */ local_path,
               /* .checksum = */ std::nullopt,
-							/* .bytes = */ std::nullopt,
+              /* .bytes = */ std::nullopt,
               /* .downloadedBytes = */ std::nullopt,
           }},
       }};
@@ -487,7 +489,8 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       DownloadTask{/* .id = */ "cortex",
                    /* .status = */ DownloadTask::Status::Pending,
                    /* .type = */ DownloadType::Cortex,
-                   /* .items = */ {DownloadItem{
+                   /* .items = */
+                   {DownloadItem{
                        /* .id = */ "cortex",
                        /* .downloadUrl = */ url_parser::FromUrl(url_obj),
                        /* .localPath = */ localPath,
@@ -558,7 +561,8 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
       DownloadTask{/* .id = */ "cortex",
                    /* .status = */ DownloadTask::Status::Pending,
                    /* .type = */ DownloadType::Cortex,
-                   /* .items = */ {DownloadItem{
+                   /* .items = */
+                   {DownloadItem{
                        /* .id = */ "cortex",
                        /* .downloadUrl = */ url_parser::FromUrl(url_obj),
                        /* .localPath = */ localPath,
