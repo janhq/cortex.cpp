@@ -895,6 +895,46 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
   }
 }
 
+cpp::result<DownloadTask, std::string> ModelService::PullModel(
+    const std::string& model_handle,
+    const std::optional<std::string>& desired_model_id,
+    const std::optional<std::string>& desired_model_name) {
+  CTL_INF("Handle model input, model handle: " + model_handle);
+
+  if (string_utils::StartsWith(model_handle, "https"))
+    return HandleDownloadUrlAsync(model_handle, desired_model_id,
+                                  desired_model_name);
+
+  if (model_handle.find(":") == std::string::npos)
+    return cpp::fail("Invalid model handle or not supported!");
+
+  auto model_and_branch = string_utils::SplitBy(model_handle, ":");
+
+  // cortexso format - model:branch
+  // NOTE: desired_model_name is not used by cortexso downloader
+  if (model_and_branch.size() == 2)
+    return DownloadModelFromCortexsoAsync(
+        model_and_branch[0], model_and_branch[1], desired_model_id);
+
+  // single GGUF file
+  // author_id:model_name:filename
+  if (model_and_branch.size() == 3) {
+    auto mh = url_parser::Url{
+        .protocol = "https",
+        .host = kHuggingFaceHost,
+        .pathParams = {
+            model_and_branch[0],
+            model_and_branch[1],
+            "resolve",
+            "main",
+            model_and_branch[2],
+        }}.ToFullPath();
+    return HandleDownloadUrlAsync(mh, desired_model_id, desired_model_name);
+  }
+
+  return cpp::fail("Invalid model handle or not supported!");
+}
+
 cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
     const std::string& input) {
   if (input.empty()) {
