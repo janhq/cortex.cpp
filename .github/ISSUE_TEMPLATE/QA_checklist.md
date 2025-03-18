@@ -70,7 +70,7 @@ OS (select one)
 ## Server
 - [ ] `cortex start` should start server and output localhost URL & port number
 - [ ] users can access API Swagger documentation page  at localhost URL & port number
-- [ ] `cortex start` can be configured with parameters (port, [logLevel [WIP]](https://github.com/janhq/cortex.cpp/pull/1636)) https://cortex.so/docs/cli/start/
+- [ ] `cortex start` can be configured with parameters (port, [logLevel [WIP]](https://github.com/menloresearch/cortex.cpp/pull/1636)) https://cortex.so/docs/cli/start/
 - [ ]  it should correctly log to cortex logs (logs/cortex.log, logs/cortex-cli.log)
 - [ ]  `cortex ps` should return server status and running models (or no model loaded)
 - [ ]  `cortex stop` should stop server
