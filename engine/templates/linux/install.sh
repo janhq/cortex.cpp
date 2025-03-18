@@ -50,10 +50,10 @@ get_latest_version() {
   local tag_name
   case $channel in
     stable)
-      tag_name=$(curl -s "https://api.github.com/repos/janhq/cortex.cpp/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')
+      tag_name=$(curl -s "https://api.github.com/repos/menloresearch/cortex.cpp/releases/latest" | grep -oP '"tag_name": "\K(.*)(?=")')
       ;;
     beta)
-      tag_name=$(curl -s "https://api.github.com/repos/janhq/cortex.cpp/releases" | jq -r '.[] | select(.prerelease) | .tag_name' | head -n 1)
+      tag_name=$(curl -s "https://api.github.com/repos/menloresearch/cortex.cpp/releases" | jq -r '.[] | select(.prerelease) | .tag_name' | head -n 1)
       ;;
     nightly)
       tag_name=$(curl -s "https://delta.jan.ai/cortex/latest/version.json" | jq -r '.tag_name')
@@ -153,14 +153,14 @@ install_cortex() {
 
   case $channel in
     stable)
-      url_binary="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}.tar.gz"
-      url_deb_local="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-local-installer.deb"
-      url_deb_network="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-network-installer.deb"
+      url_binary="https://github.com/menloresearch/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}.tar.gz"
+      url_deb_local="https://github.com/menloresearch/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-local-installer.deb"
+      url_deb_network="https://github.com/menloresearch/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-network-installer.deb"
       ;;
     beta)
-      url_binary="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}.tar.gz"
-      url_deb_local="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-local-installer.deb"
-      url_deb_network="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-network-installer.deb"
+      url_binary="https://github.com/menloresearch/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}.tar.gz"
+      url_deb_local="https://github.com/menloresearch/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-local-installer.deb"
+      url_deb_network="https://github.com/menloresearch/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-network-installer.deb"
       ;;
     nightly)
       url_binary="https://delta.jan.ai/cortex/v${version}/linux-${ARCH}/cortex-nightly.tar.gz"

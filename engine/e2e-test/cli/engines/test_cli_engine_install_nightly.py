@@ -5,7 +5,7 @@ import pytest
 import requests
 from utils.test_runner import run, start_server, stop_server, get_latest_pre_release_tag
 
-latest_pre_release_tag = get_latest_pre_release_tag("janhq", "cortex.llamacpp")
+latest_pre_release_tag = get_latest_pre_release_tag("menloresearch", "cortex.llamacpp")
 
 class TestCliEngineInstall:
     def setup_and_teardown(self):

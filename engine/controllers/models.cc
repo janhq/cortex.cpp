@@ -504,8 +504,8 @@ void Models::StartModel(
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
 
   std::optional<std::string> mmproj;
-  if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
-    mmproj = o.asString();
+  if (auto& o = (*(req->getJsonObject())); o.isMember("mmproj")) {
+    mmproj = o["mmproj"].asString();
   }
 
   auto bypass_llama_model_path = false;
