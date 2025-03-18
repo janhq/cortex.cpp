@@ -85,7 +85,7 @@ export default function CardDownload({ lastRelease }: Props) {
             .replace("{tag}", tag);
           return {
             ...system,
-            href: `https://github.com/janhq/cortex/releases/download/${lastRelease.tag_name}/${downloadUrl}`,
+            href: `https://github.com/menloresearch/cortex/releases/download/${lastRelease.tag_name}/${downloadUrl}`,
           };
         });
 

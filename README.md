@@ -5,17 +5,17 @@
 </p>
 
 <p align="center">
-  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/janhq/cortex.cpp"/>
-  <img alt="Github Last Commit" src="https://img.shields.io/github/last-commit/janhq/cortex.cpp"/>
-  <img alt="Github Contributors" src="https://img.shields.io/github/contributors/janhq/cortex.cpp"/>
+  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/menloresearch/cortex.cpp"/>
+  <img alt="Github Last Commit" src="https://img.shields.io/github/last-commit/menloresearch/cortex.cpp"/>
+  <img alt="Github Contributors" src="https://img.shields.io/github/contributors/menloresearch/cortex.cpp"/>
   <img alt="Discord" src="https://img.shields.io/discord/1107178041848909847?label=discord"/>
 </p>
 
 <p align="center">
   <a href="https://cortex.so/docs/">Docs</a> •
   <a href="https://cortex.so/api-reference">API Reference</a> •
-  <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> •
-  <a href="https://github.com/janhq/cortex.cpp/issues">Issues</a> •
+  <a href="https://github.com/menloresearch/cortex.cpp/releases">Changelog</a> •
+  <a href="https://github.com/menloresearch/cortex.cpp/issues">Issues</a> •
   <a href="https://discord.gg/AsJ8krTT3N">Community</a>
 </p>
 
@@ -35,7 +35,7 @@ Cortex is the open-source brain for robots: vision, speech, language, tabular, a
 
 All other Linux distributions:
 ```bash
-curl -s https://raw.githubusercontent.com/janhq/cortex/main/engine/templates/linux/install.sh | sudo bash
+curl -s https://raw.githubusercontent.com/menloresearch/cortex/main/engine/templates/linux/install.sh | sudo bash
 ```
 
 ### Start the Server
@@ -144,7 +144,7 @@ cortex-nightly hardware activate
 - Quick troubleshooting: `cortex --help`
 - [Documentation](https://cortex.so/docs)
 - [Community Discord](https://discord.gg/FTk2MvZwJH)
-- [Report Issues](https://github.com/janhq/cortex.cpp/issues)
+- [Report Issues](https://github.com/menloresearch/cortex.cpp/issues)
 
 ---
 
@@ -182,6 +182,6 @@ The script to uninstall Cortex comes with the binary and was added to the `/usr/
 
 ## Contact Support
 
-- For support, please file a [GitHub ticket](https://github.com/janhq/cortex.cpp/issues/new/choose).
+- For support, please file a [GitHub ticket](https://github.com/menloresearch/cortex.cpp/issues/new/choose).
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).

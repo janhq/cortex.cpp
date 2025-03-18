@@ -515,10 +515,10 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
                                          const std::string& channel) {
   std::vector<std::string> path_list;
   if (channel == "nightly") {
-    path_list = {"janhq",     "cortex.cpp", "dev",       "engine",
+    path_list = {"menloresearch",     "cortex.cpp", "dev",       "engine",
                  "templates", "linux",      "install.sh"};
   } else {
-    path_list = {"janhq",     "cortex.cpp", "main",      "engine",
+    path_list = {"menloresearch",     "cortex.cpp", "main",      "engine",
                  "templates", "linux",      "install.sh"};
   }
   auto url_obj = url_parser::Url{
