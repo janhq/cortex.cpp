@@ -916,22 +916,6 @@ cpp::result<DownloadTask, std::string> ModelService::PullModel(
     return DownloadModelFromCortexsoAsync(
         model_and_branch[0], model_and_branch[1], desired_model_id);
 
-  // single GGUF file
-  // author_id:model_name:filename
-  if (model_and_branch.size() == 3) {
-    auto mh = url_parser::Url{
-        .protocol = "https",
-        .host = kHuggingFaceHost,
-        .pathParams = {
-            model_and_branch[0],
-            model_and_branch[1],
-            "resolve",
-            "main",
-            model_and_branch[2],
-        }}.ToFullPath();
-    return HandleDownloadUrlAsync(mh, desired_model_id, desired_model_name);
-  }
-
   return cpp::fail("Invalid model handle or not supported!");
 }
 
