@@ -39,15 +39,9 @@ class server : public drogon::HttpController<server, false>,
   METHOD_ADD(server::ModelStatus, "modelstatus", Options, Post);
   METHOD_ADD(server::GetModels, "models", Get);
 
-  // cortex.python API
-  METHOD_ADD(server::FineTuning, "finetuning", Options, Post);
-
   // Openai compatible path
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Options, Post);
-  ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Options, Post);
   ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Options, Post);
-  ADD_METHOD_TO(server::Inference, "/v1/inference", Options, Post);
-  ADD_METHOD_TO(server::RouteRequest, "/v1/route/request", Options, Post);
 
   ADD_METHOD_TO(server::Python, "/v1/python/{1}/.*", Options, Get, Post);
 
@@ -71,16 +65,6 @@ class server : public drogon::HttpController<server, false>,
   void GetModels(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void FineTuning(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void Inference(const HttpRequestPtr& req,
-                 std::function<void(const HttpResponsePtr&)>&& callback);
-  void RouteRequest(const HttpRequestPtr& req,
-                    std::function<void(const HttpResponsePtr&)>&& callback);
-  void Python(const HttpRequestPtr& req,
-              std::function<void(const HttpResponsePtr&)>&& callback,
-              const std::string& model);
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,

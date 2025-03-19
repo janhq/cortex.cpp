@@ -450,7 +450,6 @@ ModelService::DownloadModelFromCortexsoAsync(
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
 
-    // post-download hooks for different engines
     if (mc.engine == kLlamaEngine) {
       mc.model = unique_model_id;
 
@@ -602,34 +601,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
               .string());
       auto mc = yaml_handler.GetModelConfig();
 
-      // Check if Python model first
-      if (mc.engine == kPythonEngine) {
-        const std::string model_yaml_path =
-            model_entry.value().path_to_model_yaml;
-
-        json_data["model"] = model_handle;
-        json_data["model_dir"] = fmu::ToAbsoluteCortexDataPath(
-                                     fs::path(model_yaml_path).parent_path())
-                                     .string();
-        json_data["engine"] = mc.engine;
-        assert(!!inference_svc_);
-
-        auto ir =
-            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
-        auto status = std::get<0>(ir)["status_code"].asInt();
-        auto data = std::get<1>(ir);
-
-        if (status == drogon::k200OK) {
-          return StartModelResult{.success = true, .warning = ""};
-        } else if (status == drogon::k409Conflict) {
-          CTL_INF("Model '" + model_handle + "' is already loaded");
-          return StartModelResult{.success = true, .warning = ""};
-        }
-        CTL_ERR("Model failed to start with status code: " << status);
-        return cpp::fail("Model failed to start: " +
-                         data["message"].asString());
-      }
-
       // Running remote model
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
         (void)engine_svc_->LoadEngine(mc.engine);
@@ -740,7 +711,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     }
 
     assert(!!inference_svc_);
-    // Check if python engine
 
     auto ir =
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));

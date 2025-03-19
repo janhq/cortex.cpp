@@ -702,14 +702,6 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
-  // Check for python engine
-
-  // if (engine_name == kPythonEngine) {
-  //   engines_[engine_name].engine = new python_engine::PythonEngine();
-  //   CTL_INF("Loaded engine: " << engine_name);
-  //   return {};
-  // }
-
   // Check for remote engine
   if (IsRemoteEngine(engine_name)) {
     auto exist_engine = GetEngineByNameAndVariant(engine_name);
@@ -941,16 +933,6 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     }
     return true;
   }
-
-  // Check for python engine
-  // if (engine == kPythonEngine) {
-  //   if (!python_engine::IsUvInstalled()) {
-  //     return cpp::fail(
-  //         "Python engine is not ready. Please run `cortex engines install "
-  //         "python`");
-  //   }
-  //   return true;
-  // }
 
   auto os = hw_inf_.sys_inf->os;
 

@@ -153,74 +153,6 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
   return {};
 }
 
-cpp::result<void, InferResult> InferenceService::HandleInference(
-    std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
-  std::string engine_type;
-  if (!HasFieldInReq(json_body, "engine")) {
-    engine_type = kLlamaRepo;
-  } else {
-    engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
-  }
-
-  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
-  if (engine_result.has_error()) {
-    Json::Value res;
-    Json::Value stt;
-    res["message"] = "Engine is not loaded yet";
-    stt["status_code"] = drogon::k400BadRequest;
-    LOG_WARN << "Engine is not loaded yet";
-    return cpp::fail(std::make_pair(stt, res));
-  }
-
-  auto cb = [q](Json::Value status, Json::Value res) {
-    q->push(std::make_pair(status, res));
-  };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->HandleInference(json_body, std::move(cb));
-  }
-  return {};
-}
-
-cpp::result<void, InferResult> InferenceService::HandleRouteRequest(
-    std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
-  std::string engine_type;
-  if (!HasFieldInReq(json_body, "engine")) {
-    engine_type = kLlamaRepo;
-  } else {
-    engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
-  }
-
-  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
-  if (engine_result.has_error()) {
-    Json::Value res;
-    Json::Value stt;
-    res["message"] = "Engine is not loaded yet";
-    stt["status_code"] = drogon::k400BadRequest;
-    LOG_WARN << "Engine is not loaded yet";
-    return cpp::fail(std::make_pair(stt, res));
-  }
-
-  auto cb = [q](Json::Value status, Json::Value res) {
-    q->push(std::make_pair(status, res));
-  };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->HandleRouteRequest(json_body, std::move(cb));
-  }
-  return {};
-}
-
-cpp::result<int, std::string> InferenceService::GetPythonPort(
-    const std::string& model) {
-  auto engine_result = engine_service_->GetLoadedEngine(kPythonEngine);
-  if (engine_result.has_error()) {
-    return cpp::fail("Python engine is not loaded yet");
-  }
-
-  return std::get<PythonEngineI*>(engine_result.value())->GetPort(model);
-}
-
 InferResult InferenceService::LoadModel(
     std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
@@ -378,17 +310,6 @@ InferResult InferenceService::GetModels(
   root["object"] = "list";
   stt["status_code"] = drogon::k200OK;
   return std::make_pair(stt, root);
-}
-
-InferResult InferenceService::FineTuning(
-    std::shared_ptr<Json::Value> json_body) {
-  std::string ne = kPythonEngine;
-  Json::Value r;
-  Json::Value stt;
-
-  r["message"] = "Method is not supported yet";
-  stt["status_code"] = drogon::k500InternalServerError;
-  return std::make_pair(stt, r);
 }
 
 bool InferenceService::StopInferencing(const std::string& engine_name,
