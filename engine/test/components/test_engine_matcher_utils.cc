@@ -117,4 +117,11 @@ TEST_F(EngineMatcherUtilsTestSuite, TestGetVersionAndArch) {
     EXPECT_EQ(version, "b4920");
     EXPECT_EQ(arch, "macos-x64");
   }
+
+  {
+    std::string variant = "llama-b4920-bin-ubuntu-vulkan-x64.zip";
+    auto [version, arch] = engine_matcher_utils::GetVersionAndArch(variant);
+    EXPECT_EQ(version, "b4920");
+    EXPECT_EQ(arch, "ubuntu-vulkan-x64");
+  }
 }

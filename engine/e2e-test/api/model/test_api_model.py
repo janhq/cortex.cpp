@@ -95,6 +95,7 @@ class TestApiModel:
         time.sleep(30)
 
         print("Pull model")
+        requests.delete("http://localhost:3928/v1/models/tinyllama:1b")
         json_body = {"model": "tinyllama:1b"}
         response = requests.post("http://localhost:3928/v1/models/pull", json=json_body)
         assert response.status_code == 200, f"Failed to pull model: tinyllama:1b"
