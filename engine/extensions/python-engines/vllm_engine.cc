@@ -1,6 +1,7 @@
 #include "vllm_engine.h"
 #include "utils/curl_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/system_info_utils.h"
 
 namespace {
 cpp::result<std::string, std::string> GetLatestVllmVersion() {
@@ -28,6 +29,12 @@ VllmEngine::~VllmEngine() {
 cpp::result<void, std::string> VllmEngine::Download(
     std::shared_ptr<DownloadService>& download_service,
     const std::string& version, const std::optional<std::string> variant_name) {
+  auto system_info = system_info_utils::GetSystemInfo();
+  if (!(system_info->os == kLinuxOs && system_info->arch == "amd64" &&
+        system_info_utils::IsNvidiaSmiAvailable()))
+    return cpp::fail(
+        "vLLM engine is only supported on Linux x86_64 with Nvidia GPU.");
+
   if (variant_name.has_value()) {
     return cpp::fail("variant_name must be empty");
   }
@@ -83,6 +90,23 @@ cpp::result<void, std::string> VllmEngine::Download(
   }
 
   return {};
+}
+
+std::vector<EngineVariantResponse> VllmEngine::GetVariants() {
+  const auto vllm_path = python_utils::GetEnvsPath() / "vllm";
+
+  namespace fs = std::filesystem;
+  if (!fs::exists(vllm_path))
+    return {};
+
+  std::vector<EngineVariantResponse> variants;
+  for (const auto& entry : fs::directory_iterator(vllm_path)) {
+    const auto name = "linux-amd64-cuda";  // arbitrary
+    const auto version_str = "v" + entry.path().filename().string();
+    const EngineVariantResponse variant{name, version_str, kVllmEngine};
+    variants.push_back(variant);
+  }
+  return variants;
 }
 
 void VllmEngine::Load(EngineLoadOption opts) {};

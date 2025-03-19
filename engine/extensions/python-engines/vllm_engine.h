@@ -1,3 +1,4 @@
+#include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
 #include "python_utils.h"
 
@@ -16,38 +17,39 @@ class VllmEngine : public EngineI {
       const std::string& version,
       const std::optional<std::string> variant_name);
 
-  virtual void Load(EngineLoadOption opts) override;
-  virtual void Unload(EngineUnloadOption opts) override;
+  static std::vector<EngineVariantResponse> GetVariants();
+
+  void Load(EngineLoadOption opts) override;
+  void Unload(EngineUnloadOption opts) override;
 
   // cortex.llamacpp interface
-  virtual void HandleChatCompletion(
+  void HandleChatCompletion(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  virtual void HandleEmbedding(
+  void HandleEmbedding(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  virtual void LoadModel(
+  void LoadModel(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  virtual void UnloadModel(
+  void UnloadModel(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  virtual void GetModelStatus(
+  void GetModelStatus(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
   // For backward compatible checking
-  virtual bool IsSupported(const std::string& f) override;
+  bool IsSupported(const std::string& f) override;
 
   // Get list of running models
-  virtual void GetModels(
+  void GetModels(
       std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-  virtual bool SetFileLogger(int max_log_lines,
-                             const std::string& log_path) override;
-  virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
+  bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
+  void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
 
   // Stop inflight chat completion in stream mode
-  virtual void StopInferencing(const std::string& model_id) override;
+  void StopInferencing(const std::string& model_id) override;
 };

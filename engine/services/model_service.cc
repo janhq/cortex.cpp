@@ -208,9 +208,17 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
     const std::string& modelId) const {
 
   config::YamlHandler yaml_handler;
-  auto model_entry = db_service_->GetModelInfo(modelId);
-  if (!model_entry.has_value()) {
+  auto result = db_service_->GetModelInfo(modelId);
+  if (result.has_error()) {
     return std::nullopt;
+  }
+  auto model_entry = result.value();
+
+  // ignore all other params
+  if (model_entry.engine == kVllmEngine) {
+    config::ModelConfig cfg;
+    cfg.engine = kVllmEngine;
+    return cfg;
   }
 
   try {
@@ -219,11 +227,11 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
     namespace fmu = file_manager_utils;
     yaml_handler.ModelConfigFromFile(
         fmu::ToAbsoluteCortexDataPath(
-            fs::path(model_entry.value().path_to_model_yaml))
+            fs::path(model_entry.path_to_model_yaml))
             .string());
     return yaml_handler.GetModelConfig();
   } catch (const std::exception& e) {
-    LOG_ERROR << "Error reading yaml file '" << model_entry->path_to_model_yaml
+    LOG_ERROR << "Error reading yaml file '" << model_entry.path_to_model_yaml
               << "': " << e.what();
     return std::nullopt;
   }

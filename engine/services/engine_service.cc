@@ -620,22 +620,8 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
   auto os = hw_inf_.sys_inf->os;
 
-  // if (ne == kPythonEngine) {
-  //   if (!python_engine::IsUvInstalled()) {
-  //     return {};
-  //   } else {
-  //     // Python engine only means uv is installed.
-  //     // variant name and version don't quite make sense in this context.
-  //     // hence, they are left blank.
-  //     std::vector<EngineVariantResponse> variants;
-  //     variants.push_back(EngineVariantResponse{
-  //         .name = "",
-  //         .version = "",
-  //         .engine = kPythonEngine,
-  //     });
-  //     return variants;
-  //   }
-  // }
+  if (ne == kVllmEngine)
+    return VllmEngine::GetVariants();
 
   auto engines_variants_dir =
       file_manager_utils::GetEnginesContainerPath() / ne;
@@ -931,8 +917,6 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     return true;
   }
 
-  auto os = hw_inf_.sys_inf->os;
-
   auto installed_variants = GetInstalledEngineVariants(engine);
   if (installed_variants.has_error()) {
     return cpp::fail(installed_variants.error());
@@ -1119,6 +1103,11 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
 
 bool EngineService::IsRemoteEngine(const std::string& engine_name) const {
   auto ne = Repo2Engine(engine_name);
+
+  if (ne == kLlamaEngine || ne == kVllmEngine)
+    return false;
+  return true;
+
   auto local_engines = file_manager_utils::GetCortexConfig().supportedEngines;
   for (auto const& le : local_engines) {
     if (le == ne)
