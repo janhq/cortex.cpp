@@ -55,12 +55,6 @@ class LocalEngine : public EngineI {
   // Stop inflight chat completion in stream mode
   void StopInferencing(const std::string& model_id) final {}
 
-  void HandleRouteRequest(std::shared_ptr<Json::Value> json_body,
-                          http_callback&& callback) final {}
-
-  void HandleInference(std::shared_ptr<Json::Value> json_body,
-                       http_callback&& callback) final {}
-
  private:
   void HandleOpenAiChatCompletion(std::shared_ptr<Json::Value> json_body,
                                   http_callback&& callback,

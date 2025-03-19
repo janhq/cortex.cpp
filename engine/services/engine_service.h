@@ -37,8 +37,7 @@ struct EngineUpdateResult {
   }
 };
 
-using EngineV =
-    std::variant<EngineI*, RemoteEngineI*>;
+using EngineV = std::variant<EngineI*, RemoteEngineI*>;
 
 class EngineService : public EngineServiceI {
  private:

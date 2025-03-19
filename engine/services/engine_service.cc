@@ -10,7 +10,6 @@
 #include "database/engines.h"
 #include "database/models.h"
 #include "extensions/local-engine/local_engine.h"
-#include "extensions/python-engine/python_engine.h"
 #include "extensions/remote-engine/remote_engine.h"
 
 #include "utils/archive_utils.h"
@@ -746,14 +745,6 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
-  // Check for python engine
-
-  if (engine_name == kPythonEngine) {
-    engines_[engine_name].engine = new python_engine::PythonEngine();
-    CTL_INF("Loaded engine: " << engine_name);
-    return {};
-  }
-
   // Check for remote engine
   if (IsRemoteEngine(engine_name)) {
     auto exist_engine = GetEngineByNameAndVariant(engine_name);
@@ -924,12 +915,6 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine + "' is not installed");
     }
-    return true;
-  }
-
-  // End hard code
-  // Check for python engine
-  if (engine == kPythonEngine) {
     return true;
   }
 

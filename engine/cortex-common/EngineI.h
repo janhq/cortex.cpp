@@ -58,11 +58,4 @@ class EngineI {
 
   // Stop inflight chat completion in stream mode
   virtual void StopInferencing(const std::string& model_id) = 0;
-
-  virtual void HandleRouteRequest(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
-  virtual void HandleInference(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 };

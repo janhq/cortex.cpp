@@ -121,84 +121,6 @@ void server::GetModels(const HttpRequestPtr& req,
   LOG_TRACE << "Done get models";
 }
 
-void server::Inference(const HttpRequestPtr& req,
-                       std::function<void(const HttpResponsePtr&)>&& callback) {
-
-  auto json_body = req->getJsonObject();
-
-  LOG_TRACE << "Start inference";
-  auto q = std::make_shared<SyncQueue>();
-  auto ir = inference_svc_->HandleInference(q, req->getJsonObject());
-  LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
-  if (ir.has_error()) {
-    auto err = ir.error();
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
-    resp->setStatusCode(
-        static_cast<HttpStatusCode>(std::get<0>(err)["status_code"].asInt()));
-    callback(resp);
-    return;
-  }
-
-  bool is_stream =
-      (*json_body).get("stream", false).asBool() ||
-      (*json_body).get("body", Json::Value()).get("stream", false).asBool();
-
-  LOG_TRACE << "Wait to inference";
-  if (is_stream) {
-    auto model_id = (*json_body).get("model", "invalid_model").asString();
-    auto engine_type = [this, &json_body]() -> std::string {
-      if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
-        return kLlamaRepo;
-      } else {
-        return (*(json_body)).get("engine", kLlamaRepo).asString();
-      }
-    }();
-    ProcessStreamRes(callback, q, engine_type, model_id);
-  } else {
-    ProcessNonStreamRes(callback, *q);
-    LOG_TRACE << "Done  inference";
-  }
-}
-
-void server::RouteRequest(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) {
-
-  auto json_body = req->getJsonObject();
-
-  LOG_TRACE << "Start route request";
-  auto q = std::make_shared<SyncQueue>();
-  auto ir = inference_svc_->HandleRouteRequest(q, req->getJsonObject());
-  LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
-  if (ir.has_error()) {
-    auto err = ir.error();
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
-    resp->setStatusCode(
-        static_cast<HttpStatusCode>(std::get<0>(err)["status_code"].asInt()));
-    callback(resp);
-    return;
-  }
-  auto is_stream =
-      (*json_body).get("stream", false).asBool() ||
-      (*json_body).get("body", Json::Value()).get("stream", false).asBool();
-  LOG_TRACE << "Wait to route request";
-  if (is_stream) {
-
-    auto model_id = (*json_body).get("model", "invalid_model").asString();
-    auto engine_type = [this, &json_body]() -> std::string {
-      if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
-        return kLlamaRepo;
-      } else {
-        return (*(json_body)).get("engine", kLlamaRepo).asString();
-      }
-    }();
-    ProcessStreamRes(callback, q, engine_type, model_id);
-  } else {
-    ProcessNonStreamRes(callback, *q);
-    LOG_TRACE << "Done route request";
-  }
-}
-
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto ir = inference_svc_->LoadModel(req->getJsonObject());
@@ -216,7 +138,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
                                       char* buf,
-                                       std::size_t buf_size) -> std::size_t {
+                                      std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
       if (!(*err_or_done)) {

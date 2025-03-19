@@ -226,14 +226,20 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     const std::string& url, std::optional<std::string> temp_model_id,
     std::optional<std::string> temp_name) {
   auto url_obj = url_parser::FromUrlString(url);
-  if (url_obj.has_error()) {
-    return cpp::fail("Invalid url: " + url);
+  if (url_obj.has_error() || url_obj->pathParams.size() < 5) {
+    return cpp::fail(
+        "Invalid url: " + url +
+        ", a valid URL example is: "
+        "https://huggingface.co/cortexso/tinyllama/blob/1b/model.gguf");
   }
 
   if (url_obj->host == kHuggingFaceHost) {
     if (url_obj->pathParams[2] == "blob") {
       url_obj->pathParams[2] = "resolve";
     }
+  } else {
+    return cpp::fail("Only support pull model from " +
+                     std::string(kHuggingFaceHost));
   }
   auto author{url_obj->pathParams[0]};
   auto model_id{url_obj->pathParams[1]};
@@ -241,10 +247,6 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 
   if (author == "cortexso") {
     return DownloadModelFromCortexsoAsync(model_id, url_obj->pathParams[3]);
-  }
-
-  if (url_obj->pathParams.size() < 5) {
-    return cpp::fail("Invalid url: " + url);
   }
 
   std::string huggingFaceHost{kHuggingFaceHost};
@@ -400,59 +402,8 @@ ModelService::DownloadModelFromCortexsoAsync(
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
-    if (mc.engine == kPythonEngine) {  // process for Python engine
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(model_yml_item->localPath.string());
-      python_model_config.files.push_back(
-          model_yml_item->localPath.parent_path().string());
-      python_model_config.ToYaml(model_yml_item->localPath.string());
-      // unzip venv.zip
-      auto model_folder = model_yml_item->localPath.parent_path();
-      auto venv_path = model_folder / std::filesystem::path("venv");
-      if (!std::filesystem::exists(venv_path)) {
-        std::filesystem::create_directories(venv_path);
-      }
-      auto venv_zip = model_folder / std::filesystem::path("venv.zip");
-      if (std::filesystem::exists(venv_zip)) {
-        if (archive_utils::ExtractArchive(venv_zip.string(),
-                                          venv_path.string())) {
-          std::filesystem::remove_all(venv_zip);
-          CTL_INF("Successfully extract venv.zip");
-          // If extract success create pyvenv.cfg
-          std::ofstream pyvenv_cfg(venv_path /
-                                   std::filesystem::path("pyvenv.cfg"));
-#ifdef _WIN32
-          pyvenv_cfg << "home = "
-                     << (venv_path / std::filesystem::path("Scripts")).string()
-                     << std::endl;
-          pyvenv_cfg << "executable = "
-                     << (venv_path / std::filesystem::path("Scripts") /
-                         std::filesystem::path("python.exe"))
-                            .string()
-                     << std::endl;
-#else
-          pyvenv_cfg << "home = "
-                     << (venv_path / std::filesystem::path("bin/")).string()
-                     << std::endl;
-          pyvenv_cfg
-              << "executable = "
-              << (venv_path / std::filesystem::path("bin/python")).string()
-              << std::endl;
-#endif
-          // Close the file
-          pyvenv_cfg.close();
-          // Add executable permission to python
-          (void)set_permission_utils::SetExecutePermissionsRecursive(venv_path);
-        } else {
-          CTL_ERR("Failed to extract venv.zip");
-        };
 
-      } else {
-        CTL_ERR(
-            "venv.zip not found in model folder: " << model_folder.string());
-      }
-
-    } else {
+    if (mc.engine == kLlamaEngine) {
       mc.model = unique_model_id;
 
       uint64_t model_size = 0;
@@ -605,62 +556,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
               .string());
       auto mc = yaml_handler.GetModelConfig();
 
-      // Check if Python model first
-      if (mc.engine == kPythonEngine) {
-
-        config::PythonModelConfig python_model_config;
-        python_model_config.ReadFromYaml(
-
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string());
-        // Start all depends model
-        auto depends = python_model_config.depends;
-        for (auto& depend : depends) {
-          Json::Value temp;
-          auto res = StartModel(depend, temp, false);
-          if (res.has_error()) {
-            CTL_WRN("Error: " + res.error());
-            for (auto& depend : depends) {
-              if (depend != model_handle) {
-                auto sr = StopModel(depend);
-              }
-            }
-            return cpp::fail("Model failed to start dependency '" + depend +
-                             "' : " + res.error());
-          }
-        }
-
-        json_data["model"] = model_handle;
-        json_data["model_path"] =
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string();
-        json_data["engine"] = mc.engine;
-        assert(!!inference_svc_);
-        // Check if python engine
-
-        auto ir =
-            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
-        auto status = std::get<0>(ir)["status_code"].asInt();
-        auto data = std::get<1>(ir);
-
-        if (status == drogon::k200OK) {
-          return StartModelResult{.success = true, .warning = ""};
-        } else if (status == drogon::k409Conflict) {
-          CTL_INF("Model '" + model_handle + "' is already loaded");
-          return StartModelResult{.success = true, .warning = ""};
-        } else {
-          // only report to user the error
-          for (auto& depend : depends) {
-            (void)StopModel(depend);
-          }
-        }
-        CTL_ERR("Model failed to start with status code: " << status);
-        return cpp::fail("Model failed to start: " +
-                         data["message"].asString());
-      }
-
       // Running remote model
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
         (void)engine_svc_->LoadEngine(mc.engine);
@@ -771,7 +666,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     }
 
     assert(!!inference_svc_);
-    // Check if python engine
 
     auto ir =
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
@@ -835,21 +729,6 @@ cpp::result<bool, std::string> ModelService::StopModel(
     }
     if (bypass_check) {
       engine_name = kLlamaEngine;
-    }
-
-    // Update for python engine
-    if (engine_name == kPythonEngine) {
-      auto model_entry = db_service_->GetModelInfo(model_handle);
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      // Stop all depends model
-      auto depends = python_model_config.depends;
-      for (auto& depend : depends) {
-        (void)StopModel(depend);
-      }
     }
 
     //
@@ -921,13 +800,19 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
 
   if (string_utils::StartsWith(input, "https://")) {
     auto url_obj = url_parser::FromUrlString(input);
-    if (url_obj.has_error()) {
-      return cpp::fail("Invalid url: " + input);
+    if (url_obj.has_error() || url_obj->pathParams.size() < 5) {
+      return cpp::fail(
+          "Invalid url: " + input +
+          ", a valid URL example is: "
+          "https://huggingface.co/cortexso/tinyllama/blob/1b/model.gguf");
     }
     if (url_obj->host == kHuggingFaceHost) {
       if (url_obj->pathParams[2] == "blob") {
         url_obj->pathParams[2] = "resolve";
       }
+    } else {
+      return cpp::fail("Only support pull model from " +
+                       std::string(kHuggingFaceHost));
     }
 
     auto author{url_obj->pathParams[0]};
