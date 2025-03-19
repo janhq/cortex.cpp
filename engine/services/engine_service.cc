@@ -677,18 +677,23 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
 cpp::result<DefaultEngineVariant, std::string>
 EngineService::GetDefaultEngineVariant(const std::string& engine) {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  // current we don't support other engine
-  if (ne != kLlamaRepo) {
-    return cpp::fail("Engine " + engine + " is not supported yet!");
-  }
 
   auto config = file_manager_utils::GetCortexConfig();
-  auto variant = config.llamacppVariant;
-  auto version = config.llamacppVersion;
-
-  if (variant.empty() || version.empty()) {
-    return cpp::fail("Default engine variant for " + engine +
-                     " is not set yet!");
+  std::string variant, version;
+  if (engine == kLlamaEngine) {
+    variant = config.llamacppVariant;
+    version = config.llamacppVersion;
+    if (variant.empty() || version.empty())
+      return cpp::fail("Default engine version and variant for " + engine +
+                       " is not set yet!");
+  } else if (engine == kVllmEngine) {
+    variant = "";
+    version = config.vllmVersion;
+    if (version.empty())
+      return cpp::fail("Default engine version for " + engine +
+                       " is not set yet!");
+  } else {
+    return cpp::fail("Engine " + engine + " is not supported yet!");
   }
 
   return DefaultEngineVariant{
@@ -789,7 +794,14 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   // check for vLLM engine
   if (engine_name == kVllmEngine) {
     auto engine = new VllmEngine();
-    EngineI::EngineLoadOption load_opts{};
+    EngineI::EngineLoadOption load_opts;
+
+    auto result = GetDefaultEngineVariant(engine_name);
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    // we set version to engine_path
+    load_opts.engine_path = result.value().version;
     engine->Load(load_opts);
     engines_[engine_name].engine = engine;
     return {};

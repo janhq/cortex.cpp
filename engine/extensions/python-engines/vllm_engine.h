@@ -5,12 +5,18 @@
 
 class VllmEngine : public EngineI {
  private:
+  std::string version_;
+
+  // port_offsets_[i] == true means cortex_port + i is used
+  // otherwise, cortex_port + i is not used
+  std::vector<bool> port_offsets_;
+
   mutable std::shared_mutex mutex;
   std::unordered_map<std::string, python_utils::PythonSubprocess>
       model_process_map;
 
  public:
-  VllmEngine() {};
+  VllmEngine();
   ~VllmEngine();
 
   static std::vector<EngineVariantResponse> GetVariants();

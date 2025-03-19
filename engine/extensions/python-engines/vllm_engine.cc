@@ -4,6 +4,10 @@
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
 
+namespace {
+// figure out port of current running process
+const constexpr int CORTEX_PORT = 3928;
+
 static std::pair<Json::Value, Json::Value> CreateResponse(
     const std::string& msg, int code) {
 
@@ -24,6 +28,10 @@ static std::pair<Json::Value, Json::Value> CreateResponse(
 
   return {status, res};
 }
+}  // namespace
+
+// cortex_port + 0 is always used (by cortex itself)
+VllmEngine::VllmEngine() : port_offsets_{true} {}
 
 VllmEngine::~VllmEngine() {
   // NOTE: what happens if we can't kill subprocess?
@@ -51,18 +59,15 @@ std::vector<EngineVariantResponse> VllmEngine::GetVariants() {
   return variants;
 }
 
-// NOTE: doesn't do anything
 void VllmEngine::Load(EngineLoadOption opts) {
-  CTL_WRN("EngineLoadOption is ignored");
+  version_ = opts.engine_path;  // engine path actually contains version info
+  if (version_[0] == 'v')
+    version_ = version_.substr(1);
   return;
 };
 
-// NOTE: doesn't do anything
-void VllmEngine::Unload(EngineUnloadOption opts) {
-  return;
-};
+void VllmEngine::Unload(EngineUnloadOption opts) {};
 
-// cortex.llamacpp interface
 void VllmEngine::HandleChatCompletion(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
@@ -93,73 +98,142 @@ void VllmEngine::LoadModel(
   {
     std::unique_lock write_lock(mutex);
     if (model_process_map.find(model) != model_process_map.end()) {
-      // check if model is still alive
-      if (model_process_map[model].IsAlive()) {
+      auto proc = model_process_map[model];
+
+      if (proc.IsAlive()) {
         auto [status, error] = CreateResponse("Model already loaded!", 409);
         callback(std::move(status), std::move(error));
         return;
       } else {
-        // if model has exited, try to load model again
+        // if model has exited, try to load model again?
         CTL_WRN("Model " << model << " has exited unexpectedly");
         model_process_map.erase(model);
+        port_offsets_[proc.port - CORTEX_PORT] = false;  // free the port
       }
     }
   }
 
-  // pid_t pid;
-  // try {
-  //   // https://docs.astral.sh/uv/reference/cli/#uv-run
-  //   std::vector<std::string> command =
-  //       python_utils::BuildUvCommand("run", model_dir.string());
-  //   for (const auto& item : py_cfg.entrypoint)
-  //     command.push_back(item);
+  pid_t pid;
+  try {
+    namespace fs = std::filesystem;
 
-  //   const std::string stdout_path = (model_dir / "stdout.txt").string();
-  //   const std::string stderr_path = (model_dir / "stderr.txt").string();
+    const auto model_path = file_manager_utils::GetCortexDataPath() / "models" /
+                            kHuggingFaceHost / model;
 
-  //   // create empty stdout.txt and stderr.txt for redirection
-  //   if (!std::filesystem::exists(stdout_path))
-  //     std::ofstream(stdout_path).flush();
-  //   if (!std::filesystem::exists(stderr_path))
-  //     std::ofstream(stderr_path).flush();
+    auto env_dir = python_utils::GetEnvsPath() / "vllm" / version_;
+    if (!fs::exists(env_dir))
+      throw std::runtime_error(env_dir.string() + " does not exist");
 
-  //   auto result =
-  //       cortex::process::SpawnProcess(command, stdout_path, stderr_path);
-  //   if (result.has_error()) {
-  //     throw std::runtime_error(result.error());
-  //   }
+    int offset = 1;
+    for (;; offset++) {
+      // add this guard to prevent endless loop
+      if (offset >= 100)
+        throw std::runtime_error("Unable to find an available port");
 
-  //   PythonSubprocess py_proc;
-  //   py_proc.proc_info = result.value();
-  //   py_proc.port = py_cfg.port;
-  //   py_proc.start_time = std::chrono::system_clock::now().time_since_epoch() /
-  //                        std::chrono::milliseconds(1);
+      if (port_offsets_.size() <= offset)
+        port_offsets_.push_back(false);
 
-  //   pid = py_proc.proc_info.pid;
+      // check if port is used
+      if (!port_offsets_[offset])
+        break;
+    }
+    const int port = CORTEX_PORT + offset;
 
-  //   std::unique_lock write_lock(mutex);
-  //   model_process_map[model] = py_proc;
+    // https://docs.astral.sh/uv/reference/cli/#uv-run
+    // TODO: pass more args
+    // TOOD: figure out how to set env vars
+    // TOOD: set logging config
+    std::vector<std::string> cmd =
+        python_utils::BuildUvCommand("run", env_dir.string());
+    cmd.push_back("vllm");
+    cmd.push_back("serve");
+    cmd.push_back(model_path.string());
+    cmd.push_back("--port");
+    cmd.push_back(std::to_string(port));
 
-  // } catch (const std::exception& e) {
-  //   auto e_msg = e.what();
-  //   auto [status, error] = CreateResponse(e_msg, k500InternalServerError);
-  //   callback(std::move(status), std::move(error));
-  //   return;
-  // }
+    auto result = cortex::process::SpawnProcess(cmd);
+    if (result.has_error()) {
+      throw std::runtime_error(result.error());
+    }
 
-  // auto [status, res] = CreateResponse(
-  //     "Model loaded successfully with pid: " + std::to_string(pid), k200OK);
-  // callback(std::move(status), std::move(res));
+    python_utils::PythonSubprocess py_proc;
+    py_proc.proc_info = result.value();
+    py_proc.port = port;
+    py_proc.start_time = std::chrono::system_clock::now().time_since_epoch() /
+                         std::chrono::milliseconds(1);
 
-  // CTL_WRN("Not implemented");
-  // throw std::runtime_error("Not implemented");
+    pid = py_proc.proc_info.pid;
+
+    std::unique_lock write_lock(mutex);
+    model_process_map[model] = py_proc;
+
+  } catch (const std::exception& e) {
+    auto e_msg = e.what();
+    auto [status, error] = CreateResponse(e_msg, 500);
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  auto [status, res] = CreateResponse(
+      "Model loaded successfully with pid: " + std::to_string(pid), 200);
+  callback(std::move(status), std::move(res));
 };
 
 void VllmEngine::UnloadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  CTL_WRN("Not implemented");
-  throw std::runtime_error("Not implemented");
+  if (!json_body->isMember("model")) {
+    auto [status, error] = CreateResponse("Missing required field: model", 400);
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  const std::string model = (*json_body)["model"].asString();
+
+  // check if model has started
+  {
+    std::shared_lock read_lock(mutex);
+    if (model_process_map.find(model) == model_process_map.end()) {
+      const std::string msg = "Model " + model + " has not been loaded yet.";
+      auto [status, error] = CreateResponse(msg, 400);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+  }
+
+  // we know that model has started
+  {
+    std::unique_lock write_lock(mutex);
+    auto proc = model_process_map[model];
+
+    // TODO: we can use vLLM health check endpoint
+    // check if subprocess is still alive
+    // NOTE: is this step necessary? the subprocess could have terminated
+    // after .IsAlive() and before .Kill() later.
+    if (!proc.IsAlive()) {
+      model_process_map.erase(model);
+      port_offsets_[proc.port - CORTEX_PORT] = false;  // free the port
+
+      const std::string msg = "Model " + model + " stopped running.";
+      auto [status, error] = CreateResponse(msg, 400);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+
+    // subprocess is alive. we kill it here.
+    if (!model_process_map[model].Kill()) {
+      const std::string msg = "Unable to kill process of model " + model;
+      auto [status, error] = CreateResponse(msg, 500);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+
+    model_process_map.erase(model);
+    port_offsets_[proc.port - CORTEX_PORT] = false;  // free the port
+  }
+
+  auto [status, res] = CreateResponse("Unload model successfully", 200);
+  callback(std::move(status), std::move(res));
 };
 
 void VllmEngine::GetModelStatus(

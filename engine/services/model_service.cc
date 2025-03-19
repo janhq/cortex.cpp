@@ -322,7 +322,7 @@ cpp::result<DownloadTask, std::string> ModelService::DownloadHfModelAsync(
     return cpp::fail("Please delete the model before downloading again");
 
   auto download_task = GetCloneRepoDownloadTask(
-      author_id, model_id, "main", {"huggingface.co", author_id, model_id},
+      author_id, model_id, "main", {kHuggingFaceHost, author_id, model_id},
       unique_model_id);
   if (download_task.has_error())
     return download_task;
@@ -617,13 +617,14 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
             inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
 
         auto status_code = status["status_code"].asInt();
-        if (status == drogon::k200OK) {
-          return StartModelResult{true, "vLLM engine ignores all params override"};
-        } else if (status == drogon::k409Conflict) {
+        if (status_code == drogon::k200OK) {
+          return StartModelResult{true, ""};
+        } else if (status_code == drogon::k409Conflict) {
           CTL_INF("Model '" + model_handle + "' is already loaded");
-          return StartModelResult{.success = true, .warning = ""};
+          return StartModelResult{true, ""};
         } else {
-          return cpp::fail("Model failed to start: " + data["message"].asString());
+          return cpp::fail("Model failed to start: " +
+                           data["message"].asString());
         }
       }
 
@@ -789,17 +790,23 @@ cpp::result<bool, std::string> ModelService::StopModel(
                          bypass_stop_check_set_.end());
     std::string engine_name = "";
     if (!bypass_check) {
-      auto model_entry = db_service_->GetModelInfo(model_handle);
-      if (model_entry.has_error()) {
-        CTL_WRN("Error: " + model_entry.error());
-        return cpp::fail(model_entry.error());
+      auto result = db_service_->GetModelInfo(model_handle);
+      if (result.has_error()) {
+        CTL_WRN("Error: " + result.error());
+        return cpp::fail(result.error());
       }
-      yaml_handler.ModelConfigFromFile(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      auto mc = yaml_handler.GetModelConfig();
-      engine_name = mc.engine;
+
+      const auto model_entry = result.value();
+      if (model_entry.engine == kVllmEngine) {
+        engine_name = kVllmEngine;
+      } else {
+        yaml_handler.ModelConfigFromFile(
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.path_to_model_yaml))
+                .string());
+        auto mc = yaml_handler.GetModelConfig();
+        engine_name = mc.engine;
+      }
     }
     if (bypass_check) {
       engine_name = kLlamaEngine;
