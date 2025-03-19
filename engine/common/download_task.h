@@ -6,14 +6,7 @@
 #include <sstream>
 #include <string>
 
-enum class DownloadType {
-  Model,
-  Engine,
-  Miscellaneous,
-  CudaToolkit,
-  Cortex,
-  Environments
-};
+enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
 
 struct DownloadItem {
 
@@ -55,8 +48,6 @@ inline std::string DownloadTypeToString(DownloadType type) {
       return "CudaToolkit";
     case DownloadType::Cortex:
       return "Cortex";
-    case DownloadType::Environments:
-      return "Environments";
     default:
       return "Unknown";
   }
@@ -73,8 +64,6 @@ inline DownloadType DownloadTypeFromString(const std::string& str) {
     return DownloadType::CudaToolkit;
   } else if (str == "Cortex") {
     return DownloadType::Cortex;
-  } else if (str == "Environments") {
-    return DownloadType::Environments;
   } else {
     return DownloadType::Miscellaneous;
   }
