@@ -22,17 +22,17 @@ class EngineMatcherUtilsTestSuite : public ::testing::Test {
       "llama-b4920-bin-ubuntu-vulkan-x64.tar.gz",
       "llama-b4920-bin-macos-arm64.zip",
       "llama-b4920-bin-macos-x64.zip",
-      "llama-b4920-bin-windows-amd64-avx-cuda-11-7.tar.gz",
-      "llama-b4920-bin-windows-amd64-avx-cuda-12-0.tar.gz",
+      "llama-b4920-bin-win-avx-cuda-cu11.7-x64.tar.gz",
+      "llama-b4920-bin-win-avx-cuda-cu12.0-x64.tar.gz",
       "llama-b4920-bin-win-avx-x64.zip",
-      "llama-b4920-bin-windows-amd64-avx2-cuda-11-7.tar.gz",
-      "llama-b4920-bin-windows-amd64-avx2-cuda-12-0.tar.gz",
+      "llama-b4920-bin-win-avx2-cuda-cu11.7-x64.tar.gz",
+      "llama-b4920-bin-win-avx2-cuda-cu12.0-x64.tar.gz",
       "llama-b4920-bin-win-avx2-x64.zip",
-      "llama-b4920-bin-windows-amd64-avx512-cuda-11-7.tar.gz",
-      "llama-b4920-bin-windows-amd64-avx512-cuda-12-0.tar.gz",
+      "llama-b4920-bin-win-avx512-cuda-cu11.7-x64.tar.gz",
+      "llama-b4920-bin-win-avx512-cuda-cu12.0-x64.tar.gz",
       "llama-b4920-bin-win-avx512-x64.zip",
-      "llama-b4920-bin-windows-amd64-noavx-cuda-11-7.tar.gz",
-      "llama-b4920-bin-windows-amd64-noavx-cuda-12-0.tar.gz",
+      "llama-b4920-bin-win-noavx-cuda-cu11.7-x64.tar.gz",
+      "llama-b4920-bin-win-noavx-cuda-cu12.0-x64.tar.gz",
       "llama-b4920-bin-win-noavx-x64.zip",
       "llama-b4920-bin-win-vulkan-x64.zip",
   };
@@ -41,14 +41,14 @@ class EngineMatcherUtilsTestSuite : public ::testing::Test {
 TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
   {
     auto os{"win"};
-    auto cpu_arch{"amd64"};
+    auto cpu_arch{"x64"};
     auto suitable_avx{"avx2"};
     auto cuda_version{"12.4"};
 
     auto variant = engine_matcher_utils::Validate(
         cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version);
 
-    EXPECT_EQ(variant, "llama-b4920-bin-windows-amd64-avx2-cuda-12-0.tar.gz");
+    EXPECT_EQ(variant, "llama-b4920-bin-win-avx2-cuda-cu12.0-x64.tar.gz");
   }
 
   {
@@ -61,6 +61,18 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
         cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version);
 
     EXPECT_EQ(variant, "llama-b4920-bin-macos-x64.zip");
+  }
+
+  {
+    auto os{"mac"};
+    auto cpu_arch{"arm64"};
+    auto suitable_avx{""};
+    auto cuda_version{""};
+
+    auto variant = engine_matcher_utils::Validate(
+        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version);
+
+    EXPECT_EQ(variant, "llama-b4920-bin-macos-arm64.zip");
   }
 
   {

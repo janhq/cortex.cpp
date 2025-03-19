@@ -55,7 +55,7 @@ inline std::string GetSuitableAvxVariant(cortex::cpuid::CpuInfo& cpu_info) {
 
 inline std::string GetSuitableCudaVariant(
     const std::vector<std::string>& variants, const std::string& cuda_version) {
-  std::regex cuda_reg("cuda-(\\d+)-(\\d+)");
+  std::regex cuda_reg("cuda-cu(\\d+).(\\d+)");
   std::smatch match;
 
   int requested_major = 0;
@@ -148,7 +148,7 @@ inline std::string Validate(const std::vector<std::string>& variants,
                             const std::string& os, const std::string& cpu_arch,
                             const std::string& suitable_avx,
                             const std::string& cuda_version) {
-  CTL_INF(os << " " << cpu_arch);
+  // CTL_INF(os << " " << cpu_arch);
   // Early return if the OS is not supported
   if (os != kMacOs && os != kWindowsOs && os != kLinuxOs) {
     return "";
