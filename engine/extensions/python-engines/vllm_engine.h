@@ -50,12 +50,4 @@ class VllmEngine : public EngineI {
 
   // Stop inflight chat completion in stream mode
   virtual void StopInferencing(const std::string& model_id) override;
-
-  virtual Json::Value GetRemoteModels() override;
-  virtual void HandleRouteRequest(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  virtual void HandleInference(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 };

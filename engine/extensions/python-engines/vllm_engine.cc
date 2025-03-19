@@ -125,15 +125,3 @@ void VllmEngine::SetLogLevel(trantor::Logger::LogLevel logLevel) {};
 
 // Stop inflight chat completion in stream mode
 void VllmEngine::StopInferencing(const std::string& model_id) {};
-
-Json::Value VllmEngine::GetRemoteModels() {
-  return Json::Value{};
-};
-
-void VllmEngine::HandleRouteRequest(
-    std::shared_ptr<Json::Value> json_body,
-    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
-
-void VllmEngine::HandleInference(
-    std::shared_ptr<Json::Value> json_body,
-    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {};
