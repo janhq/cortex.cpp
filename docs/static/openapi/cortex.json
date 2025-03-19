@@ -5913,10 +5913,12 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "The identifier or URL of the model to use. It can be a model ID on Cortexso (https://huggingface.co/cortexso) or a HuggingFace URL pointing to the model file. For example: 'gpt2' or 'https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf'",
+            "description": "The identifier or URL of the model to use. It can be a model ID on Cortexso (https://huggingface.co/cortexso) or a HuggingFace URL pointing to the model file.",
             "examples": [
+              "tinyllama",
               "tinyllama:1b",
-              "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf"
+              "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf",
+              "TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q2_K.gguf"
             ]
           },
           "id": {
