@@ -301,21 +301,25 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
       meta << "name: " << variant.value() << std::endl;
       meta << "version: " << selected_variant->version << std::endl;
       meta.close();
-      namespace fs = std::filesystem;
 
-      fs::path bin_path = extract_path / "build" / "bin";
-      if (fs::exists(bin_path)) {
-        for (const auto& entry : fs::directory_iterator(bin_path)) {
+      std::filesystem::path bin_path = extract_path / "build" / "bin";
+      if (std::filesystem::exists(bin_path)) {
+        for (const auto& entry :
+             std::filesystem::directory_iterator(bin_path)) {
           if (entry.is_regular_file()) {
-            fs::path target_file = extract_path / entry.path().filename();
-            fs::copy_file(entry.path(), target_file,
-                          fs::copy_options::overwrite_existing);
+            std::filesystem::path target_file =
+                extract_path / entry.path().filename();
+            std::filesystem::copy_file(
+                entry.path(), target_file,
+                std::filesystem::copy_options::overwrite_existing);
           }
         }
         std::filesystem::remove_all(bin_path.parent_path());
       }
-      if (!fs::exists(extract_path.parent_path().parent_path() / "deps")) {
-        fs::create_directory(extract_path.parent_path().parent_path() / "deps");
+      if (!std::filesystem::exists(extract_path.parent_path().parent_path() /
+                                   "deps")) {
+        std::filesystem::create_directory(
+            extract_path.parent_path().parent_path() / "deps");
       }
       std::filesystem::permissions(extract_path / kLlamaServer,
                                    std::filesystem::perms::owner_exec |
