@@ -1210,5 +1210,6 @@ bool EngineService::IsRemoteEngine(const std::string& engine_name) const {
 
 cpp::result<std::vector<std::string>, std::string>
 EngineService::GetSupportedEngineNames() {
+  return config_yaml_utils::kDefaultSupportedEngines;
   return file_manager_utils::GetCortexConfig().supportedEngines;
 }
