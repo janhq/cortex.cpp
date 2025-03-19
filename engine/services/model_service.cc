@@ -237,6 +237,9 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     if (url_obj->pathParams[2] == "blob") {
       url_obj->pathParams[2] = "resolve";
     }
+  } else {
+    return cpp::fail("Only support pull model from " +
+                     std::string(kHuggingFaceHost));
   }
   auto author{url_obj->pathParams[0]};
   auto model_id{url_obj->pathParams[1]};
@@ -807,6 +810,9 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
       if (url_obj->pathParams[2] == "blob") {
         url_obj->pathParams[2] = "resolve";
       }
+    } else {
+      return cpp::fail("Only support pull model from " +
+                       std::string(kHuggingFaceHost));
     }
 
     auto author{url_obj->pathParams[0]};
