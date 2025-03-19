@@ -16,7 +16,7 @@ constexpr const auto kGgmlOrg = "ggml-org";
 constexpr auto static kHuggingFaceHost = "huggingface.co";
 constexpr auto static kGitHubHost = "api.github.com";
 constexpr auto static kCortexFolderName = "cortexcpp";
-constexpr auto static kDefaultGHUserAgent = "cortexcpp";
+constexpr auto static kDefaultGHUserAgent = kMenloOrg;
 
 constexpr auto static kWindowsOs = "win";
 constexpr auto static kMacOs = "mac";
