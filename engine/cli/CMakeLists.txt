@@ -85,8 +85,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/hardware_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/database_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/remote-engine/remote_engine.cc
-    
-    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/python-engine/python_engine.cc
+
     ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/template_renderer.cc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/easywsclient.cc
