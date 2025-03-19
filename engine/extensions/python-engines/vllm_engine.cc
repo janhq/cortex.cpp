@@ -5,33 +5,21 @@
 #include "utils/system_info_utils.h"
 
 namespace {
-// figure out port of current running process
-const constexpr int CORTEX_PORT = 3928;
-
 static std::pair<Json::Value, Json::Value> CreateResponse(
     const std::string& msg, int code) {
-
   Json::Value status, res;
-  const bool has_error = code != 200;
-
-  status["is_done"] = true;
-  status["has_error"] = has_error;
-  status["is_stream"] = false;
   status["status_code"] = code;
-
-  if (has_error) {
-    CTL_ERR(msg);
-    res["error"] = msg;
-  } else {
-    res["status"] = msg;
-  }
-
+  status["has_error"] = code != 200;
+  res["message"] = msg;
   return {status, res};
 }
 }  // namespace
 
-// cortex_port + 0 is always used (by cortex itself)
-VllmEngine::VllmEngine() : port_offsets_{true} {}
+VllmEngine::VllmEngine()
+    : cortex_port_{std::stoi(
+          file_manager_utils::GetCortexConfig().apiServerPort)},
+      port_offsets_{true}  // cortex_port + 0 is always used (by cortex itself)
+{}
 
 VllmEngine::~VllmEngine() {
   // NOTE: what happens if we can't kill subprocess?
@@ -108,7 +96,7 @@ void VllmEngine::LoadModel(
         // if model has exited, try to load model again?
         CTL_WRN("Model " << model << " has exited unexpectedly");
         model_process_map.erase(model);
-        port_offsets_[proc.port - CORTEX_PORT] = false;  // free the port
+        port_offsets_[proc.port - cortex_port_] = false;  // free the port
       }
     }
   }
@@ -137,7 +125,7 @@ void VllmEngine::LoadModel(
       if (!port_offsets_[offset])
         break;
     }
-    const int port = CORTEX_PORT + offset;
+    const int port = cortex_port_ + offset;
 
     // https://docs.astral.sh/uv/reference/cli/#uv-run
     // TODO: pass more args
@@ -212,7 +200,7 @@ void VllmEngine::UnloadModel(
     // after .IsAlive() and before .Kill() later.
     if (!proc.IsAlive()) {
       model_process_map.erase(model);
-      port_offsets_[proc.port - CORTEX_PORT] = false;  // free the port
+      port_offsets_[proc.port - cortex_port_] = false;  // free the port
 
       const std::string msg = "Model " + model + " stopped running.";
       auto [status, error] = CreateResponse(msg, 400);
@@ -229,7 +217,7 @@ void VllmEngine::UnloadModel(
     }
 
     model_process_map.erase(model);
-    port_offsets_[proc.port - CORTEX_PORT] = false;  // free the port
+    port_offsets_[proc.port - cortex_port_] = false;  // free the port
   }
 
   auto [status, res] = CreateResponse("Unload model successfully", 200);

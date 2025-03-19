@@ -6,6 +6,7 @@
 class VllmEngine : public EngineI {
  private:
   std::string version_;
+  int cortex_port_;
 
   // port_offsets_[i] == true means cortex_port + i is used
   // otherwise, cortex_port + i is not used
