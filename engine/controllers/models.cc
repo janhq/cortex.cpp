@@ -178,6 +178,17 @@ void Models::ListModel(
           data.append(std::move(obj));
           continue;
         }
+
+        if (model_entry.engine == kVllmEngine) {
+          Json::Value obj;
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          obj["engine"] = model_entry.engine;
+          obj["status"] = "downloaded";
+          data.append(std::move(obj));
+          continue;
+        }
+
         yaml_handler.ModelConfigFromFile(
             fmu::ToAbsoluteCortexDataPath(
                 fs::path(model_entry.path_to_model_yaml))

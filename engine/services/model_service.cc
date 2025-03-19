@@ -179,7 +179,12 @@ void ModelService::ForceIndexingModelList() {
     if (model_entry.status != cortex::db::ModelStatus::Downloaded) {
       continue;
     }
+    if (model_entry.engine == kVllmEngine) {
+      // TODO: check if folder still exists?
+      continue;
+    }
     try {
+      // check if path_to_model_yaml still exists
       CTL_DBG(fmu::ToAbsoluteCortexDataPath(
                   fs::path(model_entry.path_to_model_yaml))
                   .string());
@@ -590,14 +595,20 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     Json::Value json_data;
     // Currently we don't support download vision models, so we need to bypass check
     if (!bypass_model_check) {
-      auto model_entry = db_service_->GetModelInfo(model_handle);
-      if (model_entry.has_error()) {
-        CTL_WRN("Error: " + model_entry.error());
-        return cpp::fail(model_entry.error());
+      auto result = db_service_->GetModelInfo(model_handle);
+      if (result.has_error()) {
+        CTL_WRN("Error: " + result.error());
+        return cpp::fail(result.error());
       }
+      auto model_entry = result.value();
+
+      if (model_entry.engine == kVllmEngine) {
+        return cpp::fail("vLLM engine models are not supported yet.");
+      }
+
       yaml_handler.ModelConfigFromFile(
           fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
+              fs::path(model_entry.path_to_model_yaml))
               .string());
       auto mc = yaml_handler.GetModelConfig();
 
@@ -605,17 +616,15 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
         (void)engine_svc_->LoadEngine(mc.engine);
         config::RemoteModelConfig remote_mc;
-        remote_mc.LoadFromYamlFile(
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string());
-        auto remote_engine_entry =
-            engine_svc_->GetEngineByNameAndVariant(mc.engine);
-        if (remote_engine_entry.has_error()) {
-          CTL_WRN("Remote engine error: " + model_entry.error());
-          return cpp::fail(remote_engine_entry.error());
+        remote_mc.LoadFromYamlFile(fmu::ToAbsoluteCortexDataPath(
+                                       fs::path(model_entry.path_to_model_yaml))
+                                       .string());
+        auto result = engine_svc_->GetEngineByNameAndVariant(mc.engine);
+        if (result.has_error()) {
+          CTL_WRN("Remote engine error: " + result.error());
+          return cpp::fail(result.error());
         }
-        auto remote_engine_json = remote_engine_entry.value().ToJson();
+        auto remote_engine_json = result.value().ToJson();
         json_data = remote_mc.ToJson();
 
         json_data["api_key"] = std::move(remote_engine_json["api_key"]);
@@ -623,10 +632,9 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
             !v.empty() && v != "latest") {
           json_data["version"] = v;
         }
-        json_data["model_path"] =
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string();
+        json_data["model_path"] = fmu::ToAbsoluteCortexDataPath(
+                                      fs::path(model_entry.path_to_model_yaml))
+                                      .string();
         json_data["metadata"] = std::move(remote_engine_json["metadata"]);
 
         auto ir =

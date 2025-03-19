@@ -57,6 +57,7 @@ cpp::result<void, std::string> VllmEngine::Download(
   if (!std::filesystem::exists(vllm_path / ".venv")) {
     std::vector<std::string> cmd =
         python_utils::BuildUvCommand("venv", vllm_path_str);
+    cmd.push_back("--relocatable");
     auto result = cortex::process::SpawnProcess(cmd);
     if (result.has_error())
       return cpp::fail(result.error());
