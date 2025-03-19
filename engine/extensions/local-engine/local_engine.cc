@@ -492,16 +492,17 @@ void LocalEngine::HandleEmbedding(std::shared_ptr<Json::Value> json_body,
 void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
                             http_callback&& callback) {
   CTL_INF("Start loading model");
-  auto wait_for_server_up = [](const std::string& host, int port) {
+  auto wait_for_server_up = [this](const std::string& model,
+                                   const std::string& host, int port) {
     auto url = url_parser::Url{
         .protocol = "http",
         .host = host + ":" + std::to_string(port),
         .pathParams = {"health"},
     };
-    for (size_t i = 0; i < 10; i++) {
+    while (server_map_.find(model) != server_map_.end()) {
       auto res = curl_utils::SimpleGet(url.ToFullPath());
       if (res.has_error()) {
-        LOG_INFO << "Wait for server up: " << i;
+        LOG_INFO << "Wait for server up ..";
         std::this_thread::sleep_for(std::chrono::seconds(1));
       } else {
         return true;
@@ -560,7 +561,7 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   }
 
   s.process_info = result.value();
-  if (wait_for_server_up(s.host, s.port)) {
+  if (wait_for_server_up(model_id, s.host, s.port)) {
     Json::Value response;
     response["status"] = "Model loaded successfully with pid: " +
                          std::to_string(s.process_info.pid);
