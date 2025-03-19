@@ -565,7 +565,7 @@ EngineService::GetEngineVariants(const std::string& engine,
                          if (system_info->arch == "arm64" &&
                              name.find("arm64") != std::string::npos)
                            arch_match = true;
-                         if (system_info->arch == "amd64" &&
+                         if (system_info->arch == "x64" &&
                              name.find("x64") != std::string::npos)
                            arch_match = true;
 
