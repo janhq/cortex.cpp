@@ -45,7 +45,6 @@ class EngineService : public EngineServiceI {
   using EngineVariant = github_release_utils::GitHubAsset;
 
   struct EngineInfo {
-    std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
   };
 
