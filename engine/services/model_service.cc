@@ -155,8 +155,8 @@ ModelService::ModelService(std::shared_ptr<DatabaseService> db_service,
       inference_svc_(inference_service),
       engine_svc_(engine_svc),
       task_queue_(task_queue) {
-  ProcessBgrTasks();
-};
+        // ProcessBgrTasks();
+      };
 
 void ModelService::ForceIndexingModelList() {
   CTL_INF("Force indexing model list");
@@ -320,10 +320,6 @@ ModelService::EstimateModel(const std::string& model_handle,
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    auto file_path = fmu::ToAbsoluteCortexDataPath(
-                         fs::path(model_entry.value().path_to_model_yaml))
-                         .parent_path() /
-                     "model.gguf";
     yaml_handler.ModelConfigFromFile(
         fmu::ToAbsoluteCortexDataPath(
             fs::path(model_entry.value().path_to_model_yaml))
@@ -340,13 +336,14 @@ ModelService::EstimateModel(const std::string& model_handle,
     free_vram_MiB = hw_info.ram.available_MiB;
 #endif
 
-    return hardware::EstimateLLaMACppRun(file_path.string(),
-                                         {.ngl = mc.ngl,
-                                          .ctx_len = mc.ctx_len,
-                                          .n_batch = n_batch,
-                                          .n_ubatch = n_ubatch,
-                                          .kv_cache_type = kv_cache,
-                                          .free_vram_MiB = free_vram_MiB});
+    return hardware::EstimateLLaMACppRun(
+        fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string(),
+        {.ngl = mc.ngl,
+         .ctx_len = mc.ctx_len,
+         .n_batch = n_batch,
+         .n_ubatch = n_ubatch,
+         .kv_cache_type = kv_cache,
+         .free_vram_MiB = free_vram_MiB});
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
@@ -402,59 +399,8 @@ ModelService::DownloadModelFromCortexsoAsync(
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
-    if (mc.engine == kPythonEngine) {  // process for Python engine
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(model_yml_item->localPath.string());
-      python_model_config.files.push_back(
-          model_yml_item->localPath.parent_path().string());
-      python_model_config.ToYaml(model_yml_item->localPath.string());
-      // unzip venv.zip
-      auto model_folder = model_yml_item->localPath.parent_path();
-      auto venv_path = model_folder / std::filesystem::path("venv");
-      if (!std::filesystem::exists(venv_path)) {
-        std::filesystem::create_directories(venv_path);
-      }
-      auto venv_zip = model_folder / std::filesystem::path("venv.zip");
-      if (std::filesystem::exists(venv_zip)) {
-        if (archive_utils::ExtractArchive(venv_zip.string(),
-                                          venv_path.string())) {
-          std::filesystem::remove_all(venv_zip);
-          CTL_INF("Successfully extract venv.zip");
-          // If extract success create pyvenv.cfg
-          std::ofstream pyvenv_cfg(venv_path /
-                                   std::filesystem::path("pyvenv.cfg"));
-#ifdef _WIN32
-          pyvenv_cfg << "home = "
-                     << (venv_path / std::filesystem::path("Scripts")).string()
-                     << std::endl;
-          pyvenv_cfg << "executable = "
-                     << (venv_path / std::filesystem::path("Scripts") /
-                         std::filesystem::path("python.exe"))
-                            .string()
-                     << std::endl;
-#else
-          pyvenv_cfg << "home = "
-                     << (venv_path / std::filesystem::path("bin/")).string()
-                     << std::endl;
-          pyvenv_cfg
-              << "executable = "
-              << (venv_path / std::filesystem::path("bin/python")).string()
-              << std::endl;
-#endif
-          // Close the file
-          pyvenv_cfg.close();
-          // Add executable permission to python
-          (void)set_permission_utils::SetExecutePermissionsRecursive(venv_path);
-        } else {
-          CTL_ERR("Failed to extract venv.zip");
-        };
 
-      } else {
-        CTL_ERR(
-            "venv.zip not found in model folder: " << model_folder.string());
-      }
-
-    } else {
+    if (mc.engine == kLlamaEngine) {
       mc.model = unique_model_id;
 
       uint64_t model_size = 0;
@@ -528,12 +474,17 @@ cpp::result<void, std::string> ModelService::DeleteModel(
         fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     auto mc = yaml_handler.GetModelConfig();
-    // Remove yaml files
-    for (const auto& entry :
-         std::filesystem::directory_iterator(yaml_fp.parent_path())) {
-      if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
-        std::filesystem::remove(entry);
-        CTL_INF("Removed: " << entry.path().string());
+    if (engine_svc_->IsRemoteEngine(mc.engine)) {
+      std::filesystem::remove(yaml_fp);
+      CTL_INF("Removed: " << yaml_fp.string());
+    } else {
+      // Remove yaml files
+      for (const auto& entry :
+           std::filesystem::directory_iterator(yaml_fp.parent_path())) {
+        if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
+          std::filesystem::remove(entry);
+          CTL_INF("Removed: " << entry.path().string());
+        }
       }
     }
 
@@ -602,62 +553,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
               .string());
       auto mc = yaml_handler.GetModelConfig();
 
-      // Check if Python model first
-      if (mc.engine == kPythonEngine) {
-
-        config::PythonModelConfig python_model_config;
-        python_model_config.ReadFromYaml(
-
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string());
-        // Start all depends model
-        auto depends = python_model_config.depends;
-        for (auto& depend : depends) {
-          Json::Value temp;
-          auto res = StartModel(depend, temp, false);
-          if (res.has_error()) {
-            CTL_WRN("Error: " + res.error());
-            for (auto& depend : depends) {
-              if (depend != model_handle) {
-                auto sr = StopModel(depend);
-              }
-            }
-            return cpp::fail("Model failed to start dependency '" + depend +
-                             "' : " + res.error());
-          }
-        }
-
-        json_data["model"] = model_handle;
-        json_data["model_path"] =
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string();
-        json_data["engine"] = mc.engine;
-        assert(!!inference_svc_);
-        // Check if python engine
-
-        auto ir =
-            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
-        auto status = std::get<0>(ir)["status_code"].asInt();
-        auto data = std::get<1>(ir);
-
-        if (status == drogon::k200OK) {
-          return StartModelResult{.success = true, .warning = ""};
-        } else if (status == drogon::k409Conflict) {
-          CTL_INF("Model '" + model_handle + "' is already loaded");
-          return StartModelResult{.success = true, .warning = ""};
-        } else {
-          // only report to user the error
-          for (auto& depend : depends) {
-            (void)StopModel(depend);
-          }
-        }
-        CTL_ERR("Model failed to start with status code: " << status);
-        return cpp::fail("Model failed to start: " +
-                         data["message"].asString());
-      }
-
       // Running remote model
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
         (void)engine_svc_->LoadEngine(mc.engine);
@@ -718,10 +613,20 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};
       }
+      if (!mc.mmproj.empty()) {
+#if defined(_WIN32)
+        json_data["mmproj"] = cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).wstring());
+#else
+        json_data["mmproj"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).string();
+#endif
+      }
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
       json_data["ctx_len"] = std::min(kDefautlContextLength, mc.ctx_len);
+      json_data["max_tokens"] = std::min(kDefautlContextLength, mc.ctx_len);
       max_model_context_length = mc.ctx_len;
     } else {
       bypass_stop_check_set_.insert(model_handle);
@@ -746,6 +651,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     if (ctx_len) {
       json_data["ctx_len"] =
           std::min(ctx_len.value(), max_model_context_length);
+      json_data["max_tokens"] =
+          std::min(ctx_len.value(), max_model_context_length);
     }
     CTL_INF(json_data.toStyledString());
     auto may_fallback_res = MayFallbackToCpu(json_data["model_path"].asString(),
@@ -756,7 +663,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     }
 
     assert(!!inference_svc_);
-    // Check if python engine
 
     auto ir =
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
@@ -764,16 +670,18 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     auto data = std::get<1>(ir);
 
     if (status == drogon::k200OK) {
-      // start model successfully, we store the metadata so we can use
+      // start model successfully, in case not vision model, we store the metadata so we can use
       // for each inference
-      auto metadata_res = GetModelMetadata(model_handle);
-      if (metadata_res.has_value()) {
-        loaded_model_metadata_map_.emplace(model_handle,
-                                           std::move(metadata_res.value()));
-        CTL_INF("Successfully stored metadata for model " << model_handle);
-      } else {
-        CTL_WRN("Failed to get metadata for model " << model_handle << ": "
-                                                    << metadata_res.error());
+      if (!json_data.isMember("mmproj") || json_data["mmproj"].isNull()) {
+        auto metadata_res = GetModelMetadata(model_handle);
+        if (metadata_res.has_value()) {
+          loaded_model_metadata_map_.emplace(model_handle,
+                                             std::move(metadata_res.value()));
+          CTL_INF("Successfully stored metadata for model " << model_handle);
+        } else {
+          CTL_WRN("Failed to get metadata for model " << model_handle << ": "
+                                                      << metadata_res.error());
+        }
       }
 
       return StartModelResult{.success = true,
@@ -818,21 +726,6 @@ cpp::result<bool, std::string> ModelService::StopModel(
     }
     if (bypass_check) {
       engine_name = kLlamaEngine;
-    }
-
-    // Update for python engine
-    if (engine_name == kPythonEngine) {
-      auto model_entry = db_service_->GetModelInfo(model_handle);
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      // Stop all depends model
-      auto depends = python_model_config.depends;
-      for (auto& depend : depends) {
-        (void)StopModel(depend);
-      }
     }
 
     //
@@ -1208,5 +1101,5 @@ void ModelService::ProcessBgrTasks() {
 
   auto clone = cb;
   task_queue_.RunInQueue(std::move(cb));
-  task_queue_.RunEvery(std::chrono::seconds(10), std::move(clone));
+  task_queue_.RunEvery(std::chrono::seconds(60), std::move(clone));
 }

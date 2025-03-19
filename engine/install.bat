@@ -41,11 +41,11 @@ echo %VERSION%
 :: Get the release
 if "%VERSION%"=="latest" (
     :: If the version is set to "latest", get the latest version number from the cortex-cpp GitHub repository
-    for /f "delims=" %%i in ('powershell -Command "& {$version = Invoke-RestMethod -Uri 'https://api.github.com/repos/janhq/cortex/releases/latest'; return $version.tag_name.TrimStart('v')}"') do set "VERSION=%%i"
+    for /f "delims=" %%i in ('powershell -Command "& {$version = Invoke-RestMethod -Uri 'https://api.github.com/repos/menloresearch/cortex/releases/latest'; return $version.tag_name.TrimStart('v')}"') do set "VERSION=%%i"
 )
 
 :: Construct the download URL
-set "URL=https://github.com/janhq/cortex/releases/download/v%VERSION%/cortex-cpp-%VERSION%-win-amd64%AVX%"
+set "URL=https://github.com/menloresearch/cortex/releases/download/v%VERSION%/cortex-cpp-%VERSION%-win-amd64%AVX%"
 if "%GPU%"=="true" (
     :: If --gpu option is provided, append -cuda to the URL
     set "URL=%URL%-cuda"

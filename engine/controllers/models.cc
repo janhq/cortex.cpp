@@ -224,16 +224,6 @@ void Models::ListModel(
           }
           data.append(std::move(obj));
           yaml_handler.Reset();
-        } else if (model_config.engine == kPythonEngine) {
-          config::PythonModelConfig python_model_config;
-          python_model_config.ReadFromYaml(
-              fmu::ToAbsoluteCortexDataPath(
-                  fs::path(model_entry.path_to_model_yaml))
-                  .string());
-          Json::Value obj = python_model_config.ToJson();
-          obj["id"] = model_entry.model;
-          obj["model"] = model_entry.model;
-          data.append(std::move(obj));
         } else {
           config::RemoteModelConfig remote_model_config;
           remote_model_config.LoadFromYamlFile(
@@ -302,19 +292,6 @@ void Models::GetModel(const HttpRequestPtr& req,
       auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
       resp->setStatusCode(drogon::k200OK);
       callback(resp);
-    } else if (model_config.engine == kPythonEngine) {
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      ret = python_model_config.ToJson();
-      ret["id"] = python_model_config.model;
-      ret["object"] = "model";
-      ret["result"] = "OK";
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k200OK);
-      callback(resp);
     } else {
       config::RemoteModelConfig remote_model_config;
       remote_model_config.LoadFromYamlFile(
@@ -381,17 +358,6 @@ void Models::UpdateModel(const HttpRequestPtr& req,
       model_config.FromJson(json_body);
       yaml_handler.UpdateModelConfig(model_config);
       yaml_handler.WriteYamlFile(yaml_fp.string());
-      message = "Successfully update model ID '" + model_id +
-                "': " + json_body.toStyledString();
-    } else if (model_config.engine == kPythonEngine) {
-      // Block changes to `command`
-      if (json_body.isMember("command")) {
-        json_body.removeMember("command");
-      }
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(yaml_fp.string());
-      python_model_config.FromJson(json_body);
-      python_model_config.ToYaml(yaml_fp.string());
       message = "Successfully update model ID '" + model_id +
                 "': " + json_body.toStyledString();
     } else {
@@ -533,8 +499,8 @@ void Models::StartModel(
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
 
   std::optional<std::string> mmproj;
-  if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
-    mmproj = o.asString();
+  if (auto& o = (*(req->getJsonObject())); o.isMember("mmproj")) {
+    mmproj = o["mmproj"].asString();
   }
 
   auto bypass_llama_model_path = false;

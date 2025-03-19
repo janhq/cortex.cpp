@@ -20,9 +20,6 @@ class BaseModel {
   virtual void GetModels(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) = 0;
-  virtual void FineTuning(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 };
 
 class BaseChatCompletion {
