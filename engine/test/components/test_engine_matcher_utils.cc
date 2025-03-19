@@ -97,7 +97,7 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidateTensorrt) {
 
 TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
   {
-    auto os{"windows"};
+    auto os{"win"};
     auto cpu_arch{"amd64"};
     auto suitable_avx{"avx2"};
     auto cuda_version{"12.4"};
@@ -123,7 +123,7 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
   }
 
   {
-    auto os{"windows"};
+    auto os{"win"};
     auto cpu_arch{"amd64"};
     auto suitable_avx{"avx2"};
     auto cuda_version{"10"};
