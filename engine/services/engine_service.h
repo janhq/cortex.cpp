@@ -64,11 +64,10 @@ class EngineService : public EngineServiceI {
   std::shared_ptr<cortex::TaskQueue> q_ = nullptr;
 
  public:
-  explicit EngineService(
-      std::shared_ptr<DownloadService> download_service,
-      std::shared_ptr<cortex::DylibPathManager> dylib_path_manager,
-      std::shared_ptr<DatabaseService> db_service,
-      std::shared_ptr<cortex::TaskQueue> q)
+  EngineService(std::shared_ptr<DownloadService> download_service,
+                std::shared_ptr<cortex::DylibPathManager> dylib_path_manager,
+                std::shared_ptr<DatabaseService> db_service,
+                std::shared_ptr<cortex::TaskQueue> q)
       : download_service_{download_service},
         dylib_path_manager_{dylib_path_manager},
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
@@ -76,6 +75,12 @@ class EngineService : public EngineServiceI {
                     system_info_utils::GetDriverAndCudaVersion().second},
         db_service_(db_service),
         q_(q) {}
+
+  EngineService(std::shared_ptr<cortex::DylibPathManager> dylib_path_manager)
+      : dylib_path_manager_(dylib_path_manager),
+        hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
+                .cuda_driver_version =
+                    system_info_utils::GetDriverAndCudaVersion().second} {}
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 

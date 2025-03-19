@@ -79,9 +79,9 @@ inline std::vector<std::string> GetReleasePath() {
   if (CORTEX_VARIANT == file_manager_utils::kNightlyVariant) {
     return {"cortex", "latest", "version.json"};
   } else if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
-    return {"repos", "menloresearch", "cortex.cpp", "releases"};
+    return {"repos", kMenloOrg, "cortex.cpp", "releases"};
   } else {
-    return {"repos", "menloresearch", "cortex.cpp", "releases", "latest"};
+    return {"repos", kMenloOrg, "cortex.cpp", "releases", "latest"};
   }
 }
 

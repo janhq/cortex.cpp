@@ -47,13 +47,6 @@ std::string Repo2Engine(const std::string& r) {
   }
   return r;
 };
-
-std::string GetEnginePath(std::string_view e) {
-  if (e == kLlamaRepo) {
-    return kLlamaLibPath;
-  }
-  return kLlamaLibPath;
-};
 }  // namespace
 
 cpp::result<void, std::string> EngineService::InstallEngineAsync(
@@ -238,11 +231,10 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
                                        : normalized_version;
     std::unordered_set<std::string> merged_variant_name = {
         "llama-" + latest_version_semantic + "-bin-" + variant_name.value() +
-            ".tar.gz",
+            ".tar.gz",  // menlo
         "llama-" + latest_version_semantic + "-bin-" + variant_name.value() +
-            ".zip"};
+            ".zip"};  // ggml
 
-    // CTL_INF("merged_variant_name: " << merged_variant_name);
     for (const auto& asset : res.value()) {
       if (merged_variant_name.find(asset.name) != merged_variant_name.end()) {
         selected_variant = asset;
@@ -279,23 +271,21 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     }
   }
 
-  // auto normalize_version = "v" + selected_variant->version;
-  auto normalize_version = selected_variant->version;
   auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(
       selected_variant->name, engine, selected_variant->version);
   auto variant_folder_path = file_manager_utils::GetEnginesContainerPath() /
                              engine / variant_folder_name.value() /
-                             normalize_version;
+                             selected_variant->version;
   auto variant_path = variant_folder_path / selected_variant->name;
 
   std::filesystem::create_directories(variant_folder_path);
 
   CTL_INF("variant_folder_path: " + variant_folder_path.string());
-  auto on_finished = [this, engine, selected_variant, variant_folder_path,
-                      normalize_version](const DownloadTask& finishedTask) {
+  auto on_finished = [this, engine, selected_variant,
+                      variant_folder_path](const DownloadTask& finishedTask) {
     // try to unzip the downloaded file
     CTL_INF("Engine zip path: " << finishedTask.items[0].localPath.string());
-    CTL_INF("Version: " + normalize_version);
+    CTL_INF("Version: " + selected_variant->version);
 
     auto extract_path = finishedTask.items[0].localPath.parent_path();
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
@@ -303,30 +293,35 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     CTL_INF("local path: " << finishedTask.items[0].localPath.string()
                            << ", extract path: " << extract_path.string());
     auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
-        selected_variant->name, engine, normalize_version);
+        selected_variant->name, engine, selected_variant->version);
     CTL_INF("Extracted variant: " + variant.value());
     try {
+      // Create version file
       std::ofstream meta(extract_path / "version.txt", std::ios::out);
       meta << "name: " << variant.value() << std::endl;
-      meta << "version: " << normalize_version << std::endl;
+      meta << "version: " << selected_variant->version << std::endl;
       meta.close();
-      namespace fs = std::filesystem;
 
-      fs::path bin_path = extract_path / "build" / "bin";
-      if (fs::exists(bin_path)) {
-        for (const auto& entry : fs::directory_iterator(bin_path)) {
+      std::filesystem::path bin_path = extract_path / "build" / "bin";
+      if (std::filesystem::exists(bin_path)) {
+        for (const auto& entry :
+             std::filesystem::directory_iterator(bin_path)) {
           if (entry.is_regular_file()) {
-            fs::path target_file = extract_path / entry.path().filename();
-            fs::copy_file(entry.path(), target_file,
-                          fs::copy_options::overwrite_existing);
+            std::filesystem::path target_file =
+                extract_path / entry.path().filename();
+            std::filesystem::copy_file(
+                entry.path(), target_file,
+                std::filesystem::copy_options::overwrite_existing);
           }
         }
         std::filesystem::remove_all(bin_path.parent_path());
       }
-      if (!fs::exists(extract_path.parent_path().parent_path() / "deps")) {
-        fs::create_directory(extract_path.parent_path().parent_path() / "deps");
+      if (!std::filesystem::exists(extract_path.parent_path().parent_path() /
+                                   "deps")) {
+        std::filesystem::create_directory(
+            extract_path.parent_path().parent_path() / "deps");
       }
-      std::filesystem::permissions(extract_path / "llama-server",
+      std::filesystem::permissions(extract_path / kLlamaServer,
                                    std::filesystem::perms::owner_exec |
                                        std::filesystem::perms::group_exec |
                                        std::filesystem::perms::others_exec,
@@ -337,17 +332,17 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     }
 
     // set as default
-
-    auto res =
-        SetDefaultEngineVariant(engine, normalize_version, variant.value());
+    auto res = SetDefaultEngineVariant(engine, selected_variant->version,
+                                       variant.value());
     if (res.has_error()) {
       CTL_ERR("Failed to set default engine variant: " << res.error());
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
-    auto create_res = EngineService::UpsertEngine(
-        engine,  // engine_name
-        kLocal, "", "", normalize_version, variant.value(), "Default", "");
+    auto create_res =
+        EngineService::UpsertEngine(engine,  // engine_name
+                                    kLocal, "", "", selected_variant->version,
+                                    variant.value(), "Default", "");
 
     if (create_res.has_error()) {
       CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
@@ -358,7 +353,7 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     for (const auto& entry : std::filesystem::directory_iterator(
              variant_folder_path.parent_path())) {
       if (entry.is_directory() &&
-          entry.path().filename() != normalize_version) {
+          entry.path().filename() != selected_variant->version) {
         try {
           std::filesystem::remove_all(entry.path());
         } catch (const std::exception& e) {
@@ -472,8 +467,8 @@ std::string EngineService::GetMatchedVariant(
 cpp::result<std::vector<EngineService::EngineRelease>, std::string>
 EngineService::GetEngineReleases(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  auto ggml_org = github_release_utils::GetReleases("ggml-org", ne);
-  auto menlo = github_release_utils::GetReleases("menloresearch", ne);
+  auto ggml_org = github_release_utils::GetReleases(kGgmlOrg, ne);
+  auto menlo = github_release_utils::GetReleases(kMenloOrg, ne);
   if (ggml_org.has_error() && menlo.has_error()) {
     return cpp::fail(ggml_org.error());
   }
@@ -500,13 +495,13 @@ EngineService::GetEngineVariants(const std::string& engine,
                                  bool filter_compatible_only) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
   auto engine_release_menlo =
-      github_release_utils::GetReleaseByVersion("menloresearch", ne, version);
+      github_release_utils::GetReleaseByVersion(kMenloOrg, ne, version);
   auto engine_release_ggml =
-      github_release_utils::GetReleaseByVersion("ggml-org", ne, version);
+      github_release_utils::GetReleaseByVersion(kGgmlOrg, ne, version);
 
   if (engine_release_menlo.has_error() && engine_release_ggml.has_error()) {
     return cpp::fail("Failed to get engine release: " +
-      engine_release_menlo.error());
+                     engine_release_menlo.error());
   }
   if (engine_release_menlo.has_error()) {
     CTL_WRN("Failed to get engine release: " << engine_release_menlo.error());
@@ -835,8 +830,8 @@ EngineService::GetEngineDirPath(const std::string& engine_name) {
   CTL_DBG("user defined engine path: " << user_defined_engine_path);
   const std::filesystem::path engine_dir_path = [&] {
     if (user_defined_engine_path != nullptr) {
-      return std::filesystem::path(user_defined_engine_path) /
-             GetEnginePath(ne) / selected_engine_variant->variant /
+      return std::filesystem::path(user_defined_engine_path) / kLlamaLibPath /
+             selected_engine_variant->variant /
              selected_engine_variant->version;
     } else {
       return file_manager_utils::GetEnginesContainerPath() / ne /
@@ -897,8 +892,7 @@ std::vector<EngineV> EngineService::GetLoadedEngines() {
 cpp::result<github_release_utils::GitHubRelease, std::string>
 EngineService::GetLatestEngineVersion(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  auto res =
-      github_release_utils::GetReleaseByVersion("menloresearch", ne, "latest");
+  auto res = github_release_utils::GetReleaseByVersion(kMenloOrg, ne, "latest");
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine " + engine + " latest version!");
   }

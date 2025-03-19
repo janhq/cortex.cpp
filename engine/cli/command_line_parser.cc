@@ -51,9 +51,7 @@ CommandLineParser::CommandLineParser()
       download_service_{std::make_shared<DownloadService>()},
       dylib_path_manager_{std::make_shared<cortex::DylibPathManager>()},
       db_service_{std::make_shared<DatabaseService>()},
-      engine_service_{std::make_shared<EngineService>(
-          download_service_, dylib_path_manager_, db_service_,
-          std::make_shared<cortex::TaskQueue>(1, "q"))} {}
+      engine_service_{std::make_shared<EngineService>(dylib_path_manager_)} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   app_.usage("Usage:\n" + commands::GetCortexBinary() +
@@ -124,14 +122,14 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     }
   }
 #endif
-  // auto config = file_manager_utils::GetCortexConfig();
-  // if (!config.llamacppVersion.empty() &&
-  //     config.latestLlamacppRelease != config.llamacppVersion) {
-  //   CLI_LOG(
-  //       "\nNew llama.cpp version available: " << config.latestLlamacppRelease);
-  //   CLI_LOG("To update, run: " << commands::GetCortexBinary()
-  //                              << " engines update llama-cpp");
-  // }
+  auto config = file_manager_utils::GetCortexConfig();
+  if (!config.llamacppVersion.empty() &&
+      config.latestLlamacppRelease != config.llamacppVersion) {
+    CLI_LOG(
+        "\nNew llama.cpp version available: " << config.latestLlamacppRelease);
+    CLI_LOG("To update, run: " << commands::GetCortexBinary()
+                               << " engines update llama-cpp");
+  }
 
   return true;
 }
