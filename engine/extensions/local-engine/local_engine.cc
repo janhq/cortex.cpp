@@ -530,13 +530,13 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
 
   std::vector<std::string> v;
   v.reserve(params.size() + 1);
-  auto engine_dir = engine_service_.GetEngineDirPath("llama.cpp");
+  auto engine_dir = engine_service_.GetEngineDirPath(kLlamaRepo);
   if (engine_dir.has_error()) {
     CTL_WRN(engine_dir.error());
     server_map_.erase(model_id);
     return;
   }
-  auto exe = (engine_dir.value().first / "llama-server").string();
+  auto exe = (engine_dir.value().first / kLlamaServer).string();
 
   v.push_back(exe);
   v.insert(v.end(), params.begin(), params.end());
@@ -544,7 +544,7 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
 
   auto log_path =
       (file_manager_utils::GetCortexLogPath() / "logs" / "cortex.log").string();
-  CTL_INF("log: " << log_path);
+  CTL_DBG("log: " << log_path);
   auto result = cortex::process::SpawnProcess(v, log_path, log_path);
   if (result.has_error()) {
     CTL_ERR("Fail to spawn process. " << result.error());

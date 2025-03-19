@@ -17,23 +17,23 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   CTL_DBG("engine_type: " << engine_type);
   auto tool_choice = json_body->get("tool_choice", Json::Value::null);
   auto model_id = json_body->get("model", "").asString();
-  // if (saved_models_.find(model_id) != saved_models_.end()) {
-  //   // check if model is started, if not start it first
-  //   Json::Value root;
-  //   root["model"] = model_id;
-  //   root["engine"] = engine_type;
-  //   auto ir = GetModelStatus(std::make_shared<Json::Value>(root));
-  //   auto status = std::get<0>(ir)["status_code"].asInt();
-  //   if (status != drogon::k200OK) {
-  //     CTL_INF("Model is not loaded, start loading it: " << model_id);
-  //     // For remote engine, we use the updated configuration
-  //     if (engine_service_->IsRemoteEngine(engine_type)) {
-  //       (void)model_service_.lock()->StartModel(model_id, {}, false);
-  //     } else {
-  //       (void)LoadModel(saved_models_.at(model_id));
-  //     }
-  //   }
-  // }
+  if (saved_models_.find(model_id) != saved_models_.end()) {
+    // check if model is started, if not start it first
+    Json::Value root;
+    root["model"] = model_id;
+    root["engine"] = engine_type;
+    auto ir = GetModelStatus(std::make_shared<Json::Value>(root));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    if (status != drogon::k200OK) {
+      CTL_INF("Model is not loaded, start loading it: " << model_id);
+      // For remote engine, we use the updated configuration
+      if (engine_service_->IsRemoteEngine(engine_type)) {
+        (void)model_service_.lock()->StartModel(model_id, {}, false);
+      } else {
+        (void)LoadModel(saved_models_.at(model_id));
+      }
+    }
+  }
   CTL_DBG("engine_type: " << engine_type);
 
   auto engine_result = engine_service_->GetLoadedEngine(engine_type);

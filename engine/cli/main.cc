@@ -148,14 +148,14 @@ int main(int argc, char* argv[]) {
         std::chrono::hours(24);
     should_check_for_latest_llamacpp_version = now > last_check;
   }
-
-  if (false) {
+  
+  if (should_check_for_latest_llamacpp_version) {
     std::thread t1([]() {
       // TODO: namh current we only check for llamacpp. Need to add support for other engine
       auto get_latest_version = []() -> cpp::result<std::string, std::string> {
         try {
           auto res = github_release_utils::GetReleaseByVersion(
-              "menloresearch", "cortex.llamacpp", "latest");
+              kGgmlOrg, "llama.cpp", "latest");
           if (res.has_error()) {
             CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
             return cpp::fail("Failed to get latest llama.cpp version: " +
@@ -171,6 +171,7 @@ int main(int argc, char* argv[]) {
       };
 
       auto res = get_latest_version();
+      
       if (res.has_error()) {
         CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
         return;

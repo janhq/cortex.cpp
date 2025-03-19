@@ -179,11 +179,6 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
   std::vector<std::string> path_params{"repos", author, repo, "releases"};
   if (tag != "latest") {
     path_params.push_back("tags");
-
-    // if (!string_utils::StartsWith(tag, "v")) {
-    //   path_params.push_back("v" + tag);
-    // }
-
     path_params.push_back(tag);
   } else {
     path_params.push_back("latest");
