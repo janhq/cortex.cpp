@@ -92,8 +92,8 @@ bool EngineInstallCmd::Exec(const std::string& engine,
       auto v_name = variant["name"].asString();
       if ((string_utils::StringContainsIgnoreCase(v_name,
                                                   hw_inf_.sys_inf->os) ||
-           (hw_inf_.sys_inf->os == "linux" &&
-            string_utils::StringContainsIgnoreCase(v_name, "ubuntu"))) &&
+           (hw_inf_.sys_inf->os == kLinuxOs &&
+            string_utils::StringContainsIgnoreCase(v_name, kUbuntuOs))) &&
           string_utils::StringContainsIgnoreCase(v_name,
                                                  hw_inf_.sys_inf->arch)) {
         variant_selections.push_back(variant["name"].asString());
