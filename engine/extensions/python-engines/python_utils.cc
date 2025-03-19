@@ -2,6 +2,7 @@
 #include <filesystem>
 
 #include "utils/archive_utils.h"
+#include "utils/curl_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/set_permission_utils.h"
 #include "utils/system_info_utils.h"
@@ -23,8 +24,7 @@ std::filesystem::path GetUvPath() {
 bool IsUvInstalled() {
   return std::filesystem::exists(GetUvPath());
 }
-cpp::result<void, std::string> InstallUv(
-    std::shared_ptr<DownloadService>& download_service) {
+cpp::result<void, std::string> InstallUv() {
   const auto py_bin_path = GetPythonEnginesPath() / "bin";
   std::filesystem::create_directories(py_bin_path);
 
@@ -58,52 +58,37 @@ cpp::result<void, std::string> InstallUv(
   const std::string url = url_stream.str();
   CTL_INF("Download uv from " << url);
 
-  auto on_finished = [py_bin_path,
-                      uv_version](const DownloadTask& finishedTask) {
-    // try to unzip the downloaded file
-    const std::string download_path = finishedTask.items[0].localPath.string();
+  const auto save_path = py_bin_path / fname;
+  auto res = curl_utils::SimpleDownload(url, save_path.string());
+  if (res.has_error())
+    return res;
 
-    archive_utils::ExtractArchive(download_path, py_bin_path.string(), true);
-    set_permission_utils::SetExecutePermissionsRecursive(py_bin_path);
-    std::filesystem::remove(download_path);
+  archive_utils::ExtractArchive(save_path, py_bin_path.string(), true);
+  set_permission_utils::SetExecutePermissionsRecursive(py_bin_path);
+  std::filesystem::remove(save_path);
 
-    // install Python3.10 from Astral. this will be preferred over system
-    // Python when possible.
-    // NOTE: currently this will install to a user-wide directory. we can
-    // install to a specific location using `--install-dir`, but later
-    // invocation of `uv run` needs to have `UV_PYTHON_INSTALL_DIR` set to use
-    // this Python installation.
-    // we can add this once we allow passing custom env var to SpawnProcess().
-    // https://docs.astral.sh/uv/reference/cli/#uv-python-install
-    std::vector<std::string> command = BuildUvCommand("python");
-    command.push_back("install");
-    command.push_back("3.10");
+  // install Python3.10 from Astral. this will be preferred over system
+  // Python when possible.
+  // NOTE: currently this will install to a user-wide directory. we can
+  // install to a specific location using `--install-dir`, but later
+  // invocation of `uv run` needs to have `UV_PYTHON_INSTALL_DIR` set to use
+  // this Python installation.
+  // we can add this once we allow passing custom env var to SpawnProcess().
+  // https://docs.astral.sh/uv/reference/cli/#uv-python-install
+  std::vector<std::string> command = BuildUvCommand("python");
+  command.push_back("install");
+  command.push_back("3.10");
 
-    // NOTE: errors in download callback won't be propagated to caller
-    auto result = cortex::process::SpawnProcess(command);
-    if (result.has_error()) {
-      CTL_ERR(result.error());
-      return;
-    }
+  auto result = cortex::process::SpawnProcess(command);
+  if (result.has_error())
+    return cpp::fail(result.error());
 
-    if (!cortex::process::WaitProcess(result.value())) {
-      CTL_ERR("Process spawned but fail to wait");
-      return;
-    }
-  };
-
-  auto downloadTask = DownloadTask{.id = "python-uv",
-                                   .type = DownloadType::Engine,
-                                   .items = {DownloadItem{
-                                       .id = "python-uv",
-                                       .downloadUrl = url,
-                                       .localPath = py_bin_path / fname,
-                                   }}};
-
-  auto add_task_result = download_service->AddTask(downloadTask, on_finished);
-  if (add_task_result.has_error()) {
-    return cpp::fail(add_task_result.error());
+  if (!cortex::process::WaitProcess(result.value())) {
+    const auto msg = "Process spawned but fail to wait";
+    CTL_ERR(msg);
+    return cpp::fail(msg);
   }
+
   return {};
 }
 

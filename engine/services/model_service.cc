@@ -226,8 +226,7 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
     namespace fs = std::filesystem;
     namespace fmu = file_manager_utils;
     yaml_handler.ModelConfigFromFile(
-        fmu::ToAbsoluteCortexDataPath(
-            fs::path(model_entry.path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(fs::path(model_entry.path_to_model_yaml))
             .string());
     return yaml_handler.GetModelConfig();
   } catch (const std::exception& e) {
@@ -611,7 +610,21 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       auto model_entry = result.value();
 
       if (model_entry.engine == kVllmEngine) {
-        return cpp::fail("vLLM engine models are not supported yet.");
+        Json::Value json_data;
+        json_data["model"] = model_handle;
+        json_data["engine"] = kVllmEngine;
+        auto [status, data] =
+            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+
+        auto status_code = status["status_code"].asInt();
+        if (status == drogon::k200OK) {
+          return StartModelResult{true, "vLLM engine ignores all params override"};
+        } else if (status == drogon::k409Conflict) {
+          CTL_INF("Model '" + model_handle + "' is already loaded");
+          return StartModelResult{.success = true, .warning = ""};
+        } else {
+          return cpp::fail("Model failed to start: " + data["message"].asString());
+        }
       }
 
       yaml_handler.ModelConfigFromFile(

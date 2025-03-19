@@ -1,3 +1,4 @@
+#include <functional>
 #include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
 #include "python_utils.h"
@@ -11,11 +12,6 @@ class VllmEngine : public EngineI {
  public:
   VllmEngine() {};
   ~VllmEngine();
-
-  static cpp::result<void, std::string> Download(
-      std::shared_ptr<DownloadService>& download_service,
-      const std::string& version,
-      const std::optional<std::string> variant_name);
 
   static std::vector<EngineVariantResponse> GetVariants();
 

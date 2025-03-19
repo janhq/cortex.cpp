@@ -36,6 +36,7 @@ cpp::result<void, std::string> CortexConfigMgr::DumpYamlConfig(
     node["gitHubToken"] = config.gitHubToken;
     node["llamacppVariant"] = config.llamacppVariant;
     node["llamacppVersion"] = config.llamacppVersion;
+    node["vllmVersion"] = config.vllmVersion;
     node["enableCors"] = config.enableCors;
     node["allowedOrigins"] = config.allowedOrigins;
     node["proxyUrl"] = config.proxyUrl;
@@ -80,7 +81,8 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
          !node["logOnnxPath"] || !node["huggingFaceToken"] ||
          !node["gitHubUserAgent"] || !node["gitHubToken"] ||
          !node["llamacppVariant"] || !node["llamacppVersion"] ||
-         !node["enableCors"] || !node["allowedOrigins"] || !node["proxyUrl"] ||
+         !node["vllmVersion"] || !node["enableCors"] ||
+         !node["allowedOrigins"] || !node["proxyUrl"] ||
          !node["proxyUsername"] || !node["proxyPassword"] ||
          !node["verifyPeerSsl"] || !node["verifyHostSsl"] ||
          !node["verifyProxySsl"] || !node["verifyProxyHostSsl"] ||
@@ -138,6 +140,9 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
         .llamacppVersion = node["llamacppVersion"]
                                ? node["llamacppVersion"].as<std::string>()
                                : default_cfg.llamacppVersion,
+        .vllmVersion = node["vllmVersion"]
+                           ? node["vllmVersion"].as<std::string>()
+                           : default_cfg.vllmVersion,
         .enableCors = node["enableCors"] ? node["enableCors"].as<bool>()
                                          : default_cfg.enableCors,
         .allowedOrigins =

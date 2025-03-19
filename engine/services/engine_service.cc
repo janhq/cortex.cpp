@@ -225,11 +225,11 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
 
-  if (engine == kLlamaRepo) {
+  if (engine == kLlamaRepo)
     return DownloadLlamaCpp(version, variant_name);
-  } else if (engine == kVllmEngine) {
-    return VllmEngine::Download(download_service_, version, variant_name);
-  }
+  if (engine == kVllmEngine)
+    return DownloadVllm(version, variant_name);
+
   return cpp::fail("Unknown engine " + engine);
 }
 
@@ -369,6 +369,83 @@ cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
   if (add_task_result.has_error()) {
     return cpp::fail(add_task_result.error());
   }
+  return {};
+}
+
+cpp::result<void, std::string> EngineService::DownloadVllm(
+    const std::string& version, const std::optional<std::string> variant_name) {
+
+  auto system_info = system_info_utils::GetSystemInfo();
+  if (!(system_info->os == kLinuxOs && system_info->arch == "amd64" &&
+        system_info_utils::IsNvidiaSmiAvailable()))
+    return cpp::fail(
+        "vLLM engine is only supported on Linux x86_64 with Nvidia GPU.");
+
+  if (variant_name.has_value()) {
+    return cpp::fail("variant_name must be empty");
+  }
+
+  // NOTE: everything below is not async
+  // to make it async, we have to run everything in a thread (spawning and waiting
+  // for subprocesses)
+  if (!python_utils::IsUvInstalled()) {
+    auto result = python_utils::InstallUv();
+    if (result.has_error())
+      return result;
+  }
+
+  std::string concrete_version = version;
+  if (version == "latest") {
+    auto result = curl_utils::SimpleGetJson("https://pypi.org/pypi/vllm/json");
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    auto version_value = result.value()["info"]["version"];
+    if (version_value.isNull())
+      return cpp::fail("Can't find version in the response");
+    concrete_version = version_value.asString();
+  }
+  CTL_INF("Download vLLM " << concrete_version);
+
+  const auto vllm_path =
+      python_utils::GetEnvsPath() / "vllm" / concrete_version;
+  std::filesystem::create_directories(vllm_path);
+  const auto vllm_path_str = vllm_path.string();
+
+  // initialize venv
+  if (!std::filesystem::exists(vllm_path / ".venv")) {
+    std::vector<std::string> cmd =
+        python_utils::BuildUvCommand("venv", vllm_path_str);
+    cmd.push_back("--relocatable");
+    auto result = cortex::process::SpawnProcess(cmd);
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    // TODO: check return code
+    // NOTE: these are not async
+    cortex::process::WaitProcess(result.value());
+  }
+
+  // install vLLM
+  {
+    std::vector<std::string> cmd =
+        python_utils::BuildUvCommand("pip", vllm_path_str);
+    cmd.push_back("install");
+    cmd.push_back("vllm==" + concrete_version);
+    auto result = cortex::process::SpawnProcess(cmd);
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    // TODO: check return code
+    // one reason this may fail is that the requested version does not exist
+    // NOTE: these are not async
+    cortex::process::WaitProcess(result.value());
+  }
+
+  auto result = SetDefaultEngineVariant(kVllmEngine, concrete_version, "");
+  if (result.has_error())
+    return cpp::fail(result.error());
+
   return {};
 }
 
@@ -553,8 +630,14 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
 
   auto config = file_manager_utils::GetCortexConfig();
-  config.llamacppVersion = "v" + normalized_version;
-  config.llamacppVariant = variant;
+  if (ne == kLlamaRepo) {
+    config.llamacppVersion = "v" + normalized_version;
+    config.llamacppVariant = variant;
+  } else if (ne == kVllmEngine) {
+    config.vllmVersion = "v" + normalized_version;
+  } else {
+    return cpp::fail("Unrecognized engine " + engine);
+  }
   auto result = file_manager_utils::UpdateCortexConfig(config);
   if (result.has_error()) {
     return cpp::fail(result.error());
@@ -686,6 +769,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     CTL_INF("Engine " << ne << " is already loaded");
     return {};
   }
+  CTL_INF("Loading engine: " << ne);
 
   // Check for remote engine
   if (IsRemoteEngine(engine_name)) {
@@ -702,9 +786,17 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
+  // check for vLLM engine
+  if (engine_name == kVllmEngine) {
+    auto engine = new VllmEngine();
+    EngineI::EngineLoadOption load_opts{};
+    engine->Load(load_opts);
+    engines_[engine_name].engine = engine;
+    return {};
+  }
+
   // End hard code
 
-  CTL_INF("Loading engine: " << ne);
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
 #endif

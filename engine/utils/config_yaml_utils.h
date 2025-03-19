@@ -48,6 +48,7 @@ struct CortexConfig {
   std::string gitHubToken;
   std::string llamacppVariant;
   std::string llamacppVersion;
+  std::string vllmVersion;
 
   bool enableCors;
   std::vector<std::string> allowedOrigins;

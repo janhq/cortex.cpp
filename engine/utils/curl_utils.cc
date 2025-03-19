@@ -373,4 +373,48 @@ cpp::result<Json::Value, std::string> SimplePatchJson(const std::string& url,
 
   return root;
 }
+
+cpp::result<void, std::string> SimpleDownload(const std::string& url,
+                                              const std::string& save_path,
+                                              const int timeout) {
+  auto curl = curl_easy_init();
+  if (!curl) {
+    return cpp::fail("Failed to init CURL");
+  }
+
+  auto headers = GetHeaders(url);
+  curl_slist* curl_headers = nullptr;
+  if (headers) {
+    for (const auto& [key, value] : headers->m) {
+      auto header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+  }
+
+  auto file = fopen(save_path.c_str(), "wb");
+  if (!file)
+    return cpp::fail("Failed to open " + save_path);
+
+  SetUpProxy(curl, url);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+  if (timeout > 0) {
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+  }
+
+  // Perform the request
+  auto res = curl_easy_perform(curl);
+  fclose(file);
+  curl_slist_free_all(curl_headers);
+  curl_easy_cleanup(curl);
+  if (res != CURLE_OK) {
+    return cpp::fail("CURL request failed: " +
+                     std::string{curl_easy_strerror(res)});
+  }
+
+  return {};
+}
 }  // namespace curl_utils

@@ -15,8 +15,7 @@ std::filesystem::path GetUvPath();
 
 // UV-related functions
 bool IsUvInstalled();
-cpp::result<void, std::string> InstallUv(
-    std::shared_ptr<DownloadService>& download_service);
+cpp::result<void, std::string> InstallUv();
 std::vector<std::string> BuildUvCommand(const std::string& action,
                                         const std::string& directory = "");
 // cpp::result<void, std::string> UvDownloadDeps(
