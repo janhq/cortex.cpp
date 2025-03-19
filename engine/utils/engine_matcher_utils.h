@@ -206,15 +206,18 @@ inline std::string Validate(const std::vector<std::string>& variants,
 inline std::pair<std::string, std::string> GetVersionAndArch(
     const std::string& file_name) {
   // Remove the file extension
-  std::string base = file_name.substr(0, file_name.find("tar") - 1);
+  std::string b = string_utils::RemoveSubstring(file_name, ".tar.gz");
+  std::string base = string_utils::RemoveSubstring(b, ".zip");
 
   size_t arch_pos = 0;
-  if (base.find("windows") != std::string::npos) {
-    arch_pos = base.find("-windows");
+  if (base.find("win") != std::string::npos) {
+    arch_pos = base.find("-bin-win");
   } else if (base.find("linux") != std::string::npos) {
-    arch_pos = base.find("-linux");
+    arch_pos = base.find("-bin-linux");
+  } else if (base.find("ubuntu") != std::string::npos) {
+    arch_pos = base.find("-bin-ubuntu");
   } else {
-    arch_pos = base.find("-mac");
+    arch_pos = base.find("-bin-macos");
   }
 
   // Extract architecture part
@@ -223,6 +226,6 @@ inline std::pair<std::string, std::string> GetVersionAndArch(
   // Extract version part
   size_t v_pos = base.find_first_of('-');
   auto version = base.substr(v_pos + 1, arch_pos - v_pos - 1);
-  return std::pair("v" + version, arch);
+  return std::pair(version, string_utils::RemoveSubstring(arch, "bin-"));
 }
 }  // namespace engine_matcher_utils

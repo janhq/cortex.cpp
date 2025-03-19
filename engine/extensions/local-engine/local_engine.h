@@ -22,6 +22,7 @@ struct ServerAddress {
   std::string ai_prompt;
   std::string system_prompt;
 };
+
 class LocalEngine : public EngineI {
  public:
   LocalEngine(EngineService& engine_service, TaskQueue& q)
