@@ -5913,9 +5913,8 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "The identifier or URL of the model to use. It can be a model ID on Cortexso (https://huggingface.co/cortexso) or a HuggingFace URL pointing to the model file.",
+            "description": "The identifier or URL of the model to use. It can be a model ID on Cortexso (https://huggingface.co/cortexso) or a HuggingFace URL pointing to the model GGUF file. For example: 'tinyllama:1b', 'https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf', or 'TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q2_K.gguf'",
             "examples": [
-              "tinyllama",
               "tinyllama:1b",
               "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf",
               "TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q2_K.gguf"
@@ -5928,7 +5927,7 @@
           },
           "name": {
             "type": "string",
-            "description": "The name which will be used to overwrite the model name.",
+            "description": "The name which will be used to overwrite the model name. This only affects single GGUF file models.",
             "examples": "my-custom-model-name"
           }
         }
