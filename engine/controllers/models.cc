@@ -50,36 +50,7 @@ void Models::PullModel(const HttpRequestPtr& req,
     desired_model_name = name_value;
   }
 
-  auto handle_model_input =
-      [&, model_handle]() -> cpp::result<DownloadTask, std::string> {
-    CTL_INF("Handle model input, model handle: " + model_handle);
-    if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_->HandleDownloadUrlAsync(
-          model_handle, desired_model_id, desired_model_name);
-    } else if (model_handle.find(":") != std::string::npos) {
-      auto model_and_branch = string_utils::SplitBy(model_handle, ":");
-      if (model_and_branch.size() == 3) {
-        auto mh = url_parser::Url{
-            .protocol = "https",
-            .host = kHuggingFaceHost,
-            .pathParams = {
-                model_and_branch[0],
-                model_and_branch[1],
-                "resolve",
-                "main",
-                model_and_branch[2],
-            }}.ToFullPath();
-        return model_service_->HandleDownloadUrlAsync(mh, desired_model_id,
-                                                      desired_model_name);
-      }
-      return model_service_->DownloadModelFromCortexsoAsync(
-          model_and_branch[0], model_and_branch[1], desired_model_id);
-    }
-
-    return cpp::fail("Invalid model handle or not supported!");
-  };
-
-  auto result = handle_model_input();
+  auto result = model_service_->PullModel(model_handle, desired_model_id, desired_model_name);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
