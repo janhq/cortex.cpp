@@ -43,8 +43,6 @@ class server : public drogon::HttpController<server, false>,
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Options, Post);
   ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Options, Post);
 
-  ADD_METHOD_TO(server::Python, "/v1/python/{1}/.*", Options, Get, Post);
-
   METHOD_LIST_END
 
   void ChatCompletion(

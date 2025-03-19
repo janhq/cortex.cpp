@@ -185,10 +185,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
 
   std::optional<std::filesystem::path> path_to_remove = std::nullopt;
 
-  // Python engine is stored in a separate folder
-  if (ne == kPythonEngine) {
-    return cpp::fail("Not implemented");
-  } else {
+  if (ne == kLlamaRepo) {
     if (version == std::nullopt && variant == std::nullopt) {
       // if no version and variant provided, remove all engines variant of that engine
       path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
@@ -203,6 +200,8 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     } else {
       return cpp::fail("No variant provided");
     }
+  } else {
+    return cpp::fail("Not implemented for engine " + ne);
   }
 
   if (path_to_remove == std::nullopt) {
@@ -890,8 +889,6 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
-  } else if (std::holds_alternative<PythonEngineI*>(engines_[ne].engine)) {
-    delete std::get<PythonEngineI*>(engines_[ne].engine);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }

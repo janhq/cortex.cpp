@@ -107,9 +107,6 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
         ->HandleChatCompletion(json_body, std::move(cb));
-  } else if (std::holds_alternative<PythonEngineI*>(engine_result.value())) {
-    return cpp::fail(GetUnsupportedResponse(
-        "Python engine does not support Chat completion"));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
         ->HandleChatCompletion(json_body, std::move(cb));
@@ -143,9 +140,6 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
         ->HandleEmbedding(json_body, std::move(cb));
-  } else if (std::holds_alternative<PythonEngineI*>(engine_result.value())) {
-    return cpp::fail(
-        GetUnsupportedResponse("Python engine does not support Embedding"));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
         ->HandleEmbedding(json_body, std::move(cb));
@@ -183,8 +177,6 @@ InferResult InferenceService::LoadModel(
   };
   if (std::holds_alternative<EngineI*>(engine)) {
     std::get<EngineI*>(engine)->LoadModel(json_body, std::move(cb));
-  } else if (std::holds_alternative<PythonEngineI*>(engine)) {
-    std::get<PythonEngineI*>(engine)->LoadModel(json_body, std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine)->LoadModel(json_body, std::move(cb));
   }
@@ -220,9 +212,6 @@ InferResult InferenceService::UnloadModel(const std::string& engine_name,
   auto engine = engine_result.value();
   if (std::holds_alternative<EngineI*>(engine)) {
     std::get<EngineI*>(engine)->UnloadModel(
-        std::make_shared<Json::Value>(json_body), std::move(cb));
-  } else if (std::holds_alternative<PythonEngineI*>(engine)) {
-    std::get<PythonEngineI*>(engine)->UnloadModel(
         std::make_shared<Json::Value>(json_body), std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine)->UnloadModel(
@@ -262,8 +251,6 @@ InferResult InferenceService::GetModelStatus(
   auto engine = engine_result.value();
   if (std::holds_alternative<EngineI*>(engine)) {
     std::get<EngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
-  } else if (std::holds_alternative<PythonEngineI*>(engine)) {
-    std::get<PythonEngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   }
@@ -296,9 +283,6 @@ InferResult InferenceService::GetModels(
       if (e->IsSupported("GetModels")) {
         e->GetModels(json_body, std::move(cb));
       }
-    } else if (std::holds_alternative<PythonEngineI*>(loaded_engine)) {
-      std::get<PythonEngineI*>(loaded_engine)
-          ->GetModels(json_body, std::move(cb));
     } else {
       std::get<RemoteEngineI*>(loaded_engine)
           ->GetModels(json_body, std::move(cb));
