@@ -55,7 +55,7 @@ class TestApiEngine:
     @pytest.mark.asyncio
     async def test_engines_install_uninstall_llamacpp_with_only_version_should_be_failed(self):
         # install first
-        data = {"variant": "macos-arm64"}
+        data = {"variant": "linux-avx-x64"}
         install_response = requests.post(
             "http://127.0.0.1:3928/v1/engines/llama-cpp/install", json=data
         )
@@ -72,7 +72,7 @@ class TestApiEngine:
     @pytest.mark.asyncio
     async def test_engines_install_uninstall_llamacpp_with_variant_should_be_successful(self):
         # install first
-        data = {"variant": "macos-arm64"}
+        data = {"variant": "linux-avx-x64"}
         install_response = requests.post(
             "http://127.0.0.1:3928/v1/engines/llama-cpp/install", json=data
         )
@@ -85,7 +85,7 @@ class TestApiEngine:
     def test_engines_install_uninstall_llamacpp_with_specific_variant_and_version_should_be_successful(
         self,
     ):
-        data = {"variant": "macos-arm64", "version": "b4920"}
+        data = {"variant": "linux-avx-x64", "version": "b4920"}
         # install first
         install_response = requests.post(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
