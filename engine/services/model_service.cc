@@ -226,14 +226,20 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     const std::string& url, std::optional<std::string> temp_model_id,
     std::optional<std::string> temp_name) {
   auto url_obj = url_parser::FromUrlString(url);
-  if (url_obj.has_error()) {
-    return cpp::fail("Invalid url: " + url);
+  if (url_obj.has_error() || url_obj->pathParams.size() < 5) {
+    return cpp::fail(
+        "Invalid url: " + url +
+        ", a valid URL example is: "
+        "https://huggingface.co/cortexso/tinyllama/blob/1b/model.gguf");
   }
 
   if (url_obj->host == kHuggingFaceHost) {
     if (url_obj->pathParams[2] == "blob") {
       url_obj->pathParams[2] = "resolve";
     }
+  } else {
+    return cpp::fail("Only support pull model from " +
+                     std::string(kHuggingFaceHost));
   }
   auto author{url_obj->pathParams[0]};
   auto model_id{url_obj->pathParams[1]};
@@ -241,10 +247,6 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 
   if (author == "cortexso") {
     return DownloadModelFromCortexsoAsync(model_id, url_obj->pathParams[3]);
-  }
-
-  if (url_obj->pathParams.size() < 5) {
-    return cpp::fail("Invalid url: " + url);
   }
 
   std::string huggingFaceHost{kHuggingFaceHost};
@@ -833,13 +835,19 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
 
   if (string_utils::StartsWith(input, "https://")) {
     auto url_obj = url_parser::FromUrlString(input);
-    if (url_obj.has_error()) {
-      return cpp::fail("Invalid url: " + input);
+    if (url_obj.has_error() || url_obj->pathParams.size() < 5) {
+      return cpp::fail(
+          "Invalid url: " + input +
+          ", a valid URL example is: "
+          "https://huggingface.co/cortexso/tinyllama/blob/1b/model.gguf");
     }
     if (url_obj->host == kHuggingFaceHost) {
       if (url_obj->pathParams[2] == "blob") {
         url_obj->pathParams[2] = "resolve";
       }
+    } else {
+      return cpp::fail("Only support pull model from " +
+                       std::string(kHuggingFaceHost));
     }
 
     auto author{url_obj->pathParams[0]};
