@@ -447,13 +447,10 @@ void LocalEngine::HandleEmbedding(std::shared_ptr<Json::Value> json_body,
   if (server_map_.find(model_id) != server_map_.end()) {
     auto& s = server_map_[model_id];
     auto url = url_parser::Url{
-        .protocol = "http",
-        .host = s.host + ":" + std::to_string(s.port),
-        .pathParams =
-            {
-                "v1",
-                "embeddings",
-            },
+        /*.protocol*/ "http",
+        /*.host*/ s.host + ":" + std::to_string(s.port),
+        /*.pathParams*/ {"v1", "embeddings"},
+        /* .queries = */ {},
     };
 
     auto response = curl_utils::SimplePostJson(url.ToFullPath(),
@@ -495,9 +492,10 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   auto wait_for_server_up = [this](const std::string& model,
                                    const std::string& host, int port) {
     auto url = url_parser::Url{
-        .protocol = "http",
-        .host = host + ":" + std::to_string(port),
-        .pathParams = {"health"},
+        /*.protocol*/ "http",
+        /*.host*/ host + ":" + std::to_string(port),
+        /*.pathParams*/ {"health"},
+        /*.queries*/ {},
     };
     while (server_map_.find(model) != server_map_.end()) {
       auto res = curl_utils::SimpleGet(url.ToFullPath());
@@ -519,6 +517,11 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   server_map_[model_id].host = "127.0.0.1";
   server_map_[model_id].port = GenerateRandomInteger(39400, 39999);
   auto& s = server_map_[model_id];
+  s.pre_prompt = json_body->get("pre_prompt", "").asString();
+  s.user_prompt = json_body->get("user_prompt", "USER: ").asString();
+  s.ai_prompt = json_body->get("ai_prompt", "ASSISTANT: ").asString();
+  s.system_prompt =
+      json_body->get("system_prompt", "ASSISTANT's RULE: ").asString();
   std::vector<std::string> params = ConvertJsonToParamsVector(*json_body);
   params.push_back("--host");
   params.push_back(s.host);
@@ -696,18 +699,24 @@ void LocalEngine::HandleOpenAiChatCompletion(
   // llama.cpp server only supports n = 1
   (*json_body)["n"] = 1;
 
+  auto url = url_parser::Url{
+      /*.protocol*/ "http",
+      /*.host*/ s.host + ":" + std::to_string(s.port),
+      /*.pathParams*/ {"v1", "chat", "completions"},
+      /*.queries*/ {},
+  };
+
   if (is_stream) {
-    q_.RunInQueue([s, json_body, callback, model] {
+    q_.RunInQueue([s, json_body, callback, model, url = std::move(url)] {
       auto curl = curl_easy_init();
       if (!curl) {
         CTL_WRN("Failed to initialize CURL");
         return;
       }
 
-      auto url = "http://" + s.host + ":" + std::to_string(s.port) +
-                 "/v1/chat/completions";
-      curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+      curl_easy_setopt(curl, CURLOPT_URL, url.ToFullPath().c_str());
       curl_easy_setopt(curl, CURLOPT_POST, 1L);
+      CTL_INF(url.ToFullPath());
 
       struct curl_slist* headers = nullptr;
       headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -754,16 +763,6 @@ void LocalEngine::HandleOpenAiChatCompletion(
     });
 
   } else {
-    auto url = url_parser::Url{
-        .protocol = "http",
-        .host = s.host + ":" + std::to_string(s.port),
-        .pathParams =
-            {
-                "v1",
-                "chat",
-                "completions",
-            },
-    };
     Json::Value result;
     // multiple choices
     for (int i = 0; i < n; i++) {
@@ -810,6 +809,8 @@ void LocalEngine::HandleOpenAiChatCompletion(
   }
 }
 
+// (sang) duplicate code but it is easier to clean when
+// llama-server upstream is fully OpenAI API Compatible
 void LocalEngine::HandleNonOpenAiChatCompletion(
     std::shared_ptr<Json::Value> json_body, http_callback&& callback,
     const std::string& model) {
@@ -881,17 +882,23 @@ void LocalEngine::HandleNonOpenAiChatCompletion(
   (*json_body)["n"] = 1;
   int n_probs = json_body->get("n_probs", 0).asInt();
 
+  auto url = url_parser::Url{
+      /*.protocol*/ "http",
+      /*.host*/ s.host + ":" + std::to_string(s.port),
+      /*.pathParams*/ {"v1", "completions"},
+      /*.queries*/ {},
+  };
+
   if (is_stream) {
-    q_.RunInQueue([s, json_body, callback, n_probs, model] {
+    q_.RunInQueue([s, json_body, callback, n_probs, model,
+                   url = std::move(url)] {
       auto curl = curl_easy_init();
       if (!curl) {
         CTL_WRN("Failed to initialize CURL");
         return;
       }
 
-      auto url =
-          "http://" + s.host + ":" + std::to_string(s.port) + "/v1/completions";
-      curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+      curl_easy_setopt(curl, CURLOPT_URL, url.ToFullPath().c_str());
       curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
       struct curl_slist* headers = nullptr;
@@ -939,15 +946,7 @@ void LocalEngine::HandleNonOpenAiChatCompletion(
     });
 
   } else {
-    auto url = url_parser::Url{
-        .protocol = "http",
-        .host = s.host + ":" + std::to_string(s.port),
-        .pathParams =
-            {
-                "v1",
-                "completions",
-            },
-    };
+
     Json::Value result;
     int prompt_tokens = 0;
     int predicted_tokens = 0;
