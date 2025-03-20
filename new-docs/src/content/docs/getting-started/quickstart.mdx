@@ -1,12 +1,10 @@
 ---
 title: Quickstart
 description: Cortex Quickstart.
-slug: quickstart
+# slug: quickstart
 ---
 
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
-
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Local Installation
 
@@ -19,12 +17,12 @@ Cortex has a **Local Installer** with all of the required dependencies, so that 
 
 This command starts the Cortex's' API server at `localhost:39281`.
 <Tabs>
-  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  <TabItem label="MacOs/Linux">
   ```sh
   cortex start
   ```
   </TabItem>
-  <TabItem value="Windows" label="Windows">
+  <TabItem label="Windows">
   ```sh
   cortex.exe start
   ```

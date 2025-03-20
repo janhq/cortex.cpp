@@ -1,14 +1,10 @@
 ---
 title: Overview
 description: Cortex Overview.
-slug: /
+# slug: /overview
 ---
 
-import OAICoverage from "@site/src/components/OAICoverage"
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
-
-![Cortex Cover Image](/img/social-card.jpg)
+![Cortex Cover Image](../../assets/social-card.jpg)
 
 Cortex is the open-source brain for robots: vision, speech, language, tabular, and action -- the cloud is optional.
 

@@ -3,9 +3,8 @@ title: Docker Installation Guide
 description: Comprehensive guide for installing and running Cortex using Docker
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Admonition from '@theme/Admonition';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components';
 
 
 ## Getting Started with Cortex on Docker
@@ -49,11 +48,12 @@ docker pull menloltd/cortex:latest
 docker pull menloltd/cortex:nightly-1.0.1-224
 ```
 
-:::info Version Tags
+<Aside>
+**Version Tags**
 - `latest`: Most recent stable release
 - `nightly`: Latest development build
 - `x.y.z` (e.g., `1.0.1`): Specific version release
-:::
+</Aside>
 
 #### Method 2: Building from Source
 
@@ -294,9 +294,9 @@ docker rm cortex
 # Start new container (use run command from above)
 ```
 
-:::tip Best Practices
+<Aside>
 - Always use specific version tags in production
 - Regularly backup your data volume
 - Monitor container resources using `docker stats cortex`
 - Keep your Docker installation updated
-:::
+</Aside>
