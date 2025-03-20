@@ -182,7 +182,7 @@ inline PowerInfo FromJson(const Json::Value& root) {
 }  // namespace power
 
 namespace {
-int64_t ByteToMiB(int64_t b) {
+[[maybe_unused]] int64_t ByteToMiB(int64_t b) {
   return b / 1024 / 1024;
 }
 }  // namespace

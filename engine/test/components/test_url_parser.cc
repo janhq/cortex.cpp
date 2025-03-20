@@ -57,7 +57,12 @@ TEST_F(UrlParserTestSuite, ConstructUrlWithEmptyPathCorrectly) {
 }
 
 TEST_F(UrlParserTestSuite, GetProtocolAndHostCorrectly) {
-  auto url = url_parser::Url{.protocol = "https", .host = "jan.ai"};
+  auto url = url_parser::Url{
+      /* .protocol = */ "https",
+      /* .host = */ "jan.ai",
+      /* .pathParams = */ {},
+      /* .queries= */ {},
+  };
   auto protocol_and_host = url.GetProtocolAndHost();
   EXPECT_EQ(protocol_and_host, "https://jan.ai");
 }

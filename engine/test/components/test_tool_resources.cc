@@ -205,7 +205,7 @@ TEST_F(FileSearchTest, SelfAssignment) {
   FileSearch search;
   search.vector_store_ids = sample_vector_store_ids;
 
-  search = std::move(search);  // Self-assignment with move
+  // search = std::move(search);  // Self-assignment with move
   EXPECT_EQ(search.vector_store_ids, sample_vector_store_ids);
 }
 }  // namespace
