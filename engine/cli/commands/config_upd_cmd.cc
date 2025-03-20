@@ -2,6 +2,7 @@
 #include "commands/server_start_cmd.h"
 #include "common/api_server_configuration.h"
 #include "utils/curl_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
 #include "utils/url_parser.h"
@@ -46,20 +47,37 @@ inline Json::Value NormalizeJson(
 void commands::ConfigUpdCmd::Exec(
     const std::string& host, int port,
     const std::unordered_map<std::string, std::string>& options) {
+
+  auto non_null_opts = std::unordered_map<std::string, std::string>();
+  for (const auto& [key, value] : options) {
+    if (value.empty() && key != "api_keys") {
+      continue;
+    }
+    non_null_opts[key] = value;
+  }
+
+  if (non_null_opts.size() == 1) {
+    for (const auto& [key, value] : non_null_opts) {
+      if (key == "api_keys") {
+        auto config = file_manager_utils::GetCortexConfig();
+        config.apiKeys = string_utils::SplitBy(value, ",");
+        auto result = file_manager_utils::UpdateCortexConfig(config);
+        if (result.has_error()) {
+          CLI_LOG_ERROR(result.error());
+        } else {
+          CLI_LOG("Configuration updated successfully!");
+        }
+        return;
+      }
+    }
+  }
+
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
     commands::ServerStartCmd ssc;
     if (!ssc.Exec(host, port)) {
       return;
     }
-  }
-
-  auto non_null_opts = std::unordered_map<std::string, std::string>();
-  for (const auto& [key, value] : options) {
-    if (value.empty()) {
-      continue;
-    }
-    non_null_opts[key] = value;
   }
 
   auto url = url_parser::Url{

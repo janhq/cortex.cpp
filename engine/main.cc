@@ -255,6 +255,12 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
     static const std::unordered_set<std::string> public_endpoints = {
         "/openapi.json", "/healthz", "/processManager/destroy"};
 
+    if (req->getHeader("Authorization").empty() &&
+        req->path() == "/v1/configs") {
+      CTL_WRN("Require API key to acceess /v1/configs");
+      return false;
+    }
+    
     // If API key is not set, skip validation
     if (api_keys.empty()) {
       return true;
