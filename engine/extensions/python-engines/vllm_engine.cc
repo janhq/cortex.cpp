@@ -129,9 +129,6 @@ void VllmEngine::LoadModel(
     const int port = cortex_port_ + offset;
 
     // https://docs.astral.sh/uv/reference/cli/#uv-run
-    // TODO: pass more args
-    // TOOD: figure out how to set env vars
-    // TOOD: set logging config
     std::vector<std::string> cmd =
         python_utils::BuildUvCommand("run", env_dir.string());
     cmd.push_back("vllm");
@@ -146,11 +143,13 @@ void VllmEngine::LoadModel(
     const auto stderr_file = env_dir / "stderr.log";
 
     // create empty files for redirection
+    // TODO: add limit on file size?
     if (!std::filesystem::exists(stdout_file))
       std::ofstream(stdout_file).flush();
     if (!std::filesystem::exists(stderr_file))
       std::ofstream(stderr_file).flush();
 
+    // TODO: may want to wait until model is ready i.e. health check endpoint
     auto result = cortex::process::SpawnProcess(cmd, stdout_file.string(),
                                                 stderr_file.string());
     if (result.has_error()) {
@@ -240,21 +239,89 @@ void VllmEngine::UnloadModel(
 void VllmEngine::GetModelStatus(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  CTL_WRN("Not implemented");
-  throw std::runtime_error("Not implemented");
+
+  if (!json_body->isMember("model")) {
+    auto [status, error] = CreateResponse("Missing required field: model", 400);
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  const std::string model = (*json_body)["model"].asString();
+  // check if model has started
+  {
+    std::shared_lock read_lock(mutex);
+    if (model_process_map.find(model) == model_process_map.end()) {
+      const std::string msg = "Model " + model + " has not been loaded yet.";
+      auto [status, error] = CreateResponse(msg, 400);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+  }
+
+  // we know that model has started
+  // TODO: just use health check endpoint
+  {
+    std::unique_lock write_lock(mutex);
+
+    // check if subprocess is still alive
+    if (!model_process_map[model].IsAlive()) {
+      CTL_WRN("Model " << model << " has exited unexpectedly.");
+      model_process_map.erase(model);
+      const std::string msg = "Model " + model + " stopped running.";
+      auto [status, error] = CreateResponse(msg, 400);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+  }
+
+  Json::Value res, status;
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = 200;
+  callback(std::move(status), std::move(res));
 };
 
-// For backward compatible checking
 bool VllmEngine::IsSupported(const std::string& f) {
   return true;
 };
 
-// Get list of running models
 void VllmEngine::GetModels(
     std::shared_ptr<Json::Value> jsonBody,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  CTL_WRN("Not implemented");
-  throw std::runtime_error("Not implemented");
+  Json::Value res, model_list(Json::arrayValue), status;
+  {
+    std::unique_lock write_lock(mutex);
+    for (auto& [model_name, py_proc] : model_process_map) {
+      // TODO: check using health endpoint
+      if (!py_proc.IsAlive()) {
+        CTL_WRN("Model " << model_name << " has exited unexpectedly.");
+        model_process_map.erase(model_name);
+        continue;
+      }
+
+      Json::Value val;
+      val["id"] = model_name;
+      val["engine"] = kVllmEngine;
+      val["start_time"] = py_proc.start_time;
+      val["port"] = py_proc.port;
+      val["object"] = "model";
+      // TODO
+      // val["ram"];
+      // val["vram"];
+      model_list.append(val);
+    }
+  }
+
+  res["object"] = "list";
+  res["data"] = model_list;
+
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = 200;
+
+  callback(std::move(status), std::move(res));
 };
 
 bool VllmEngine::SetFileLogger(int max_log_lines, const std::string& log_path) {
@@ -266,7 +333,6 @@ void VllmEngine::SetLogLevel(trantor::Logger::LogLevel logLevel) {
   throw std::runtime_error("Not implemented");
 };
 
-// Stop inflight chat completion in stream mode
 void VllmEngine::StopInferencing(const std::string& model_id) {
   CTL_WRN("Not implemented");
   throw std::runtime_error("Not implemented");
