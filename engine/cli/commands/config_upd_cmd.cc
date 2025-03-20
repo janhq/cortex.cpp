@@ -50,6 +50,7 @@ void commands::ConfigUpdCmd::Exec(
 
   auto non_null_opts = std::unordered_map<std::string, std::string>();
   for (const auto& [key, value] : options) {
+    // In case of api_keys, we allow empty value
     if (value.empty() && key != "api_keys") {
       continue;
     }
