@@ -680,7 +680,7 @@ EngineService::GetDefaultEngineVariant(const std::string& engine) {
 
   auto config = file_manager_utils::GetCortexConfig();
   std::string variant, version;
-  if (engine == kLlamaEngine) {
+  if (engine == kLlamaRepo) {
     variant = config.llamacppVariant;
     version = config.llamacppVersion;
     if (variant.empty() || version.empty())
