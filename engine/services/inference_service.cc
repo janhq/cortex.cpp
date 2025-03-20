@@ -270,6 +270,7 @@ InferResult InferenceService::GetModels(
     for (auto r : res["data"]) {
       resp_data.append(r);
     }
+    (void) status;
   };
   for (const auto& loaded_engine : loaded_engines) {
     if (std::holds_alternative<EngineI*>(loaded_engine)) {

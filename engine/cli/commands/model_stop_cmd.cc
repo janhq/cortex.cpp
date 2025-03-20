@@ -9,9 +9,10 @@ namespace commands {
 void ModelStopCmd::Exec(const std::string& host, int port,
                         const std::string& model_handle) {
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", "stop"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", "stop"},
+      /* .queries = */ {},
   };
 
   Json::Value json_data;

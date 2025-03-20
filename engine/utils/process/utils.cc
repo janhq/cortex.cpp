@@ -44,7 +44,7 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command, const std::string& stdout_file,
     const std::string& stderr_file) {
   std::stringstream ss;
-  for (const auto item : command) {
+  for (const auto& item : command) {
     ss << item << " ";
   }
   CTL_INF("Spawning process with command: " << ss.str());

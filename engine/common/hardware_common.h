@@ -54,11 +54,7 @@ inline CPU FromJson(const Json::Value& root) {
   for (auto const& i : root["instructions"]) {
     insts.emplace_back(i.asString());
   }
-  return {.cores = cores,
-          .arch = arch,
-          .model = model,
-          .usage = usage,
-          .instructions = insts};
+  return {cores, arch, model, usage, insts};
 }
 }  // namespace cpu
 
@@ -160,8 +156,7 @@ inline Json::Value ToJson(const OS& os) {
 
 namespace os {
 inline OS FromJson(const Json::Value& root) {
-  return {.name = root["name"].asString(),
-          .version = root["version"].asString()};
+  return {root["name"].asString(), root["version"].asString(), ""};
 }
 }  // namespace os
 
@@ -181,14 +176,13 @@ inline Json::Value ToJson(const PowerInfo& pi) {
 
 namespace power {
 inline PowerInfo FromJson(const Json::Value& root) {
-  return {.charging_status = root["charging_status"].asString(),
-          .battery_life = root["battery_life"].asInt(),
-          .is_power_saving = root["is_power_saving"].asBool()};
+  return {root["charging_status"].asString(), root["battery_life"].asInt(),
+          root["is_power_saving"].asBool()};
 }
 }  // namespace power
 
 namespace {
-int64_t ByteToMiB(int64_t b) {
+[[maybe_unused]] int64_t ByteToMiB(int64_t b) {
   return b / 1024 / 1024;
 }
 }  // namespace
@@ -208,9 +202,8 @@ inline Json::Value ToJson(const Memory& m) {
 
 namespace memory {
 inline Memory FromJson(const Json::Value& root) {
-  return {.total_MiB = root["total"].asInt64(),
-          .available_MiB = root["available"].asInt64(),
-          .type = root["type"].asString()};
+  return {root["total"].asInt64(), root["available"].asInt64(),
+          root["type"].asString()};
 }
 }  // namespace memory
 
@@ -230,9 +223,8 @@ inline Json::Value ToJson(const StorageInfo& si) {
 
 namespace storage {
 inline StorageInfo FromJson(const Json::Value& root) {
-  return {.type = root["type"].asString(),
-          .total = root["total"].asInt64(),
-          .available = root["available"].asInt64()};
+  return {root["type"].asString(), root["total"].asInt64(),
+          root["available"].asInt64()};
 }
 }  // namespace storage
 }  // namespace cortex::hw

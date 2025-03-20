@@ -21,9 +21,10 @@ void ModelImportCmd::Exec(const std::string& host, int port,
   }
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", "import"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", "import"},
+      /* .queries = */ {},
   };
 
   Json::Value json_data;

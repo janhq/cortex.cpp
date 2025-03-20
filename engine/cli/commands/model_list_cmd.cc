@@ -53,9 +53,10 @@ void ModelListCmd::Exec(const std::string& host, int port,
   // Iterate through directory
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models"},
+      /* .queries = */ {},
   };
 
   auto res = curl_utils::SimpleGetJson(url.ToFullPath());

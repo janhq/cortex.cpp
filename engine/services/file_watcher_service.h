@@ -296,7 +296,7 @@ class FileWatcherService {
 
     const int POLL_TIMEOUT_MS = 1000;  // 1 second timeout
     char buffer[4096];
-    struct pollfd pfd = {.fd = fd, .events = POLLIN, .revents = 0};
+    struct pollfd pfd = {fd, POLLIN, 0};
 
     while (running_) {
       // Poll will sleep until either:

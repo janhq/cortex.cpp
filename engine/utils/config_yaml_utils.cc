@@ -89,98 +89,106 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
          !node["checkedForSyncHubAt"] || !node["apiKeys"]);
 
     CortexConfig config = {
-        .logFolderPath = node["logFolderPath"]
-                             ? node["logFolderPath"].as<std::string>()
-                             : default_cfg.logFolderPath,
-        .logLlamaCppPath = node["logLlamaCppPath"]
-                               ? node["logLlamaCppPath"].as<std::string>()
-                               : default_cfg.logLlamaCppPath,
-        .logOnnxPath = node["logOnnxPath"]
-                           ? node["logOnnxPath"].as<std::string>()
-                           : default_cfg.logOnnxPath,
-        .dataFolderPath = node["dataFolderPath"]
-                              ? node["dataFolderPath"].as<std::string>()
-                              : default_cfg.dataFolderPath,
-        .maxLogLines = node["maxLogLines"] ? node["maxLogLines"].as<int>()
-                                           : default_cfg.maxLogLines,
-        .apiServerHost = node["apiServerHost"]
-                             ? node["apiServerHost"].as<std::string>()
-                             : default_cfg.apiServerHost,
-        .apiServerPort = node["apiServerPort"]
-                             ? node["apiServerPort"].as<std::string>()
-                             : default_cfg.apiServerPort,
-        .checkedForUpdateAt = node["checkedForUpdateAt"]
-                                  ? node["checkedForUpdateAt"].as<uint64_t>()
-                                  : default_cfg.checkedForUpdateAt,
-        .checkedForLlamacppUpdateAt =
-            node["checkedForLlamacppUpdateAt"]
-                ? node["checkedForLlamacppUpdateAt"].as<uint64_t>()
-                : default_cfg.checkedForLlamacppUpdateAt,
-        .latestRelease = node["latestRelease"]
-                             ? node["latestRelease"].as<std::string>()
-                             : default_cfg.latestRelease,
-        .latestLlamacppRelease =
-            node["latestLlamacppRelease"]
-                ? node["latestLlamacppRelease"].as<std::string>()
-                : default_cfg.latestLlamacppRelease,
-        .huggingFaceToken = node["huggingFaceToken"]
-                                ? node["huggingFaceToken"].as<std::string>()
-                                : default_cfg.huggingFaceToken,
-        .gitHubUserAgent = node["gitHubUserAgent"]
-                               ? node["gitHubUserAgent"].as<std::string>()
-                               : default_cfg.gitHubUserAgent,
-        .gitHubToken = node["gitHubToken"]
-                           ? node["gitHubToken"].as<std::string>()
-                           : default_cfg.gitHubToken,
-        .llamacppVariant = node["llamacppVariant"]
-                               ? node["llamacppVariant"].as<std::string>()
-                               : default_cfg.llamacppVariant,
-        .llamacppVersion = node["llamacppVersion"]
-                               ? node["llamacppVersion"].as<std::string>()
-                               : default_cfg.llamacppVersion,
-        .enableCors = node["enableCors"] ? node["enableCors"].as<bool>()
-                                         : default_cfg.enableCors,
-        .allowedOrigins =
-            node["allowedOrigins"]
-                ? node["allowedOrigins"].as<std::vector<std::string>>()
-                : default_cfg.allowedOrigins,
-        .proxyUrl = node["proxyUrl"] ? node["proxyUrl"].as<std::string>()
-                                     : default_cfg.proxyUrl,
-        .verifyProxySsl = node["verifyProxySsl"]
-                              ? node["verifyProxySsl"].as<bool>()
-                              : default_cfg.verifyProxySsl,
-        .verifyProxyHostSsl = node["verifyProxyHostSsl"]
-                                  ? node["verifyProxyHostSsl"].as<bool>()
-                                  : default_cfg.verifyProxyHostSsl,
-        .proxyUsername = node["proxyUsername"]
-                             ? node["proxyUsername"].as<std::string>()
-                             : default_cfg.proxyUsername,
-        .proxyPassword = node["proxyPassword"]
-                             ? node["proxyPassword"].as<std::string>()
-                             : default_cfg.proxyPassword,
-        .noProxy = node["noProxy"] ? node["noProxy"].as<std::string>()
-                                   : default_cfg.noProxy,
-        .verifyPeerSsl = node["verifyPeerSsl"]
-                             ? node["verifyPeerSsl"].as<bool>()
-                             : default_cfg.verifyPeerSsl,
-        .verifyHostSsl = node["verifyHostSsl"]
-                             ? node["verifyHostSsl"].as<bool>()
-                             : default_cfg.verifyHostSsl,
-        .sslCertPath = node["sslCertPath"]
-                           ? node["sslCertPath"].as<std::string>()
-                           : default_cfg.sslCertPath,
-        .sslKeyPath = node["sslKeyPath"] ? node["sslKeyPath"].as<std::string>()
-                                         : default_cfg.sslKeyPath,
-        .supportedEngines =
-            node["supportedEngines"]
-                ? node["supportedEngines"].as<std::vector<std::string>>()
-                : default_cfg.supportedEngines,
-        .checkedForSyncHubAt = node["checkedForSyncHubAt"]
-                                   ? node["checkedForSyncHubAt"].as<uint64_t>()
-                                   : default_cfg.checkedForSyncHubAt,
-        .apiKeys = node["apiKeys"]
-                       ? node["apiKeys"].as<std::vector<std::string>>()
-                       : default_cfg.apiKeys,
+        /* .logFolderPath = */ node["logFolderPath"]
+            ? node["logFolderPath"].as<std::string>()
+            : default_cfg.logFolderPath,
+        /* .logLlamaCppPath = */
+            node["logLlamaCppPath"] ? node["logLlamaCppPath"].as<std::string>()
+                                    : default_cfg.logLlamaCppPath,
+        /* .logOnnxPath = */
+            node["logOnnxPath"] ? node["logOnnxPath"].as<std::string>()
+                                : default_cfg.logOnnxPath,
+        /* .dataFolderPath = */
+            node["dataFolderPath"] ? node["dataFolderPath"].as<std::string>()
+                                   : default_cfg.dataFolderPath,
+        /* .maxLogLines = */
+            node["maxLogLines"] ? node["maxLogLines"].as<int>()
+                                : default_cfg.maxLogLines,
+        /* .apiServerHost = */
+            node["apiServerHost"] ? node["apiServerHost"].as<std::string>()
+                                  : default_cfg.apiServerHost,
+        /* .apiServerPort = */
+            node["apiServerPort"] ? node["apiServerPort"].as<std::string>()
+                                  : default_cfg.apiServerPort,
+        /* .checkedForUpdateAt = */
+            node["checkedForUpdateAt"]
+            ? node["checkedForUpdateAt"].as<uint64_t>()
+            : default_cfg.checkedForUpdateAt,
+        /* .checkedForLlamacppUpdateAt = */
+        node["checkedForLlamacppUpdateAt"]
+            ? node["checkedForLlamacppUpdateAt"].as<uint64_t>()
+            : default_cfg.checkedForLlamacppUpdateAt,
+        /* .latestRelease = */
+            node["latestRelease"] ? node["latestRelease"].as<std::string>()
+                                  : default_cfg.latestRelease,
+        /* .latestLlamacppRelease = */
+        node["latestLlamacppRelease"]
+            ? node["latestLlamacppRelease"].as<std::string>()
+            : default_cfg.latestLlamacppRelease,
+        /* .huggingFaceToken = */
+            node["huggingFaceToken"]
+            ? node["huggingFaceToken"].as<std::string>()
+            : default_cfg.huggingFaceToken,
+        /* .gitHubUserAgent = */
+            node["gitHubUserAgent"] ? node["gitHubUserAgent"].as<std::string>()
+                                    : default_cfg.gitHubUserAgent,
+        /* .gitHubToken = */
+            node["gitHubToken"] ? node["gitHubToken"].as<std::string>()
+                                : default_cfg.gitHubToken,
+        /* .llamacppVariant = */
+            node["llamacppVariant"] ? node["llamacppVariant"].as<std::string>()
+                                    : default_cfg.llamacppVariant,
+        /* .llamacppVersion = */
+            node["llamacppVersion"] ? node["llamacppVersion"].as<std::string>()
+                                    : default_cfg.llamacppVersion,
+        /* .enableCors = */
+            node["enableCors"] ? node["enableCors"].as<bool>()
+                               : default_cfg.enableCors,
+        /* .allowedOrigins = */
+        node["allowedOrigins"]
+            ? node["allowedOrigins"].as<std::vector<std::string>>()
+            : default_cfg.allowedOrigins,
+        /* .proxyUrl = */
+            node["proxyUrl"] ? node["proxyUrl"].as<std::string>()
+                             : default_cfg.proxyUrl,
+        /* .verifyProxySsl = */
+            node["verifyProxySsl"] ? node["verifyProxySsl"].as<bool>()
+                                   : default_cfg.verifyProxySsl,
+        /* .verifyProxyHostSsl = */
+            node["verifyProxyHostSsl"] ? node["verifyProxyHostSsl"].as<bool>()
+                                       : default_cfg.verifyProxyHostSsl,
+        /* .proxyUsername = */
+            node["proxyUsername"] ? node["proxyUsername"].as<std::string>()
+                                  : default_cfg.proxyUsername,
+        /* .proxyPassword = */
+            node["proxyPassword"] ? node["proxyPassword"].as<std::string>()
+                                  : default_cfg.proxyPassword,
+        /* .noProxy = */
+            node["noProxy"] ? node["noProxy"].as<std::string>()
+                            : default_cfg.noProxy,
+        /* .verifyPeerSsl = */
+            node["verifyPeerSsl"] ? node["verifyPeerSsl"].as<bool>()
+                                  : default_cfg.verifyPeerSsl,
+        /* .verifyHostSsl = */
+            node["verifyHostSsl"] ? node["verifyHostSsl"].as<bool>()
+                                  : default_cfg.verifyHostSsl,
+        /* .sslCertPath = */
+            node["sslCertPath"] ? node["sslCertPath"].as<std::string>()
+                                : default_cfg.sslCertPath,
+        /* .sslKeyPath = */
+            node["sslKeyPath"] ? node["sslKeyPath"].as<std::string>()
+                               : default_cfg.sslKeyPath,
+        /* .supportedEngines = */
+        node["supportedEngines"]
+            ? node["supportedEngines"].as<std::vector<std::string>>()
+            : default_cfg.supportedEngines,
+        /* .checkedForSyncHubAt = */
+            node["checkedForSyncHubAt"]
+            ? node["checkedForSyncHubAt"].as<uint64_t>()
+            : default_cfg.checkedForSyncHubAt,
+        /* .apiKeys = */
+            node["apiKeys"] ? node["apiKeys"].as<std::vector<std::string>>()
+                            : default_cfg.apiKeys,
 
     };
     if (should_update_config) {

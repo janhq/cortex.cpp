@@ -11,18 +11,18 @@ std::filesystem::path FileFsRepository::GetFilePath() const {
   return data_folder_path_ / kFileContainerFolderName;
 }
 
-std::filesystem::path SanitizePath(const std::filesystem::path & user_input,
-                                    const std::filesystem::path & basedir) {
+std::filesystem::path SanitizePath(const std::filesystem::path& user_input,
+                                   const std::filesystem::path& basedir) {
 
   auto abs_base = std::filesystem::canonical(basedir);
   std::filesystem::path resolved_path = std::filesystem::weakly_canonical(
       std::filesystem::path(basedir) / std::filesystem::path(user_input));
-      /* Ensure the resolved path is within our basedir */
+  /* Ensure the resolved path is within our basedir */
   for (auto p = resolved_path; !p.empty(); p = p.parent_path()) {
     if (std::filesystem::equivalent(p, abs_base)) {
       return resolved_path;
     }
-  } 
+  }
   return {};
 }
 
@@ -89,6 +89,8 @@ cpp::result<void, std::string> FileFsRepository::StoreFile(
 cpp::result<std::vector<OpenAi::File>, std::string> FileFsRepository::ListFiles(
     const std::string& purpose, uint8_t limit, const std::string& order,
     const std::string& after) const {
+  (void)purpose;
+  (void)after;
   auto res = db_service_->GetFileList();
   if (res.has_error()) {
     return cpp::fail(res.error());

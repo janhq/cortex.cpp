@@ -36,8 +36,11 @@ inline Memory GetMemoryInfo() {
   return Memory{.total_MiB = ByteToMiB(total_memory),
                 .available_MiB = ByteToMiB(avail_memory)};
 #elif defined(__linux__) || defined(_WIN32)
-  return Memory{.total_MiB = ByteToMiB(m.total_Bytes()),
-                .available_MiB = ByteToMiB(m.available_Bytes())};
+  return Memory{
+      ByteToMiB(m.total_Bytes()),      //total_MiB
+      ByteToMiB(m.available_Bytes()),  //available_MiB
+      ""                               //type
+  };
 #else
   return Memory{};
 #endif

@@ -86,6 +86,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 #else
     CLI_LOG("default");
 #endif
+(void) c;
   };
   app_.add_flag_function("-v,--version", cb, "Get Cortex version");
 
