@@ -257,7 +257,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
 
     if (req->getHeader("Authorization").empty() &&
         req->path() == "/v1/configs") {
-      CTL_WRN("Require API key to acceess /v1/configs");
+      CTL_WRN("Require API key to access /v1/configs");
       return false;
     }
     
