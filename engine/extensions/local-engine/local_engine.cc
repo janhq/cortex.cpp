@@ -548,7 +548,9 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   auto log_path =
       (file_manager_utils::GetCortexLogPath() / "logs" / "cortex.log").string();
   CTL_DBG("log: " << log_path);
-  auto result = cortex::process::SpawnProcess(v, log_path, log_path);
+  auto result = cortex::process::SpawnProcess(
+      v, log_path, log_path,
+      file_manager_utils::GetExecutableFolderContainerPath().string());
   if (result.has_error()) {
     CTL_ERR("Fail to spawn process. " << result.error());
     Json::Value error;
