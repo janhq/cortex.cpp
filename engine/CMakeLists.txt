@@ -200,7 +200,7 @@ if(CMAKE_CXX_STANDARD LESS 17)
   find_package(Boost 1.61.0 REQUIRED)
   target_include_directories(${TARGET_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 else()
-  message(STATUS "use c++17")
+  message(STATUS "use c++${CMAKE_CXX_STANDARD}")
 endif()
 
 aux_source_directory(controllers CTL_SRC)
