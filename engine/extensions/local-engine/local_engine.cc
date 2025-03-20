@@ -548,6 +548,8 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   auto log_path =
       (file_manager_utils::GetCortexLogPath() / "logs" / "cortex.log").string();
   CTL_DBG("log: " << log_path);
+  CTL_INF("exe path: "
+          << file_manager_utils::GetExecutableFolderContainerPath().string());
   auto result = cortex::process::SpawnProcess(
       v, log_path, log_path,
       file_manager_utils::GetExecutableFolderContainerPath().string());
