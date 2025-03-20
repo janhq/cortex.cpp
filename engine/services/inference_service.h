@@ -42,12 +42,6 @@ class InferenceService {
   cpp::result<void, InferResult> HandleEmbedding(
       std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
 
-  cpp::result<void, InferResult> HandleInference(
-      std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
-
-  cpp::result<void, InferResult> HandleRouteRequest(
-      std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
-
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
   InferResult UnloadModel(const std::string& engine,
@@ -56,8 +50,6 @@ class InferenceService {
   InferResult GetModelStatus(std::shared_ptr<Json::Value> json_body);
 
   InferResult GetModels(std::shared_ptr<Json::Value> json_body);
-
-  InferResult FineTuning(std::shared_ptr<Json::Value> json_body);
 
   bool StopInferencing(const std::string& engine_name,
                        const std::string& model_id);
