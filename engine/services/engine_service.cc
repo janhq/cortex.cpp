@@ -406,16 +406,16 @@ cpp::result<void, std::string> EngineService::DownloadVllm(
     concrete_version = version_value.asString();
   }
   CTL_INF("Download vLLM " << concrete_version);
+  namespace fs = std::filesystem;
 
   const auto vllm_path =
       python_utils::GetEnvsPath() / "vllm" / concrete_version;
-  std::filesystem::create_directories(vllm_path);
-  const auto vllm_path_str = vllm_path.string();
+  fs::create_directories(vllm_path);
 
   // initialize venv
-  if (!std::filesystem::exists(vllm_path / ".venv")) {
+  if (!fs::exists(vllm_path / ".venv")) {
     std::vector<std::string> cmd =
-        python_utils::BuildUvCommand("venv", vllm_path_str);
+        python_utils::BuildUvCommand("venv", vllm_path.string());
     cmd.push_back("--relocatable");
     auto result = cortex::process::SpawnProcess(cmd);
     if (result.has_error())
@@ -429,7 +429,7 @@ cpp::result<void, std::string> EngineService::DownloadVllm(
   // install vLLM
   {
     std::vector<std::string> cmd =
-        python_utils::BuildUvCommand("pip", vllm_path_str);
+        python_utils::BuildUvCommand("pip", vllm_path.string());
     cmd.push_back("install");
     cmd.push_back("vllm==" + concrete_version);
     auto result = cortex::process::SpawnProcess(cmd);

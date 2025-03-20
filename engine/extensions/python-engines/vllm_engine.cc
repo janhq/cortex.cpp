@@ -1,4 +1,5 @@
 #include "vllm_engine.h"
+#include <fstream>
 #include "services/engine_service.h"
 #include "utils/curl_utils.h"
 #include "utils/logging_utils.h"
@@ -138,8 +139,20 @@ void VllmEngine::LoadModel(
     cmd.push_back(model_path.string());
     cmd.push_back("--port");
     cmd.push_back(std::to_string(port));
+    cmd.push_back("--served-model-name");
+    cmd.push_back(model);
 
-    auto result = cortex::process::SpawnProcess(cmd);
+    const auto stdout_file = env_dir / "stdout.log";
+    const auto stderr_file = env_dir / "stderr.log";
+
+    // create empty files for redirection
+    if (!std::filesystem::exists(stdout_file))
+      std::ofstream(stdout_file).flush();
+    if (!std::filesystem::exists(stderr_file))
+      std::ofstream(stderr_file).flush();
+
+    auto result = cortex::process::SpawnProcess(cmd, stdout_file.string(),
+                                                stderr_file.string());
     if (result.has_error()) {
       throw std::runtime_error(result.error());
     }
