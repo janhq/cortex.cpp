@@ -22,6 +22,9 @@ std::filesystem::path SanitizePath(const std::filesystem::path& user_input,
     if (std::filesystem::equivalent(p, abs_base)) {
       return resolved_path;
     }
+    if (p == p.parent_path()) {  // reached the root directory
+      break;
+    }
   }
   return {};
 }
