@@ -86,6 +86,11 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
 #endif
 }
 
+void GGUFHandler::CheckOffset(int offset) const {
+  if (offset > file_size_)
+    throw std::runtime_error("Unexpected EOF");
+}
+
 void GGUFHandler::CloseFile() {
 #ifdef _WIN32
   if (data_ != nullptr) {
@@ -101,14 +106,11 @@ void GGUFHandler::CloseFile() {
 
 std::pair<std::size_t, std::string> GGUFHandler::ReadString(
     std::size_t offset) const {
+  CheckOffset(offset + 8);
   uint64_t length;
   std::memcpy(&length, data_ + offset, sizeof(uint64_t));
 
-  if (offset + 8 + length > file_size_) {
-    throw std::runtime_error(
-        "GGUF metadata string length exceeds file size.\n");
-  }
-
+  CheckOffset(offset + 8 + length);
   std::string value(reinterpret_cast<const char*>(data_ + offset + 8), length);
   return {8 + static_cast<std::size_t>(length), value};
 }
@@ -117,29 +119,37 @@ size_t GGUFHandler::ReadMetadataValue(int type, std::size_t offset,
                                       const std::string& key) {
   switch (type) {
     case 0:  // UINT8
+      CheckOffset(offset + 1);
       metadata_uint8_[key] = data_[offset];
       return 1;
     case 1:  // INT8
+      CheckOffset(offset + 1);
       metadata_int8_[key] = static_cast<int8_t>(data_[offset]);
       return 1;
     case 2:  // UINT16
+      CheckOffset(offset + 2);
       metadata_uint16_[key] =
           *reinterpret_cast<const uint16_t*>(data_ + offset);
       return 2;
     case 3:  // INT16
+      CheckOffset(offset + 2);
       metadata_int16_[key] = *reinterpret_cast<const int16_t*>(data_ + offset);
       return 2;
     case 4:  // UINT32
+      CheckOffset(offset + 4);
       metadata_uint32_[key] =
           *reinterpret_cast<const uint32_t*>(data_ + offset);
       return 4;
     case 5:  // INT32
+      CheckOffset(offset + 4);
       metadata_int32_[key] = *reinterpret_cast<const int32_t*>(data_ + offset);
       return 4;
     case 6:  // FLOAT32
+      CheckOffset(offset + 4);
       metadata_float_[key] = *reinterpret_cast<const float*>(data_ + offset);
       return 4;
     case 7:  // BOOL
+      CheckOffset(offset + 1);
       metadata_bool_[key] = data_[offset] != 0;
       return 1;
     case 8:  // STRING
@@ -152,13 +162,16 @@ size_t GGUFHandler::ReadMetadataValue(int type, std::size_t offset,
 
       return ReadArray(offset, key);
     case 10:  // UINT64
+      CheckOffset(offset + 8);
       metadata_uint64_[key] =
           *reinterpret_cast<const uint64_t*>(data_ + offset);
       return 8;
     case 11:  // INT64
+      CheckOffset(offset + 8);
       metadata_int64_[key] = *reinterpret_cast<const int64_t*>(data_ + offset);
       return 8;
     case 12:  // FLOAT64
+      CheckOffset(offset + 8);
       metadata_double_[key] = *reinterpret_cast<const double*>(data_ + offset);
       return 8;
     default:
@@ -168,9 +181,11 @@ size_t GGUFHandler::ReadMetadataValue(int type, std::size_t offset,
 }
 
 size_t GGUFHandler::ReadArray(std::size_t offset, const std::string& key) {
+  CheckOffset(offset + 4);
   uint32_t array_type = *reinterpret_cast<const uint32_t*>(data_ + offset);
   // std::memcpy(&array_type, data_ + offset, sizeof(uint32_t));
 
+  CheckOffset(offset + 4 + 8);
   uint64_t array_length =
       *reinterpret_cast<const uint64_t*>(data_ + offset + 4);
   // std::memcpy(&array_length, data_ + offset + 4, sizeof(uint64_t));
@@ -199,11 +214,13 @@ size_t GGUFHandler::ReadArray(std::size_t offset, const std::string& key) {
     // assume that array ony has 2 type string and int
     switch (array_type) {
       case 0:
+        CheckOffset(offset + array_offset + 1);
         uint8_value = data_[offset + array_offset];
         length = 1;
         array_values_float.push_back(static_cast<float>(uint8_value));
         break;
       case 1: {
+        CheckOffset(offset + array_offset + 1);
         int8_value = static_cast<int8_t>(data_[offset + array_offset]);
         length = 1;
         array_values_float.push_back(static_cast<float>(int8_value));
@@ -211,41 +228,48 @@ size_t GGUFHandler::ReadArray(std::size_t offset, const std::string& key) {
 
       break;
       case 2:
+        CheckOffset(offset + array_offset + 2);
         uint16_value =
             *reinterpret_cast<const uint16_t*>(data_ + offset + array_offset);
         length = 2;
         array_values_float.push_back(static_cast<float>(uint16_value));
         break;
       case 3:
+        CheckOffset(offset + array_offset + 2);
         int16_value =
             *reinterpret_cast<const int16_t*>(data_ + offset + array_offset);
         length = 2;
         array_values_float.push_back(static_cast<float>(int16_value));
         break;
       case 4:
+        CheckOffset(offset + array_offset + 4);
         uint32_value =
             *reinterpret_cast<const uint32_t*>(data_ + offset + array_offset);
         length = 4;
         array_values_float.push_back(static_cast<float>(uint32_value));
         break;
       case 5:
+        CheckOffset(offset + array_offset + 4);
         int32_value =
             *reinterpret_cast<const int32_t*>(data_ + offset + array_offset);
         length = 4;
         array_values_float.push_back(static_cast<float>(int32_value));
         break;
       case 6:
+        CheckOffset(offset + array_offset + 4);
         float_value =
             *reinterpret_cast<const float*>(data_ + offset + array_offset);
         length = 4;
         array_values_float.push_back(static_cast<float>(float_value));
         break;
       case 7:
+        CheckOffset(offset + array_offset + 1);
         bool_value = data_[offset + array_offset] != 0;
         length = 1;
         array_values_float.push_back(static_cast<float>(bool_value));
         break;
       case 8: {
+        CheckOffset(offset + array_offset + 8);
         uint64_t length_ =
             *reinterpret_cast<const uint64_t*>(data_ + offset + array_offset);
         std::string value(
@@ -255,18 +279,21 @@ size_t GGUFHandler::ReadArray(std::size_t offset, const std::string& key) {
         array_values_string.push_back(value);
       } break;
       case 10:
+        CheckOffset(offset + array_offset + 8);
         uint64_value =
             *reinterpret_cast<const uint64_t*>(data_ + offset + array_offset);
         length = 8;
         array_values_float.push_back(static_cast<float>(uint64_value));
         break;
       case 11:
+        CheckOffset(offset + array_offset + 8);
         int64_value =
             *reinterpret_cast<const int64_t*>(data_ + offset + array_offset);
         length = 8;
         array_values_float.push_back(static_cast<float>(int64_value));
         break;
       case 12:
+        CheckOffset(offset + array_offset + 8);
         double_value =
             *reinterpret_cast<const double*>(data_ + offset + array_offset);
         length = 8;
@@ -279,9 +306,6 @@ size_t GGUFHandler::ReadArray(std::size_t offset, const std::string& key) {
     }
 
     array_offset += length;
-    if (offset + array_offset > file_size_) {
-      throw std::runtime_error("GGUF Parser Array exceeded file size.\n");
-    }
   }
   if (array_values_string.size() > 0)
     metadata_array_string_[key] = array_values_string;
@@ -290,8 +314,11 @@ size_t GGUFHandler::ReadArray(std::size_t offset, const std::string& key) {
   return array_offset;
 }
 
+// https://github.com/ggml-org/ggml/blob/master/docs/gguf.md
 void GGUFHandler::Parse(const std::string& file_path) {
   OpenFile(file_path);
+  CheckOffset(4 + 4 + 8 + 8);
+
   LOG_INFO << "GGUF magic number: " << *reinterpret_cast<const uint32_t*>(data_)
            << "\n";
   if (*reinterpret_cast<const uint32_t*>(data_) != GGUF_MAGIC_NUMBER) {
@@ -311,6 +338,7 @@ void GGUFHandler::Parse(const std::string& file_path) {
     auto [key_byte_length, key] = ReadString(offset);
     offset += key_byte_length;
     LOG_INFO << "key: " << key << "\n";
+    CheckOffset(offset + 4);
     uint32_t value_type = *reinterpret_cast<const uint32_t*>(data_ + offset);
     offset += 4;
     LOG_INFO << "value type number: " << value_type << "\n";
