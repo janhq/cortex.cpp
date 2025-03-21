@@ -571,8 +571,9 @@ EngineService::GetEngineVariants(const std::string& engine,
         engine_release_menlo.value().assets.end(), std::back_inserter(assets),
         [get_os_major](const github_release_utils::GitHubAsset& assets) {
 #if defined(__APPLE__) && defined(__MACH__)
-          if (get_os_major() <= 12 &&
-              assets.name.find(kMacOs) != std::string::npos) {
+          if ((assets.name.find(kMacOs) == std::string::npos) ||
+              (get_os_major() <= 12 &&
+               assets.name.find(kMacOs) != std::string::npos)) {
             return true;
           }
           return false;
@@ -589,8 +590,9 @@ EngineService::GetEngineVariants(const std::string& engine,
         engine_release_ggml.value().assets.end(), std::back_inserter(assets),
         [get_os_major](const github_release_utils::GitHubAsset& assets) {
 #if defined(__APPLE__) && defined(__MACH__)
-          if (get_os_major() > 12 &&
-              assets.name.find(kMacOs) != std::string::npos) {
+          if ((assets.name.find(kMacOs) == std::string::npos) ||
+              (get_os_major() > 12 &&
+               assets.name.find(kMacOs) != std::string::npos)) {
             return true;
           }
           return false;
@@ -776,10 +778,10 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
         try {
           auto node = YAML::LoadFile(version_txt_path.string());
           auto ev = EngineVariantResponse{
-              node["name"].as<std::string>(),           // name
+              node["name"].as<std::string>(),     // name
               node["version"].as<std::string>(),  // version
-              engine,                                   // engine
-              "",                                       // type
+              engine,                             // engine
+              "",                                 // type
           };
           variants.push_back(ev);
         } catch (const YAML::Exception& e) {
