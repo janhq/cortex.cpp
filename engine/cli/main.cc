@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
         std::chrono::hours(24);
     should_check_for_latest_llamacpp_version = now > last_check;
   }
-  
+
   if (should_check_for_latest_llamacpp_version) {
     std::thread t1([]() {
       // TODO: namh current we only check for llamacpp. Need to add support for other engine
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
       };
 
       auto res = get_latest_version();
-      
+
       if (res.has_error()) {
         CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
         return;

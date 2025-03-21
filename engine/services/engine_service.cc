@@ -17,6 +17,7 @@
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/github_release_utils.h"
+#include "utils/hardware/os_info.h"
 #include "utils/logging_utils.h"
 #include "utils/normalize_engine.h"
 #include "utils/result.hpp"
@@ -528,16 +529,59 @@ EngineService::GetEngineVariants(const std::string& engine,
 
   std::vector<EngineVariant> compatible_variants;
   std::vector<github_release_utils::GitHubAsset> assets;
+
+  auto get_os_major = []() -> int {
+    auto os_info = cortex::hw::GetOSInfo();
+    // Get os major version
+    size_t dot_pos = os_info.version.find_first_of(".");
+    if (dot_pos != std::string::npos) {
+      try {
+        return std::stoi(os_info.version.substr(0, dot_pos));
+      } catch (const std::exception& e) {
+        return 0;
+      }
+    } else {
+      // No version found
+      return 0;
+    }
+  };
+
   if (engine_release_menlo.has_value()) {
-    assets.insert(std::end(assets),
-                  std::begin(engine_release_menlo.value().assets),
-                  std::end(engine_release_menlo.value().assets));
+    // In case of macos, if os version is 12, we get binary from menlo
+    std::copy_if(
+        engine_release_menlo.value().assets.begin(),
+        engine_release_menlo.value().assets.end(), std::back_inserter(assets),
+        [get_os_major](const github_release_utils::GitHubAsset& assets) {
+#if defined(__APPLE__) && defined(__MACH__)
+          if (get_os_major() == 12 &&
+              assets.name.find(kMacOs) != std::string::npos) {
+            return true;
+          }
+          return false;
+#else
+          return true;
+#endif
+        });
   }
+  
   if (engine_release_ggml.has_value()) {
-    assets.insert(std::end(assets),
-                  std::begin(engine_release_ggml.value().assets),
-                  std::end(engine_release_ggml.value().assets));
+    // In case of macos, if os version is 12, we get binary from menlo
+    std::copy_if(
+        engine_release_ggml.value().assets.begin(),
+        engine_release_ggml.value().assets.end(), std::back_inserter(assets),
+        [get_os_major](const github_release_utils::GitHubAsset& assets) {
+#if defined(__APPLE__) && defined(__MACH__)
+          if (get_os_major() > 12 &&
+              assets.name.find(kMacOs) != std::string::npos) {
+            return true;
+          }
+          return false;
+#else
+          return true;
+#endif
+        });
   }
+
   for (const auto& variant : assets) {
     CTL_INF("content_type: " << variant.content_type
                              << ", name: " << variant.name);
