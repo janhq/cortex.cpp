@@ -171,7 +171,6 @@ int main(int argc, char* argv[]) {
       };
 
       auto res = get_latest_version();
-
       if (res.has_error()) {
         CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
         return;

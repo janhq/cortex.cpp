@@ -42,7 +42,7 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
 
 cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command, const std::string& stdout_file,
-    const std::string& stderr_file) {
+    const std::string& stderr_file, const std::string& current_directory) {
   std::stringstream ss;
   for (const auto& item : command) {
     ss << item << " ";
@@ -109,17 +109,21 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
 
     // create a suspended process. we will resume it later after adding it to
     // a job (see below)
-    if (!CreateProcessA(NULL,              // lpApplicationName
-                        command_buffer,    // lpCommandLine
-                        NULL,              // lpProcessAttributes
-                        NULL,              // lpThreadAttributes
-                        TRUE,              // bInheritHandles
-                        CREATE_SUSPENDED,  // dwCreationFlags
-                        NULL,              // lpEnvironment
-                        NULL,              // lpCurrentDirectory
-                        &si,               // lpStartupInfo
-                        &pi                // lpProcessInformation
-                        )) {
+    if (!CreateProcessA(
+            NULL,              // lpApplicationName
+            command_buffer,    // lpCommandLine
+            NULL,              // lpProcessAttributes
+            NULL,              // lpThreadAttributes
+            TRUE,              // bInheritHandles
+            CREATE_SUSPENDED,  // dwCreationFlags
+            NULL,              // lpEnvironment
+            current_directory.empty()
+                ? NULL
+                : const_cast<char*>(
+                      current_directory.c_str()),  // lpCurrentDirectory
+            &si,                                   // lpStartupInfo
+            &pi                                    // lpProcessInformation
+            )) {
       if (hStdOut != NULL)
         CloseHandle(hStdOut);
       if (hStdErr != NULL)
