@@ -80,6 +80,15 @@ static const std::unordered_map<std::string, ApiConfigurationMetadata>
                                   /* .accept_value = */ "string",
                                   /* .default_value = */ "",
                                   /* .allow_empty = */ true}},
+        {"api_keys",
+         ApiConfigurationMetadata{
+             /* .name = */ "api_keys",
+             /* .desc = */ "API header key to get access to server APIs",
+             /* .group = */ "Token",
+             /* .accept_value = */ " comma separated",
+             /* .default_value = */ "",
+             /* .allow_empty = */ true}},
+
 };
 
 class ApiServerConfiguration {
