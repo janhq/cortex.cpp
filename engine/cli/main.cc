@@ -219,6 +219,10 @@ int main(int argc, char* argv[]) {
   }
 
   CommandLineParser clp;
-  clp.SetupCommand(argc, argv);
+  if(!clp.SetupCommand()){
+    CTL_ERR("Not Able to set Commands\n");
+    exit(1);
+  }
+  clp.runCommand(argc, argv);
   return 0;
 }

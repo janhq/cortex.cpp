@@ -53,7 +53,7 @@ CommandLineParser::CommandLineParser()
       engine_service_{std::make_shared<EngineService>(
           download_service_, dylib_path_manager_, db_service_)} {}
 
-bool CommandLineParser::SetupCommand(int argc, char** argv) {
+bool CommandLineParser::SetupCommand() {
   app_.usage("Usage:\n" + commands::GetCortexBinary() +
              " [options] [subcommand]");
   cml_data_.config = file_manager_utils::GetCortexConfig();
@@ -90,6 +90,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   };
   app_.add_flag_function("-v,--version", cb, "Get Cortex version");
 
+  return true;
+}
+
+bool CommandLineParser::runCommand(int argc, char** argv) {
   CLI11_PARSE(app_, argc, argv);
   if (argc == 1) {
     CLI_LOG(app_.help());
@@ -138,7 +142,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 void CommandLineParser::SetupCommonCommands() {
   auto model_pull_cmd = app_.add_subcommand(
       "pull",
-      "Download models by HuggingFace Repo/ModelID"
+      "Download models by HuggingFace Repo/ModelID\n"
       "See built-in models: https://huggingface.co/cortexso");
   model_pull_cmd->group(kCommonCommandsGroup);
   model_pull_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
