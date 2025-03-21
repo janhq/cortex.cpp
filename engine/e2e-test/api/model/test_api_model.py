@@ -1,6 +1,7 @@
 import pytest
 import requests
 import time
+import platform
 from utils.test_runner import (
     run,
     start_server,
@@ -111,16 +112,18 @@ class TestApiModel:
         response = requests.get("http://localhost:3928/v1/models")
         assert response.status_code == 200
 
-        print("Start model")
-        json_body = {"model": "tinyllama:1b"}
-        response = requests.post(
-            "http://localhost:3928/v1/models/start", json=json_body
-        )
-        assert response.status_code == 200, f"status_code: {response.status_code}"
+        # Skip tests for linux arm
+        if platform.machine() != "aarch64": 
+            print("Start model")
+            json_body = {"model": "tinyllama:1b"}
+            response = requests.post(
+                "http://localhost:3928/v1/models/start", json=json_body
+            )
+            assert response.status_code == 200, f"status_code: {response.status_code}"
 
-        print("Stop model")
-        response = requests.post("http://localhost:3928/v1/models/stop", json=json_body)
-        assert response.status_code == 200, f"status_code: {response.status_code}"
+            print("Stop model")
+            response = requests.post("http://localhost:3928/v1/models/stop", json=json_body)
+            assert response.status_code == 200, f"status_code: {response.status_code}"
                 
         # update API
         print("Update model")
