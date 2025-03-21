@@ -23,9 +23,10 @@ void ModelUpdCmd::Exec(
   }
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", model_handle_},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", model_handle_},
+      /* .queries = */ {},
   };
 
   Json::Value json_data;
@@ -314,6 +315,7 @@ void ModelUpdCmd::UpdateConfig(Json::Value& data, const std::string& key,
 void ModelUpdCmd::UpdateVectorField(
     const std::string& key, const std::string& value,
     std::function<void(const std::vector<std::string>&)> setter) {
+	(void) key;
   std::vector<std::string> tokens;
   std::istringstream iss(value);
   std::string token;
@@ -337,6 +339,7 @@ void ModelUpdCmd::UpdateNumericField(const std::string& key,
 void ModelUpdCmd::UpdateBooleanField(const std::string& key,
                                      const std::string& value,
                                      std::function<void(bool)> setter) {
+	(void) key;
   bool boolValue = (value == "true" || value == "1");
   setter(boolValue);
 }

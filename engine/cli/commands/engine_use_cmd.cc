@@ -19,9 +19,10 @@ cpp::result<void, std::string> EngineUseCmd::Exec(const std::string& host,
   }
 
   auto get_installed_url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "engines", engine},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "engines", engine},
+      /* .queries =  */ {},
   };
   auto installed_variants_results =
       curl_utils::SimpleGetJson(get_installed_url.ToFullPath());
@@ -71,9 +72,10 @@ cpp::result<void, std::string> EngineUseCmd::Exec(const std::string& host,
   body["variant"] = selected_variant.value();
   body["version"] = selected_version.value();
   auto set_default_engine_variant = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "engines", engine, "default"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "engines", engine, "default"},
+      /* .queries = */ {},
   };
 
   auto response = curl_utils::SimplePostJson(

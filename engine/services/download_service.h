@@ -87,7 +87,7 @@ class DownloadService {
 
   explicit DownloadService(std::shared_ptr<EventQueue> event_queue,
                            std::shared_ptr<ConfigService> config_service)
-      : config_service_{config_service}, event_queue_{event_queue}  {
+      : config_service_{config_service}, event_queue_{event_queue} {
     InitializeWorkers();
   };
 
@@ -127,10 +127,9 @@ class DownloadService {
 
   void Shutdown();
 
-  cpp::result<bool, std::string> Download(
-      const std::string& download_id,
-      const DownloadItem& download_item,
-      bool show_progress = true) noexcept;
+  cpp::result<bool, std::string> Download(const std::string& download_id,
+                                          const DownloadItem& download_item,
+                                          bool show_progress = true) noexcept;
 
   std::shared_ptr<EventQueue> event_queue_;
 
@@ -224,8 +223,7 @@ class DownloadService {
           if (should_emit_event) {
             dl_srv->event_queue_->enqueue(
                 EventType::DownloadEvent,
-                DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
-                              .download_task_ = *task});
+                DownloadEvent{{}, DownloadEventType::DownloadUpdated, *task});
             dl_srv->event_emit_map_[task->id] =
                 std::chrono::steady_clock::now();
           }
@@ -234,8 +232,8 @@ class DownloadService {
         break;
       }
     }
-    (void) ultotal;
-    (void) ulnow;
+    (void)ultotal;
+    (void)ulnow;
 
     return 0;
   }

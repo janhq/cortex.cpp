@@ -69,18 +69,23 @@ class EngineService : public EngineServiceI {
                 std::shared_ptr<cortex::TaskQueue> q)
       : download_service_{download_service},
         dylib_path_manager_{dylib_path_manager},
-        hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
-                .cuda_driver_version =
-                    system_info_utils::GetDriverAndCudaVersion().second},
+        hw_inf_{
+            system_info_utils::GetSystemInfo(),  // sys_inf.
+            {},                                  // cpu_info.
+            system_info_utils::GetDriverAndCudaVersion()
+                .second  //  cuda_driver_version.
+        },
         db_service_(db_service),
         q_(q) {}
 
   EngineService(std::shared_ptr<cortex::DylibPathManager> dylib_path_manager)
       : dylib_path_manager_(dylib_path_manager),
-        hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
-                .cuda_driver_version =
-                    system_info_utils::GetDriverAndCudaVersion().second} {}
-
+        hw_inf_{
+            system_info_utils::GetSystemInfo(),  // sys_inf.
+            {},                                  // cpu_info.
+            system_info_utils::GetDriverAndCudaVersion()
+                .second  //  cuda_driver_version.
+        } {}
   std::vector<EngineInfo> GetEngineInfoList() const;
 
   /**

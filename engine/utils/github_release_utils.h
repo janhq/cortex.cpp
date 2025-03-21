@@ -28,21 +28,19 @@ struct GitHubAsset {
 
   static GitHubAsset FromJson(const Json::Value& json,
                               const std::string& version) {
-    return GitHubAsset{
-        .url = json["url"].asString(),
-        .id = json["id"].asInt(),
-        .node_id = json["node_id"].asString(),
-        .name = json["name"].asString(),
-        .label = json["label"].asString(),
-        .content_type = json["content_type"].asString(),
-        .state = json["state"].asString(),
-        .size = json["size"].asUInt64(),
-        .download_count = json["download_count"].asUInt(),
-        .created_at = json["created_at"].asString(),
-        .updated_at = json["updated_at"].asString(),
-        .browser_download_url = json["browser_download_url"].asString(),
-        .version = version,
-    };
+    return GitHubAsset{json["url"].asString(),
+                       json["id"].asInt(),
+                       json["node_id"].asString(),
+                       json["name"].asString(),
+                       json["label"].asString(),
+                       json["content_type"].asString(),
+                       json["state"].asString(),
+                       json["size"].asUInt64(),
+                       json["download_count"].asUInt(),
+                       json["created_at"].asString(),
+                       json["updated_at"].asString(),
+                       json["browser_download_url"].asString(),
+                       version};
   }
 
   Json::Value ToJson() const {
@@ -103,15 +101,15 @@ struct GitHubRelease {
     }
 
     return GitHubRelease{
-        .url = json["url"].asString(),
-        .id = json["id"].asInt(),
-        .tag_name = json["tag_name"].asString(),
-        .name = json["name"].asString(),
-        .draft = json["draft"].asBool(),
-        .prerelease = json["prerelease"].asBool(),
-        .created_at = json["created_at"].asString(),
-        .published_at = json["published_at"].asString(),
-        .assets = assets,
+        json["url"].asString(),
+        json["id"].asInt(),
+        json["tag_name"].asString(),
+        json["name"].asString(),
+        json["draft"].asBool(),
+        json["prerelease"].asBool(),
+        json["created_at"].asString(),
+        json["published_at"].asString(),
+        assets,
     };
   }
 
@@ -149,9 +147,10 @@ inline cpp::result<std::vector<GitHubRelease>, std::string> GetReleases(
     const std::string& author, const std::string& repo,
     const bool allow_prerelease = true) {
   auto url = url_parser::Url{
-      .protocol = "https",
-      .host = kGitHubHost,
-      .pathParams = {"repos", author, repo, "releases"},
+      /* .protocol = */ "https",
+      /* .host = */ kGitHubHost,
+      /* .pathParams = */ {"repos", author, repo, "releases"},
+      /* .queries = */ {},
   };
 
   auto result = curl_utils::SimpleGetJson(url_parser::FromUrl(url));
@@ -168,7 +167,7 @@ inline cpp::result<std::vector<GitHubRelease>, std::string> GetReleases(
   for (const auto& release : result.value()) {
     releases.push_back(GitHubRelease::FromJson(release));
   }
-  (void) allow_prerelease;
+  (void)allow_prerelease;
   return releases;
 }
 
@@ -185,9 +184,10 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
   }
 
   auto url = url_parser::Url{
-      .protocol = "https",
-      .host = kGitHubHost,
-      .pathParams = path_params,
+      /* .protocol = */ "https",
+      /* .host = */ kGitHubHost,
+      /* .pathParams = */ path_params,
+      /* .queries = */ {},
   };
 
   // CTL_DBG("GetReleaseByVersion: " << url.ToFullPath());
