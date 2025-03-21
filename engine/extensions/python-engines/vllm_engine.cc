@@ -24,8 +24,8 @@ VllmEngine::VllmEngine()
 
 VllmEngine::~VllmEngine() {
   // NOTE: what happens if we can't kill subprocess?
-  std::unique_lock write_lock(mutex);
-  for (auto& [model_name, py_proc] : model_process_map) {
+  std::unique_lock write_lock(mutex_);
+  for (auto& [model_name, py_proc] : model_process_map_) {
     if (py_proc.IsAlive())
       py_proc.Kill();
   }
@@ -60,15 +60,58 @@ void VllmEngine::Unload(EngineUnloadOption opts) {};
 void VllmEngine::HandleChatCompletion(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  CTL_WRN("Not implemented");
-  throw std::runtime_error("Not implemented");
+
+  // request validation should be in controller
+  if (!json_body->isMember("model")) {
+    auto [status, error] =
+        CreateResponse("Missing required fields: model", 400);
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  const std::string model = (*json_body)["model"].asString();
+  int port;
+  // check if model has started
+  // TODO: use health check instead
+  {
+    std::shared_lock read_lock(mutex_);
+    if (model_process_map_.find(model) == model_process_map_.end()) {
+      const std::string msg = "Model " + model + " has not been loaded yet.";
+      auto [status, error] = CreateResponse(msg, 400);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+    port = model_process_map_[model].port;
+  }
+
+  bool stream = (*json_body)["stream"].asBool();
+  if (stream) {
+    auto [status, res] = CreateResponse("stream=true is not yet supported", 400);
+    callback(std::move(status), std::move(res));
+  } else {
+    const std::string url =
+        "http://127.0.0.1:" + std::to_string(port) + "/v1/chat/completions";
+    auto result = curl_utils::SimplePostJson(url, json_body->toStyledString());
+
+    if (result.has_error()) {
+      auto [status, res] = CreateResponse(result.error(), 400);
+      callback(std::move(status), std::move(res));
+    }
+
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = false;
+    status["is_stream"] = false;
+    status["status_code"] = 200;
+    callback(std::move(status), std::move(result.value()));
+  }
 };
 
 void VllmEngine::HandleEmbedding(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  CTL_WRN("Not implemented");
-  throw std::runtime_error("Not implemented");
+  auto [status, res] = CreateResponse("embedding is not yet supported", 400);
+  callback(std::move(status), std::move(res));
 };
 
 void VllmEngine::LoadModel(
@@ -85,9 +128,9 @@ void VllmEngine::LoadModel(
   const std::string model = (*json_body)["model"].asString();
 
   {
-    std::unique_lock write_lock(mutex);
-    if (model_process_map.find(model) != model_process_map.end()) {
-      auto proc = model_process_map[model];
+    std::unique_lock write_lock(mutex_);
+    if (model_process_map_.find(model) != model_process_map_.end()) {
+      auto proc = model_process_map_[model];
 
       if (proc.IsAlive()) {
         auto [status, error] = CreateResponse("Model already loaded!", 409);
@@ -96,7 +139,7 @@ void VllmEngine::LoadModel(
       } else {
         // if model has exited, try to load model again?
         CTL_WRN("Model " << model << " has exited unexpectedly");
-        model_process_map.erase(model);
+        model_process_map_.erase(model);
         port_offsets_[proc.port - cortex_port_] = false;  // free the port
       }
     }
@@ -164,8 +207,8 @@ void VllmEngine::LoadModel(
 
     pid = py_proc.proc_info.pid;
 
-    std::unique_lock write_lock(mutex);
-    model_process_map[model] = py_proc;
+    std::unique_lock write_lock(mutex_);
+    model_process_map_[model] = py_proc;
 
   } catch (const std::exception& e) {
     auto e_msg = e.what();
@@ -192,8 +235,8 @@ void VllmEngine::UnloadModel(
 
   // check if model has started
   {
-    std::shared_lock read_lock(mutex);
-    if (model_process_map.find(model) == model_process_map.end()) {
+    std::shared_lock read_lock(mutex_);
+    if (model_process_map_.find(model) == model_process_map_.end()) {
       const std::string msg = "Model " + model + " has not been loaded yet.";
       auto [status, error] = CreateResponse(msg, 400);
       callback(std::move(status), std::move(error));
@@ -203,15 +246,15 @@ void VllmEngine::UnloadModel(
 
   // we know that model has started
   {
-    std::unique_lock write_lock(mutex);
-    auto proc = model_process_map[model];
+    std::unique_lock write_lock(mutex_);
+    auto proc = model_process_map_[model];
 
     // TODO: we can use vLLM health check endpoint
     // check if subprocess is still alive
     // NOTE: is this step necessary? the subprocess could have terminated
     // after .IsAlive() and before .Kill() later.
     if (!proc.IsAlive()) {
-      model_process_map.erase(model);
+      model_process_map_.erase(model);
       port_offsets_[proc.port - cortex_port_] = false;  // free the port
 
       const std::string msg = "Model " + model + " stopped running.";
@@ -221,14 +264,14 @@ void VllmEngine::UnloadModel(
     }
 
     // subprocess is alive. we kill it here.
-    if (!model_process_map[model].Kill()) {
+    if (!model_process_map_[model].Kill()) {
       const std::string msg = "Unable to kill process of model " + model;
       auto [status, error] = CreateResponse(msg, 500);
       callback(std::move(status), std::move(error));
       return;
     }
 
-    model_process_map.erase(model);
+    model_process_map_.erase(model);
     port_offsets_[proc.port - cortex_port_] = false;  // free the port
   }
 
@@ -249,8 +292,8 @@ void VllmEngine::GetModelStatus(
   const std::string model = (*json_body)["model"].asString();
   // check if model has started
   {
-    std::shared_lock read_lock(mutex);
-    if (model_process_map.find(model) == model_process_map.end()) {
+    std::shared_lock read_lock(mutex_);
+    if (model_process_map_.find(model) == model_process_map_.end()) {
       const std::string msg = "Model " + model + " has not been loaded yet.";
       auto [status, error] = CreateResponse(msg, 400);
       callback(std::move(status), std::move(error));
@@ -261,12 +304,12 @@ void VllmEngine::GetModelStatus(
   // we know that model has started
   // TODO: just use health check endpoint
   {
-    std::unique_lock write_lock(mutex);
+    std::unique_lock write_lock(mutex_);
 
     // check if subprocess is still alive
-    if (!model_process_map[model].IsAlive()) {
+    if (!model_process_map_[model].IsAlive()) {
       CTL_WRN("Model " << model << " has exited unexpectedly.");
-      model_process_map.erase(model);
+      model_process_map_.erase(model);
       const std::string msg = "Model " + model + " stopped running.";
       auto [status, error] = CreateResponse(msg, 400);
       callback(std::move(status), std::move(error));
@@ -291,12 +334,12 @@ void VllmEngine::GetModels(
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
   Json::Value res, model_list(Json::arrayValue), status;
   {
-    std::unique_lock write_lock(mutex);
-    for (auto& [model_name, py_proc] : model_process_map) {
+    std::unique_lock write_lock(mutex_);
+    for (auto& [model_name, py_proc] : model_process_map_) {
       // TODO: check using health endpoint
       if (!py_proc.IsAlive()) {
         CTL_WRN("Model " << model_name << " has exited unexpectedly.");
-        model_process_map.erase(model_name);
+        model_process_map_.erase(model_name);
         continue;
       }
 

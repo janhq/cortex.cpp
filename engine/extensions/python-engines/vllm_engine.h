@@ -12,9 +12,9 @@ class VllmEngine : public EngineI {
   // otherwise, cortex_port + i is not used
   std::vector<bool> port_offsets_;
 
-  mutable std::shared_mutex mutex;
+  mutable std::shared_mutex mutex_;
   std::unordered_map<std::string, python_utils::PythonSubprocess>
-      model_process_map;
+      model_process_map_;
 
  public:
   VllmEngine();

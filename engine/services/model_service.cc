@@ -1252,6 +1252,10 @@ std::string ModelService::GetEngineByModelId(
     CTL_WRN("Error: " + model_entry.error());
     return "";
   }
+
+  if (model_entry.value().engine == kVllmEngine)
+    return kVllmEngine;
+
   config::YamlHandler yaml_handler;
   yaml_handler.ModelConfigFromFile(
       fmu::ToAbsoluteCortexDataPath(
