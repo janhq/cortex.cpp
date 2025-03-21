@@ -25,7 +25,7 @@ class TestApiEngineList:
         # Data test
         engine= "llama-cpp"
         name= "linux-avx-x64"
-        version= "b4920"
+        version= "b4932"
         
         post_install_url = f"http://localhost:3928/v1/engines/{engine}/install"
         response = requests.delete(

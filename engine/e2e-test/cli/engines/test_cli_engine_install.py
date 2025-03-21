@@ -33,7 +33,7 @@ class TestCliEngineInstall:
 
     @pytest.mark.skipif(platform.system() == "Windows", reason="Progress bar log issue on Windows")
     def test_engines_install_pre_release_llamacpp(self):
-        engine_version = "b4920"
+        engine_version = "b4932"
         exit_code, output, error = run(
             "Install Engine",
             ["engines", "install", "llama-cpp", "-v", engine_version],

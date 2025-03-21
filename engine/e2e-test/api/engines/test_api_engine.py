@@ -28,14 +28,14 @@ class TestApiEngine:
         
     # engines install
     def test_engines_install_llamacpp_specific_version_and_variant(self):
-        data = {"version": "b4920", "variant": "linux-avx-x64"}
+        data = {"version": "b4932", "variant": "linux-avx-x64"}
         response = requests.post(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
         )
         assert response.status_code == 200
 
     def test_engines_install_llamacpp_specific_version_and_null_variant(self):
-        data = {"version": "b4920"}
+        data = {"version": "b4932"}
         response = requests.post(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
         )
@@ -62,7 +62,7 @@ class TestApiEngine:
         await wait_for_websocket_download_success_event(timeout=120)
         assert install_response.status_code == 200
 
-        data = {"version": "b4920"}
+        data = {"version": "b4932"}
         response = requests.delete(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
         )
@@ -85,7 +85,7 @@ class TestApiEngine:
     def test_engines_install_uninstall_llamacpp_with_specific_variant_and_version_should_be_successful(
         self,
     ):
-        data = {"variant": "linux-avx-x64", "version": "b4920"}
+        data = {"variant": "linux-avx-x64", "version": "b4932"}
         # install first
         install_response = requests.post(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
