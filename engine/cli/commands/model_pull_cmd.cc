@@ -37,9 +37,10 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
   }
 
   auto model_info_url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"models", "pull", "info"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"models", "pull", "info"},
+      /* .queries = */ {},
   };
   Json::Value j_data;
   j_data["model"] = input;
@@ -100,9 +101,10 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
   auto data_str = json_data.toStyledString();
 
   auto pull_url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", "pull"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", "pull"},
+      /* .queries = */ {},
   };
 
   auto pull_result =
@@ -153,9 +155,10 @@ bool ModelPullCmd::AbortModelPull(const std::string& host, int port,
   json_data["taskId"] = task_id;
   auto data_str = json_data.toStyledString();
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", "pull"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", "pull"},
+      /* .queries = */ {},
   };
   auto res = curl_utils::SimpleDeleteJson(url.ToFullPath(), data_str);
 

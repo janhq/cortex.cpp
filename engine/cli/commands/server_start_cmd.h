@@ -12,9 +12,10 @@ using CortexConfig = config_yaml_utils::CortexConfig;
 
 inline bool IsServerAlive(const std::string& host, int port) {
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"healthz"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"healthz"},
+      /* .queries = */ {},
   };
   auto res = curl_utils::SimpleGet(url.ToFullPath());
   if (res.has_error()) {

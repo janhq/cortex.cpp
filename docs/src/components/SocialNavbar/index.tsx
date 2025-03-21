@@ -14,7 +14,7 @@ const SocialNavbar = () => {
     <div className="lg:flex hidden mr-4 items-center gap-x-2">
       <div className="header-github-link flex bg-neutral-100 dark:bg-neutral-800 rounded-lg py-1 px-2 items-center gap-2">
         <Link
-          to="https://github.com/menloresearch/cortex"
+          to="https://github.com/menloresearch/cortex.cpp"
           target="_blank"
           className="hover:no-underline text-black dark:text-white hover:text-inherit"
         >

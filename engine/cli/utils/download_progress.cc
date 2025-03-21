@@ -121,7 +121,7 @@ bool DownloadProgress::Handle(
         bars->push_back(*(items.at(i.id).second));
       }
     }
-    for (int i = 0; i < ev.download_task_.items.size(); i++) {
+    for (int i = 0; i < (int) ev.download_task_.items.size(); i++) {
       auto& it = ev.download_task_.items[i];
       if (ev.type_ == DownloadStatus::DownloadUpdated) {
         uint64_t downloaded = it.downloadedBytes.value_or(0u);

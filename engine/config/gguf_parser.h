@@ -4,32 +4,32 @@
 
 namespace config {
 constexpr char OPEN_CHAT_3_5_JINJA[] =
-    "{{ bos_token }}{\% for message in messages \%}{{ 'GPT4 Correct ' + "
+    R"({{ bos_token }}{% for message in messages %}{{ 'GPT4 Correct ' + "
     "message['role'].title() + ': ' + message['content'] + "
-    "'<|end_of_turn|>'}}{\% endfor \%}{\% if add_generation_prompt \%}{{ 'GPT4 "
-    "Correct Assistant:' }}{\% endif \%}";
+    "'<|end_of_turn|>'}}{% endfor %}{% if add_generation_prompt %}{{ 'GPT4 "
+    "Correct Assistant:' }}{% endif %})";
 constexpr char ZEPHYR_JINJA[] =
-    "{\% for message in messages \%}\n{\% if message['role'] == 'user' \%}\n{{ "
-    "'<|user|>\n' + message['content'] + eos_token }}\n{\% elif "
-    "message['role'] == 'system' \%}\n{{ '<|system|>\n' + message['content'] + "
-    "eos_token }}\n{\% elif message['role'] == 'assistant' \%}\n{{ "
-    "'<|assistant|>\n'  + message['content'] + eos_token }}\n{\% endif "
-    "\%}\n{\% if loop.last and add_generation_prompt \%}\n{{ '<|assistant|>' "
-    "}}\n{\% endif \%}\n{\% endfor \%}";
+    R"({% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ "
+    "'<|user|>\n' + message['content'] + eos_token }}\n{% elif "
+    "message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + "
+    "eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ "
+    "'<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif "
+    "%}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' "
+    "}}\n{% endif %}\n{% endfor %})";
 constexpr char LLAMA_3_1_JINJA[] =
-    "{\% set loop_messages = messages \%}{\% for message in loop_messages "
-    "\%}{\% set content = '<|start_header_id|>' + message['role'] + "
-    "'<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' \%}{\% "
-    "if loop.index0 == 0 \%}{\% set content = bos_token + content \%}{\% endif "
-    "\%}{{ content }}{\% endfor \%}{{ "
-    "'<|start_header_id|>assistant<|end_header_id|>\n\n' }}";
+    R"({% set loop_messages = messages %}{% for message in loop_messages "
+    "%}{% set content = '<|start_header_id|>' + message['role'] + "
+    "'<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% "
+    "if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif "
+    "%}{{ content }}{% endfor %}{{ "
+    "'<|start_header_id|>assistant<|end_header_id|>\n\n' }})";
 constexpr char LLAMA_3_JINJA[] =
-    "{\% set loop_messages = messages \%}{\% for message in loop_messages "
-    "\%}{\% set content = '<|start_header_id|>' + message['role'] + "
-    "'<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' \%}{\% "
-    "if loop.index0 == 0 \%}{\% set content = bos_token + content \%}{\% endif "
-    "\%}{{ content }}{\% endfor \%}{\% if add_generation_prompt \%}{{ "
-    "'<|start_header_id|>assistant<|end_header_id|>\n\n' }}";
+    R"({% set loop_messages = messages %}{% for message in loop_messages "
+    "%}{% set content = '<|start_header_id|>' + message['role'] + "
+    "'<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% "
+    "if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif "
+    "%}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ "
+    "'<|start_header_id|>assistant<|end_header_id|>\n\n' }})";
 constexpr uint32_t GGUF_MAGIC_NUMBER = 1179993927;
 
 class GGUFHandler {
@@ -46,6 +46,7 @@ class GGUFHandler {
   size_t ReadArray(std::size_t offset, const std::string& key);
   void ModelConfigFromMetadata();
   void OpenFile(const std::string& file_path);
+  void CheckOffset(int offset) const;
 
   uint8_t* data_;
   size_t file_size_;
@@ -68,4 +69,4 @@ class GGUFHandler {
   std::unordered_map<std::string, std::vector<std::string>>
       metadata_array_string_;
 };
-}
+}  // namespace config

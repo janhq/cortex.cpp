@@ -88,11 +88,7 @@ inline bool SplitPathParams(const std::string& input,
 
 inline cpp::result<Url, std::string> FromUrlString(
     const std::string& urlString) {
-  Url url = {
-      .protocol = "",
-      .host = "",
-      .pathParams = {},
-  };
+  Url url{"", "", {}, {}};
   int counter = 0;
 
   std::smatch url_match_result;

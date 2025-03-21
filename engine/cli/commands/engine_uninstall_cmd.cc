@@ -18,9 +18,11 @@ void EngineUninstallCmd::Exec(const std::string& host, int port,
   }
 
   auto url =
-      url_parser::Url{.protocol = "http",
-                      .host = host + ":" + std::to_string(port),
-                      .pathParams = {"v1", "engines", engine, "install"}};
+      url_parser::Url{/* .protocol = */ "http",
+                      /* .host = */ host + ":" + std::to_string(port),
+                      /* .pathParams = */ {"v1", "engines", engine, "install"},
+                      /* .queries = */ {},
+                    };
 
   auto result = curl_utils::SimpleDeleteJson(url.ToFullPath());
   if (result.has_error()) {

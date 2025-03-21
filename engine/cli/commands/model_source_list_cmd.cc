@@ -29,9 +29,10 @@ bool ModelSourceListCmd::Exec(const std::string& host, int port) {
   table.add_row({"#", "Model Source"});
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", "sources"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", "sources"},
+      /* .queries = */ {},
   };
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {

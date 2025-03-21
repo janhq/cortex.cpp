@@ -85,7 +85,7 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
         const std::unordered_map<std::string, std::string>>>
         env_vars) {
   std::stringstream ss;
-  for (const auto item : command) {
+  for (const auto& item : command) {
     ss << item << " ";
   }
   CTL_INF("Spawning process with command: " << ss.str());

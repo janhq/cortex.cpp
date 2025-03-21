@@ -73,12 +73,16 @@ void ParseGguf(DatabaseService& db_service,
   auto author_id = author.has_value() ? author.value() : "cortexso";
   if (!db_service.HasModel(ggufDownloadItem.id)) {
     cortex::db::ModelEntry model_entry{
-        .model = ggufDownloadItem.id,
-        .author_repo_id = author_id,
-        .branch_name = branch,
-        .path_to_model_yaml = rel.string(),
-        .model_alias = ggufDownloadItem.id,
-        .status = cortex::db::ModelStatus::Downloaded};
+        /* .model = */ ggufDownloadItem.id,
+        /* .author_repo_id = */ author_id,
+        /* .branch_name = */ branch,
+        /* .path_to_model_yaml = */ rel.string(),
+        /* .model_alias = */ ggufDownloadItem.id,
+        "",
+        "",
+        /* .status = */ cortex::db::ModelStatus::Downloaded,
+        "",
+        ""};
     auto result = db_service.AddModelEntry(model_entry);
 
     if (result.has_error()) {
@@ -101,11 +105,11 @@ cpp::result<DownloadTask, std::string> GetCloneRepoDownloadTask(
     const std::string& author_id, const std::string& modelId,
     const std::string& branch, const std::vector<std::string>& save_dir,
     const std::string& task_id) {
-  url_parser::Url url = {
-      .protocol = "https",
-      .host = kHuggingFaceHost,
-      .pathParams = {"api", "models", author_id, modelId, "tree", branch},
-  };
+  url_parser::Url url = {/* .protocol = */ "https",
+                         /* .host = */ kHuggingFaceHost,
+                         /* .pathParams = */
+                         {"api", "models", author_id, modelId, "tree", branch},
+                         {}};
 
   auto result = curl_utils::SimpleGetJsonRecursive(url.ToFullPath());
   if (result.has_error()) {
@@ -126,22 +130,30 @@ cpp::result<DownloadTask, std::string> GetCloneRepoDownloadTask(
       continue;
     }
     url_parser::Url download_url = {
-        .protocol = "https",
-        .host = kHuggingFaceHost,
-        .pathParams = {author_id, modelId, "resolve", branch, path}};
+        /* .protocol = */ "https",
+        /* .host = */ kHuggingFaceHost,
+        /* .pathParams = */ {author_id, modelId, "resolve", branch, path},
+        {}};
 
     auto local_path = model_container_path / path;
     if (!std::filesystem::exists(local_path.parent_path())) {
       std::filesystem::create_directories(local_path.parent_path());
     }
-    download_items.push_back(
-        DownloadItem{.id = path,
-                     .downloadUrl = download_url.ToFullPath(),
-                     .localPath = local_path});
+    download_items.push_back(DownloadItem{
+        /* .id = */ path,
+        /* .downloadUrl = */ download_url.ToFullPath(),
+        /* .localPath = */ local_path,
+        /*.checksum = */ std::nullopt,
+        /* .bytes = */ std::nullopt,
+        /* .downloadedBytes = */ std::nullopt,
+    });
   }
 
   return DownloadTask{
-      .id = task_id, .type = DownloadType::Model, .items = download_items};
+      /* .id = */ task_id,
+      /* .status = */ DownloadTask::Status::Pending,
+      /* .type = */ DownloadType::Model,
+      /* .items = */ download_items};
 }
 }  // namespace
 
@@ -240,14 +252,20 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     const std::string& url, std::optional<std::string> temp_model_id,
     std::optional<std::string> temp_name) {
   auto url_obj = url_parser::FromUrlString(url);
-  if (url_obj.has_error()) {
-    return cpp::fail("Invalid url: " + url);
+  if (url_obj.has_error() || url_obj->pathParams.size() < 5) {
+    return cpp::fail(
+        "Invalid url: " + url +
+        ", a valid URL example is: "
+        "https://huggingface.co/cortexso/tinyllama/blob/1b/model.gguf");
   }
 
   if (url_obj->host == kHuggingFaceHost) {
     if (url_obj->pathParams[2] == "blob") {
       url_obj->pathParams[2] = "resolve";
     }
+  } else {
+    return cpp::fail("Only support pull model from " +
+                     std::string(kHuggingFaceHost));
   }
   auto author{url_obj->pathParams[0]};
   auto model_id{url_obj->pathParams[1]};
@@ -255,10 +273,6 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 
   if (author == "cortexso") {
     return DownloadModelFromCortexsoAsync(model_id, url_obj->pathParams[3]);
-  }
-
-  if (url_obj->pathParams.size() < 5) {
-    return cpp::fail("Invalid url: " + url);
   }
 
   std::string huggingFaceHost{kHuggingFaceHost};
@@ -289,12 +303,17 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 
   auto download_url = url_parser::FromUrl(url_obj.value());
   // this assume that the model being downloaded is a single gguf file
-  auto downloadTask{DownloadTask{.id = model_id,
-                                 .type = DownloadType::Model,
-                                 .items = {DownloadItem{
-                                     .id = unique_model_id,
-                                     .downloadUrl = download_url,
-                                     .localPath = local_path,
+  auto downloadTask{DownloadTask{/* .id = */ model_id,
+                                 DownloadTask::Status::Pending,
+                                 /* .type = */ DownloadType::Model,
+                                 /* .items = */
+                                 {DownloadItem{
+                                     /* .id = */ unique_model_id,
+                                     /* .downloadUrl = */ download_url,
+                                     /* .localPath = */ local_path,
+                                     /* .checksum = */ std::nullopt,
+                                     /* .bytes = */ std::nullopt,
+                                     /* .downloadedBytes = */ std::nullopt,
                                  }}}};
 
   auto on_finished = [this, author,
@@ -403,12 +422,12 @@ ModelService::EstimateModel(const std::string& model_handle,
 
     return hardware::EstimateLLaMACppRun(
         fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string(),
-        {.ngl = mc.ngl,
-         .ctx_len = mc.ctx_len,
-         .n_batch = n_batch,
-         .n_ubatch = n_ubatch,
-         .kv_cache_type = kv_cache,
-         .free_vram_MiB = free_vram_MiB});
+        {/* .ngl = */ mc.ngl,
+         /* .ctx_len = */ mc.ctx_len,
+         /* .n_batch = */ n_batch,
+         /* .n_ubatch = */ n_ubatch,
+         /* .kv_cache_type = */ kv_cache,
+         /* .free_vram_MiB = */ free_vram_MiB});
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
@@ -442,7 +461,7 @@ ModelService::DownloadModelFromCortexsoAsync(
   auto on_finished = [this, unique_model_id,
                       branch](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
-    auto need_parse_gguf = true;
+    // [unused] auto need_parse_gguf = true;
 
     for (const auto& item : finishedTask.items) {
       if (item.localPath.filename().string() == "model.yml") {
@@ -480,13 +499,16 @@ ModelService::DownloadModelFromCortexsoAsync(
 
     if (!db_service_->HasModel(unique_model_id)) {
       cortex::db::ModelEntry model_entry{
-          .model = unique_model_id,
-          .author_repo_id = "cortexso",
-          .branch_name = branch,
-          .path_to_model_yaml = rel.string(),
-          .model_alias = unique_model_id,
-          .status = cortex::db::ModelStatus::Downloaded,
-          .engine = mc.engine};
+          /* .model = */ unique_model_id,
+          /* .author_repo_id = */ "cortexso",
+          /* .branch_name = */ branch,
+          /* .path_to_model_yaml = */ rel.string(),
+          /* .model_alias = */ unique_model_id,
+          "",
+          "",
+          /* .status = */ cortex::db::ModelStatus::Downloaded,
+          /* .engine = */ mc.engine,
+          ""};
       auto result = db_service_->AddModelEntry(model_entry);
 
       if (result.has_error()) {
@@ -664,10 +686,10 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         auto status = std::get<0>(ir)["status_code"].asInt();
         auto data = std::get<1>(ir);
         if (status == drogon::k200OK) {
-          return StartModelResult{.success = true, .warning = ""};
+          return StartModelResult{/* .success = */ true, /* .warning = */ ""};
         } else if (status == drogon::k409Conflict) {
           CTL_INF("Model '" + model_handle + "' is already loaded");
-          return StartModelResult{.success = true, .warning = ""};
+          return StartModelResult{/* .success = */ true, /* .warning = */ ""};
         } else {
           // only report to user the error
           CTL_ERR("Model failed to start with status code: " << status);
@@ -689,7 +711,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 #endif
       } else {
         LOG_WARN << "model_path is empty";
-        return StartModelResult{.success = false};
+        return StartModelResult{/* .success = */ false, ""};
       }
       if (!mc.mmproj.empty()) {
 #if defined(_WIN32)
@@ -762,12 +784,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         }
       }
 
-      return StartModelResult{.success = true,
-                              .warning = may_fallback_res.value()};
+      return StartModelResult{/* .success = */ true,
+                              /* .warning = */ may_fallback_res.value()};
     } else if (status == drogon::k409Conflict) {
       CTL_INF("Model '" + model_handle + "' is already loaded");
       return StartModelResult{
-          .success = true, .warning = may_fallback_res.value_or(std::nullopt)};
+          /* .success = */ true,
+          /* .warning = */ may_fallback_res.value_or(std::nullopt)};
     } else {
       // only report to user the error
       CTL_ERR("Model failed to start with status code: " << status);
@@ -881,13 +904,19 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
 
   if (string_utils::StartsWith(input, "https://")) {
     auto url_obj = url_parser::FromUrlString(input);
-    if (url_obj.has_error()) {
-      return cpp::fail("Invalid url: " + input);
+    if (url_obj.has_error() || url_obj->pathParams.size() < 5) {
+      return cpp::fail(
+          "Invalid url: " + input +
+          ", a valid URL example is: "
+          "https://huggingface.co/cortexso/tinyllama/blob/1b/model.gguf");
     }
     if (url_obj->host == kHuggingFaceHost) {
       if (url_obj->pathParams[2] == "blob") {
         url_obj->pathParams[2] = "resolve";
       }
+    } else {
+      return cpp::fail("Only support pull model from " +
+                       std::string(kHuggingFaceHost));
     }
 
     auto author{url_obj->pathParams[0]};
@@ -895,15 +924,20 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
     auto file_name{url_obj->pathParams.back()};
     if (author == "cortexso") {
       return ModelPullInfo{
-          .id = model_id + ":" + url_obj->pathParams[3],
-          .downloaded_models = {},
-          .available_models = {},
-          .download_url = url_parser::FromUrl(url_obj.value())};
+          /* .id = */ model_id + ":" + url_obj->pathParams[3],
+          /* .default_branch = */ "main",
+          /* .downloaded_models = */ {},
+          /* .available_models = */ {},
+          /* .model_source = */ "",
+          /* .download_url = */ url_parser::FromUrl(url_obj.value())};
     }
-    return ModelPullInfo{.id = author + ":" + model_id + ":" + file_name,
-                         .downloaded_models = {},
-                         .available_models = {},
-                         .download_url = url_parser::FromUrl(url_obj.value())};
+    return ModelPullInfo{
+        /* .id = */ author + ":" + model_id + ":" + file_name,
+        /* .default_branch = */ "main",
+        /* .downloaded_models = */ {},
+        /* .available_models = */ {},
+        /* .model_source = */ "",
+        /* .download_url = */ url_parser::FromUrl(url_obj.value())};
   }
 
   if (input.find(":") != std::string::npos) {
@@ -911,10 +945,12 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
     if (parsed.size() != 2 && parsed.size() != 3) {
       return cpp::fail("Invalid model handle: " + input);
     }
-    return ModelPullInfo{.id = input,
-                         .downloaded_models = {},
-                         .available_models = {},
-                         .download_url = input};
+    return ModelPullInfo{/* .id = */ input,
+                         /* .default_branch = */ "main",
+                         /* .downloaded_models = */ {},
+                         /* .available_models = */ {},
+                         /* .model_source = */ "",
+                         /* .download_url = */ input};
   }
 
   if (input.find("/") != std::string::npos) {
@@ -943,20 +979,25 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
         }
 
         return ModelPullInfo{
-            .id = author + ":" + model_name,
-            .downloaded_models = {},
-            .available_models = options,
-            .download_url =
-                huggingface_utils::GetDownloadableUrl(author, model_name, "")};
+          /* .id = */ author + ":" + model_name,
+          /* .default_branch = */ "main",
+          /* .downloaded_models = */ {},
+          /* .available_models = */ options,
+          /* .model_source = */ "",
+          /* .download_url = */
+          huggingface_utils::GetDownloadableUrl(author, model_name, "")};
       }
 
       // repo that is supported by HF transformers
       // we will download the whole repo
       if (repo_info->library_name.value_or("") == "transformers") {
         return ModelPullInfo{
-            .id = author + "/" + model_name,
-            .model_source = "huggingface",
-        };
+          /* .id = */ author + "/" + model_name,
+          /* .default_branch = */ "main",
+          /* .downloaded_models = */ {},
+          /* .available_models = */ {},
+          /* .model_source = */ "huggingface",
+          /* .download_url = */ ""};
       }
 
       return cpp::fail(
@@ -1000,11 +1041,13 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
   string_utils::SortStrings(downloaded_model_ids);
   string_utils::SortStrings(avai_download_opts);
 
-  return ModelPullInfo{.id = model_name,
-                       .default_branch = normalized_def_branch.value_or(""),
-                       .downloaded_models = downloaded_model_ids,
-                       .available_models = avai_download_opts,
-                       .model_source = "cortexso"};
+  return ModelPullInfo{
+      /* .id = */ model_name,
+      /* .default_branch = */ normalized_def_branch.value_or(""),
+      /* .downloaded_models = */ downloaded_model_ids,
+      /* .available_models = */ avai_download_opts,
+      /* .model_source = */ "cortexso",
+      /* .download_url = */ ""};
 }
 
 cpp::result<DownloadTask, std::string> ModelService::PullModel(
@@ -1140,12 +1183,12 @@ ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
   free_vram_MiB = free_ram_MiB;
 #endif
 
-  hardware::RunConfig rc = {.ngl = ngl,
-                            .ctx_len = ctx_len,
-                            .n_batch = n_batch,
-                            .n_ubatch = n_ubatch,
-                            .kv_cache_type = kv_cache_type,
-                            .free_vram_MiB = free_vram_MiB};
+  hardware::RunConfig rc = {/* .ngl = */ ngl,
+                            /* .ctx_len = */ ctx_len,
+                            /* .n_batch = */ n_batch,
+                            /* .n_ubatch = */ n_ubatch,
+                            /* .kv_cache_type = */ kv_cache_type,
+                            /* .free_vram_MiB = */ free_vram_MiB};
   auto es = hardware::EstimateLLaMACppRun(model_path, rc);
 
   if (!!es && (*es).gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
