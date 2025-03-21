@@ -329,6 +329,24 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
                                        std::filesystem::perms::others_exec,
                                    std::filesystem::perm_options::add);
 
+      const std::vector<std::string> windows_deps = {
+          "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"};
+      for (auto const& win_dep : windows_deps) {
+        if (std::filesystem::exists(
+                file_manager_utils::GetExecutableFolderContainerPath() /
+                win_dep)) {
+          CTL_INF("Copy file "
+                  << (file_manager_utils::GetExecutableFolderContainerPath() /
+                      win_dep)
+                         .string()
+                  << " to " << extract_path.string());
+          std::filesystem::copy_file(
+              file_manager_utils::GetExecutableFolderContainerPath() / win_dep,
+              extract_path / win_dep,
+              std::filesystem::copy_options::overwrite_existing);
+        }
+      }
+
     } catch (const std::exception& e) {
       CTL_INF(e.what());
     }
@@ -563,7 +581,7 @@ EngineService::GetEngineVariants(const std::string& engine,
 #endif
         });
   }
-  
+
   if (engine_release_ggml.has_value()) {
     // In case of macos, if os version is 12, we get binary from menlo
     std::copy_if(

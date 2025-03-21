@@ -5,6 +5,7 @@
 #include "utils/curl_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
+#include "utils/process/utils.h"
 #include "utils/url_parser.h"
 
 namespace cortex::local {
@@ -548,11 +549,7 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   auto log_path =
       (file_manager_utils::GetCortexLogPath() / "logs" / "cortex.log").string();
   CTL_DBG("log: " << log_path);
-  CTL_INF("exe path: "
-          << file_manager_utils::GetExecutableFolderContainerPath().string());
-  auto result = cortex::process::SpawnProcess(
-      v, log_path, log_path,
-      file_manager_utils::GetExecutableFolderContainerPath().string());
+  auto result = cortex::process::SpawnProcess(v, log_path, log_path);
   if (result.has_error()) {
     CTL_ERR("Fail to spawn process. " << result.error());
     Json::Value error;
