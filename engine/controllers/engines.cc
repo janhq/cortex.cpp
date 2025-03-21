@@ -155,6 +155,7 @@ void Engines::GetEngineVariants(
       releases.append(json.value());
     }
   }
+  CTL_INF(releases.toStyledString());
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);
   resp->setStatusCode(k200OK);
   callback(resp);
@@ -177,6 +178,8 @@ void Engines::InstallEngine(
     }
     norm_version = version;
   }
+  CTL_INF("version: " << norm_version
+                      << ", norm_variant: " << norm_variant.value_or(""));
 
   auto result =
       engine_service_->InstallEngineAsync(engine, norm_version, norm_variant);

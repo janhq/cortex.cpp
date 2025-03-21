@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "utils/cpuid/cpu_info.h"
+#include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
@@ -24,13 +25,19 @@ inline cpp::result<std::string, std::string> GetVariantFromNameAndVersion(
   if (engine.empty()) {
     return cpp::fail("Engine name is empty");
   }
-  auto nv = string_utils::RemoveSubstring(version, "v");
-  using namespace string_utils;
-  auto removed_extension = RemoveSubstring(engine_file_name, ".tar.gz");
-  auto version_and_variant = RemoveSubstring(removed_extension, engine + "-");
-
-  auto variant = RemoveSubstring(version_and_variant, nv + "-");
-  return variant;
+  CTL_DBG("version: " << version);
+  namespace su = string_utils;
+  CTL_DBG("engine_file_name: " << engine_file_name);
+  auto rm_extension_menlo = su::RemoveSubstring(engine_file_name, ".tar.gz");
+  auto rm_extension_ggml = su::RemoveSubstring(rm_extension_menlo, ".zip");
+  CTL_DBG("removed_extension: " << rm_extension_ggml);
+  auto version_and_variant =
+      su::RemoveSubstring(rm_extension_ggml, engine + "-");
+  CTL_DBG("version_and_variant: " << version_and_variant);
+  auto variant = su::RemoveSubstring(version_and_variant, version + "-");
+  auto v = su::RemoveSubstring(variant, "llama-bin-");
+  CTL_DBG("variant: " << v);
+  return v;
 }
 
 inline std::string GetSuitableAvxVariant(cortex::cpuid::CpuInfo& cpu_info) {
@@ -48,7 +55,7 @@ inline std::string GetSuitableAvxVariant(cortex::cpuid::CpuInfo& cpu_info) {
 
 inline std::string GetSuitableCudaVariant(
     const std::vector<std::string>& variants, const std::string& cuda_version) {
-  std::regex cuda_reg("cuda-(\\d+)-(\\d+)");
+  std::regex cuda_reg("cuda-cu(\\d+).(\\d+)");
   std::smatch match;
 
   int requested_major = 0;
@@ -141,8 +148,9 @@ inline std::string Validate(const std::vector<std::string>& variants,
                             const std::string& os, const std::string& cpu_arch,
                             const std::string& suitable_avx,
                             const std::string& cuda_version) {
+  // CTL_INF(os << " " << cpu_arch);
   // Early return if the OS is not supported
-  if (os != "mac" && os != "windows" && os != "linux") {
+  if (os != kMacOs && os != kWindowsOs && os != kLinuxOs) {
     return "";
   }
 
@@ -150,6 +158,12 @@ inline std::string Validate(const std::vector<std::string>& variants,
   std::copy_if(variants.begin(), variants.end(),
                std::back_inserter(os_and_arch_compatible_list),
                [&os, &cpu_arch](const std::string& variant) {
+                 // In case of Linux, we need to include ubuntu version also
+                 if (os == kLinuxOs) {
+                   if (variant.find(kUbuntuOs) != std::string::npos &&
+                       variant.find(cpu_arch) != std::string::npos)
+                     return true;
+                 }
                  auto os_match = "-" + os;
                  auto cpu_arch_match = "-" + cpu_arch;
 
@@ -157,10 +171,10 @@ inline std::string Validate(const std::vector<std::string>& variants,
                         variant.find(cpu_arch_match) != std::string::npos;
                });
 
-  if (os == "mac" && !os_and_arch_compatible_list.empty())
+  if (os == kMacOs && !os_and_arch_compatible_list.empty())
     return os_and_arch_compatible_list[0];
 
-  if (os == "linux" && cpu_arch == "arm64" &&
+  if (os == kLinuxOs && cpu_arch == "arm64" &&
       !os_and_arch_compatible_list.empty()) {
     return os_and_arch_compatible_list[0];
   }
@@ -170,7 +184,14 @@ inline std::string Validate(const std::vector<std::string>& variants,
   std::copy_if(os_and_arch_compatible_list.begin(),
                os_and_arch_compatible_list.end(),
                std::back_inserter(avx_compatible_list),
-               [&suitable_avx](const std::string& variant) {
+               [&os, &cpu_arch, &suitable_avx](const std::string& variant) {
+                 if (os == kLinuxOs &&
+                     (suitable_avx == "avx2" || suitable_avx == "avx512" ||
+                      cpu_arch == "arm64")) {
+                   if (variant.find(std::string(kUbuntuOs) + "-" + cpu_arch) !=
+                       std::string::npos)
+                     return true;
+                 }
                  auto suitable_avx_match = "-" + suitable_avx;
 
                  return variant.find(suitable_avx_match) != std::string::npos;
@@ -185,15 +206,18 @@ inline std::string Validate(const std::vector<std::string>& variants,
 inline std::pair<std::string, std::string> GetVersionAndArch(
     const std::string& file_name) {
   // Remove the file extension
-  std::string base = file_name.substr(0, file_name.find("tar") - 1);
+  std::string b = string_utils::RemoveSubstring(file_name, ".tar.gz");
+  std::string base = string_utils::RemoveSubstring(b, ".zip");
 
   size_t arch_pos = 0;
-  if (base.find("windows") != std::string::npos) {
-    arch_pos = base.find("-windows");
+  if (base.find("win") != std::string::npos) {
+    arch_pos = base.find("-bin-win");
   } else if (base.find("linux") != std::string::npos) {
-    arch_pos = base.find("-linux");
+    arch_pos = base.find("-bin-linux");
+  } else if (base.find("ubuntu") != std::string::npos) {
+    arch_pos = base.find("-bin-ubuntu");
   } else {
-    arch_pos = base.find("-mac");
+    arch_pos = base.find("-bin-macos");
   }
 
   // Extract architecture part
@@ -202,6 +226,6 @@ inline std::pair<std::string, std::string> GetVersionAndArch(
   // Extract version part
   size_t v_pos = base.find_first_of('-');
   auto version = base.substr(v_pos + 1, arch_pos - v_pos - 1);
-  return std::pair("v" + version, arch);
+  return std::pair(version, string_utils::RemoveSubstring(arch, "bin-"));
 }
 }  // namespace engine_matcher_utils

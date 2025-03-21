@@ -24,8 +24,8 @@ class TestApiEngineList:
     def test_api_get_list_engines_successfully(self):
         # Data test
         engine= "llama-cpp"
-        name= "linux-amd64-avx"
-        version= "v0.1.35-27.10.24"
+        name= "linux-avx-x64"
+        version= "b4932"
         
         post_install_url = f"http://localhost:3928/v1/engines/{engine}/install"
         response = requests.delete(

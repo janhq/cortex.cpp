@@ -88,25 +88,6 @@ class TestApiGetHardware:
                     "example": True,
                     "description": "Indicates if the GPU is currently activated."
                     },
-                    "additional_information": {
-                    "type": "object",
-                    "properties": {
-                        "compute_cap": {
-                        "type": "string",
-                        "example": "8.6",
-                        "description": "The compute capability of the GPU."
-                        },
-                        "driver_version": {
-                        "type": "string",
-                        "example": "535.183",
-                        "description": "The version of the installed driver."
-                        }
-                    },
-                    "required": [
-                        "compute_cap",
-                        "driver_version"
-                    ]
-                    },
                     "free_vram": {
                     "type": "integer",
                     "example": 23983,
@@ -140,7 +121,6 @@ class TestApiGetHardware:
                 },
                 "required": [
                     "activated",
-                    "additional_information",
                     "free_vram",
                     "id",
                     "name",

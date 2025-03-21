@@ -83,8 +83,8 @@ bool DownloadProgress::Handle(
                          size_t max_length = 20) -> std::string {
       // Check the length of the input string
       if (str.length() >= max_length) {
-        return str.substr(
-            0, max_length);  // Return truncated string if it's too long
+        return str.substr(0, max_length - 3) +
+               ".. ";  // Return truncated string if it's too long
       }
 
       // Calculate the number of spaces needed

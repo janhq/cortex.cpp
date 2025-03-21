@@ -26,7 +26,7 @@ cpp::result<void, std::string> DylibPathManager::RegisterPath(
       }
       return cpp::fail("Failed to add DLL directory: " + path.string());
     } else {
-      CTL_DBG("Added DLL directory: " << path.string());
+      CTL_INF("Added DLL directory: " << path.string());
     }
 
     dylib_paths.push_back({path, cookie});

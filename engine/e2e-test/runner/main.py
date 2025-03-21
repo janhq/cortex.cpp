@@ -21,7 +21,7 @@ from api.engines.test_api_engine import TestApiEngine
 from api.engines.test_api_get_default_engine import TestApiDefaultEngine
 from api.engines.test_api_get_engine_release import TestApiEngineRelease
 from api.engines.test_api_get_engine_release_latest import TestApiEngineReleaseLatest
-from test_api_post_default_engine import TestApiSetDefaultEngine
+from api.engines.test_api_post_default_engine import TestApiSetDefaultEngine
 from api.model.test_api_model import TestApiModel
 from api.model.test_api_model_import import TestApiModelImport
 from api.files.test_api_create_file import TestApiCreateFile
