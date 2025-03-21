@@ -10,7 +10,8 @@
 class CommandLineParser {
  public:
   CommandLineParser();
-  bool SetupCommand(int argc, char** argv);
+  bool SetupCommand();
+  bool runCommand(int argc, char** argv);
 
  private:
   void SetupCommonCommands();
@@ -63,6 +64,6 @@ class CommandLineParser {
   CmlData cml_data_;
   std::unordered_map<std::string, std::string> config_update_opts_;
   bool executed_ = false;
-  commands::HarwareOptions hw_opts_;
+  commands::HardwareQueryFlags hw_opts_;
   std::unordered_map<std::string, std::string> run_settings_;
 };
