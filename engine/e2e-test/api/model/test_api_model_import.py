@@ -1,6 +1,9 @@
+from pathlib import Path
+import json
+
 import pytest
 import requests
-from utils.test_runner import start_server, stop_server
+from utils.test_runner import start_server, stop_server, run
 
 class TestApiModelImport:
     @pytest.fixture(autouse=True)
@@ -18,7 +21,7 @@ class TestApiModelImport:
     def test_model_import_should_be_success(self):
         body_json = {'model': 'tinyllama:1b',
                      'modelPath': '/path/to/local/gguf'}
-        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)              
+        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
         assert response.status_code == 200
 
     @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
@@ -53,5 +56,16 @@ class TestApiModelImport:
     def test_model_import_with_missing_model_should_fail(self):
         body_json = {'modelPath': '/path/to/local/gguf'}
         response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
-        print(response)
         assert response.status_code == 409
+
+    def test_model_import_with_invalid_gguf(self, tmp_path: Path):
+        run("Delete model", ["models", "delete", "model"])
+        gguf_path = tmp_path / "model.gguf"
+        with open(gguf_path, "wb") as f:
+            f.write(b"GGUF")  # only GGUF magic number
+        body_json = {'model': 'model', 'modelPath': str(gguf_path.absolute())}
+        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
+        print(response.content.decode())
+        assert response.status_code == 400
+        assert json.loads(response.content)["message"].startswith("Error importing model")
+        run("Delete model", ["models", "delete", "model"])

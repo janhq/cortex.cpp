@@ -1,3 +1,4 @@
+#include "common/hardware_common.h"
 #include "gtest/gtest.h"
 #include "utils/hardware/cpu_info.h"
 #include "utils/hardware/gpu_info.h"
@@ -67,23 +68,32 @@ class GpuJsonTests : public ::testing::Test {
     // Set up a vector of GPUs for testing
     cortex::hw::NvidiaAddInfo nvidia_info{"460.32.03", "6.1"};
 
-    test_gpus.push_back({.id = "0",
-                         .name = "NVIDIA GeForce GTX 1080",
-                         .version = "1.0",
-                         .add_info = nvidia_info,
-                         .free_vram = 4096,
-                         .total_vram = 8192,
-                         .uuid = "GPU-12345678",
-                         .is_activated = true});
+    test_gpus.push_back(cortex::hw::GPU{
+        /* .id = */ "0",
+        /* .device_id = */ 0,
+        /* .name = */ "NVIDIA GeForce GTX 1080",
+        /* .version = */ "1.0",
+        /* .add_info = */ nvidia_info,
+        /* .free_vram = */ 4096,
+        /* .total_vram = */ 8192,
+        /* .uuid = */ "GPU-12345678",
+        /* .is_activated = */ true,
+        /* .vendor = */ "",
+        /* .gpu_type = */ cortex::hw::GpuType::kGpuTypeDiscrete});
 
-    test_gpus.push_back({.id = "1",
-                         .name = "NVIDIA GeForce RTX 2080",
-                         .version = "1.1",
-                         .add_info = nvidia_info,
-                         .free_vram = 6144,
-                         .total_vram = 8192,
-                         .uuid = "GPU-87654321",
-                         .is_activated = false});
+    test_gpus.push_back({
+        /* .id = */ "1",
+        /* .device_id = */ 0,
+        /* .name = */ "NVIDIA GeForce RTX 2080",
+        /* .version = */ "1.1",
+        /* .add_info = */ nvidia_info,
+        /* .free_vram = */ 6144,
+        /* .total_vram = */ 8192,
+        /* .uuid = */ "GPU-87654321",
+        /* .is_activated = */ false,
+        /* .vendor = */ "",
+        /* .gpu_type = */ cortex::hw::GpuType::kGpuTypeDiscrete,
+    });
   }
 
   std::vector<cortex::hw::GPU> test_gpus;
@@ -169,30 +179,30 @@ TEST_F(GpuJsonTests, FromJson_ValidJson_Success) {
 }
 
 class OsJsonTests : public ::testing::Test {
-protected:
-    cortex::hw::OS test_os;
+ protected:
+  cortex::hw::OS test_os;
 
-    void SetUp() override {
-        test_os.name = "Ubuntu";
-        test_os.version = "20.04";
-        test_os.arch = "x86_64";
-    }
+  void SetUp() override {
+    test_os.name = "Ubuntu";
+    test_os.version = "20.04";
+    test_os.arch = "x86_64";
+  }
 };
 
 TEST_F(OsJsonTests, ToJson_ValidOS_Success) {
-    Json::Value json_result = cortex::hw::ToJson(test_os);
+  Json::Value json_result = cortex::hw::ToJson(test_os);
 
-    EXPECT_EQ(json_result["name"].asString(), test_os.name);
-    EXPECT_EQ(json_result["version"].asString(), test_os.version);
+  EXPECT_EQ(json_result["name"].asString(), test_os.name);
+  EXPECT_EQ(json_result["version"].asString(), test_os.version);
 }
 
 TEST_F(OsJsonTests, FromJson_ValidJson_Success) {
-    Json::Value json_input;
-    json_input["name"] = test_os.name;
-    json_input["version"] = test_os.version;
+  Json::Value json_input;
+  json_input["name"] = test_os.name;
+  json_input["version"] = test_os.version;
 
-    cortex::hw::OS os_result = cortex::hw::os::FromJson(json_input);
+  cortex::hw::OS os_result = cortex::hw::os::FromJson(json_input);
 
-    EXPECT_EQ(os_result.name, test_os.name);
-    EXPECT_EQ(os_result.version, test_os.version);
+  EXPECT_EQ(os_result.name, test_os.name);
+  EXPECT_EQ(os_result.version, test_os.version);
 }

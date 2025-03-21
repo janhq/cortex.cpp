@@ -68,9 +68,13 @@ class EngineService : public EngineServiceI {
       std::shared_ptr<DatabaseService> db_service)
       : download_service_{download_service},
         dylib_path_manager_{dylib_path_manager},
-        hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
-                .cuda_driver_version =
-                    system_info_utils::GetDriverAndCudaVersion().second},
+        hw_inf_{
+            system_info_utils::GetSystemInfo(),  // sys_inf.
+            {},                                  // cpu_info.
+            system_info_utils::GetDriverAndCudaVersion()
+                .second  //  cuda_driver_version.
+        },
+
         db_service_(db_service) {}
 
   std::vector<EngineInfo> GetEngineInfoList() const;
@@ -131,7 +135,6 @@ class EngineService : public EngineServiceI {
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
 
- 
   cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngines();
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);

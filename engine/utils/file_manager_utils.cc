@@ -182,43 +182,48 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
 
   return config_yaml_utils::CortexConfig{
 #if defined(_WIN32)
-      .logFolderPath =
+      /* .logFolderPath = */
           cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
 #else
-      .logFolderPath = default_data_folder_path.string(),
+      /* .logFolderPath = */ default_data_folder_path.string(),
 #endif
-      .logLlamaCppPath = kLogsLlamacppBaseName,
-      .logOnnxPath = kLogsOnnxBaseName,
+      /* .logLlamaCppPath = */ kLogsLlamacppBaseName,
+      /* .logOnnxPath = */ kLogsOnnxBaseName,
 #if defined(_WIN32)
-      .dataFolderPath =
+      /* .dataFolderPath = */
           cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
 #else
-      .dataFolderPath = default_data_folder_path.string(),
+      /* .dataFolderPath = */ default_data_folder_path.string(),
 #endif
-      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
-      .apiServerHost = config_yaml_utils::kDefaultHost,
-      .apiServerPort = config_yaml_utils::kDefaultPort,
-      .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
-      .checkedForLlamacppUpdateAt =
+      /* .maxLogLines = */ config_yaml_utils::kDefaultMaxLines,
+      /* .apiServerHost = */ config_yaml_utils::kDefaultHost,
+      /* .apiServerPort = */ config_yaml_utils::kDefaultPort,
+      /* .checkedForUpdateAt = */ config_yaml_utils::kDefaultCheckedForUpdateAt,
+      /* .checkedForLlamacppUpdateAt = */
           config_yaml_utils::kDefaultCheckedForLlamacppUpdateAt,
-      .latestRelease = config_yaml_utils::kDefaultLatestRelease,
-      .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
-      .enableCors = config_yaml_utils::kDefaultCorsEnabled,
-      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins,
-      .proxyUrl = "",
-      .verifyProxySsl = true,
-      .verifyProxyHostSsl = true,
-      .proxyUsername = "",
-      .proxyPassword = "",
-      .noProxy = config_yaml_utils::kDefaultNoProxy,
-      .verifyPeerSsl = true,
-      .verifyHostSsl = true,
+      /* .latestRelease = */ config_yaml_utils::kDefaultLatestRelease,
+      /* .latestLlamacppRelease = */ config_yaml_utils::kDefaultLatestLlamacppRelease,
+      /* .huggingFaceToken = */ "",
+      /* .gitHubUserAgent = */ "",
+      /* .gitHubToken = */ "",
+      /* .llamacppVariant = */ "",
+      /* .llamacppVersion = */ "",
+      /* .enableCors = */ config_yaml_utils::kDefaultCorsEnabled,
+      /* .allowedOrigins = */ config_yaml_utils::kDefaultEnabledOrigins,
+      /* .proxyUrl = */ "",
+      /* .verifyProxySsl = */ true,
+      /* .verifyProxyHostSsl = */ true,
+      /* .proxyUsername = */ "",
+      /* .proxyPassword = */ "",
+      /* .noProxy = */ config_yaml_utils::kDefaultNoProxy,
+      /* .verifyPeerSsl = */ true,
+      /* .verifyHostSsl = */ true,
 
-      .sslCertPath = "",
-      .sslKeyPath = "",
-      .supportedEngines = config_yaml_utils::kDefaultSupportedEngines,
-      .checkedForSyncHubAt = 0u,
-      .apiKeys = {},
+      /* .sslCertPath = */ "",
+      /* .sslKeyPath = */ "",
+      /* .supportedEngines = */ config_yaml_utils::kDefaultSupportedEngines,
+      /* .checkedForSyncHubAt = */ 0u,
+      /* .apiKeys = */ {},
   };
 }
 
