@@ -777,7 +777,7 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
           auto node = YAML::LoadFile(version_txt_path.string());
           auto ev = EngineVariantResponse{
               node["name"].as<std::string>(),           // name
-              "v" + node["version"].as<std::string>(),  // version
+              node["version"].as<std::string>(),  // version
               engine,                                   // engine
               "",                                       // type
           };
