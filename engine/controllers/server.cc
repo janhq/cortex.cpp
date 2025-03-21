@@ -138,7 +138,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
                                       char* buf,
-                                       std::size_t buf_size) -> std::size_t {
+                                      std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
       if (!(*err_or_done)) {

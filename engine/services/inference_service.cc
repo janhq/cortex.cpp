@@ -4,6 +4,14 @@
 #include "utils/function_calling/common.h"
 #include "utils/jinja_utils.h"
 
+static InferResult GetUnsupportedResponse(const std::string& msg) {
+  Json::Value res, stt;
+  res["message"] = msg;
+  stt["status_code"] = drogon::k400BadRequest;
+  LOG_WARN << msg;
+  return std::make_pair(stt, res);
+}
+
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
@@ -161,18 +169,16 @@ InferResult InferenceService::LoadModel(
   }
 
   // might need mutex here
-  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
+  auto engine = engine_service_->GetLoadedEngine(engine_type).value();
 
   auto cb = [&stt, &r](Json::Value status, Json::Value res) {
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->LoadModel(json_body, std::move(cb));
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->LoadModel(json_body, std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->LoadModel(json_body, std::move(cb));
+    std::get<RemoteEngineI*>(engine)->LoadModel(json_body, std::move(cb));
   }
   // Save model config to reload if needed
   auto model_id = json_body->get("model", "").asString();
@@ -203,12 +209,13 @@ InferResult InferenceService::UnloadModel(const std::string& engine_name,
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
+  auto engine = engine_result.value();
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->UnloadModel(
+        std::make_shared<Json::Value>(json_body), std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
+    std::get<RemoteEngineI*>(engine)->UnloadModel(
+        std::make_shared<Json::Value>(json_body), std::move(cb));
   }
 
   return std::make_pair(stt, r);
@@ -241,12 +248,11 @@ InferResult InferenceService::GetModelStatus(
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->GetModelStatus(json_body, std::move(cb));
+  auto engine = engine_result.value();
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->GetModelStatus(json_body, std::move(cb));
+    std::get<RemoteEngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   }
 
   return std::make_pair(stt, r);

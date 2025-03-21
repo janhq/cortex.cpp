@@ -37,8 +37,8 @@ cpp::result<YAML::Node, std::string> ReadRemoteYaml(const std::string& url);
  */
 cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
                                                     const int timeout = -1);
-cpp::result<Json::Value, std::string> SimpleGetJsonRecursive(const std::string& url,
-                                                    const int timeout = -1);
+cpp::result<Json::Value, std::string> SimpleGetJsonRecursive(
+    const std::string& url, const int timeout = -1);
 
 cpp::result<Json::Value, std::string> SimplePostJson(
     const std::string& url, const std::string& body = "");
@@ -49,4 +49,7 @@ cpp::result<Json::Value, std::string> SimpleDeleteJson(
 cpp::result<Json::Value, std::string> SimplePatchJson(
     const std::string& url, const std::string& body = "");
 
+cpp::result<void, std::string> SimpleDownload(const std::string& url,
+                                              const std::string& save_path,
+                                              const int timeout = -1);
 }  // namespace curl_utils
