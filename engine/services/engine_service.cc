@@ -553,7 +553,7 @@ EngineService::GetEngineVariants(const std::string& engine,
         engine_release_menlo.value().assets.end(), std::back_inserter(assets),
         [get_os_major](const github_release_utils::GitHubAsset& assets) {
 #if defined(__APPLE__) && defined(__MACH__)
-          if (get_os_major() == 12 &&
+          if (get_os_major() <= 12 &&
               assets.name.find(kMacOs) != std::string::npos) {
             return true;
           }
@@ -563,7 +563,7 @@ EngineService::GetEngineVariants(const std::string& engine,
 #endif
         });
   }
-  
+
   if (engine_release_ggml.has_value()) {
     // In case of macos, if os version is 12, we get binary from menlo
     std::copy_if(
