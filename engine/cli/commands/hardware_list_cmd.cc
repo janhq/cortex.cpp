@@ -9,15 +9,16 @@
 #include "utils/logging_utils.h"
 // clang-format off
 #include <tabulate/table.hpp>
+#include<numeric>
 // clang-format on
 
 namespace commands {
-using namespace tabulate;
-using Row_t =
-    std::vector<variant<std::string, const char*, string_view, Table>>;
+using Row_t = std::vector<
+    variant<std::string, const char*, string_view, tabulate::Table>>;
 
-bool HardwareListCmd::Exec(const std::string& host, int port,
-                           const std::optional<HarwareOptions>& ho) {
+bool HardwareListCmd::Exec(
+    const std::string& host, int port,
+    const std::optional<HardwareQueryFlags>& query_flags) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
@@ -33,149 +34,146 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
       /* .pathParams = */ {"v1", "hardware"},
       /* .queries = */ {},
   };
-  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
-  if (result.has_error()) {
-    CTL_ERR(result.error());
+
+  auto hardware_json_response = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (hardware_json_response.has_error()) {
+    CTL_ERR(hardware_json_response.error());
     return false;
   }
 
-  if (!ho.has_value() || ho.value().show_cpu) {
+  // CPU Section
+  if (!query_flags.has_value() || query_flags.value().show_cpu) {
     std::cout << "CPU Information:" << std::endl;
-    Table table;
-    std::vector<std::string> column_headers{"#",     "Arch",  "Cores",
-                                            "Model", "Usage", "Instructions"};
+    tabulate::Table cpu_table;
+    cpu_table.add_row(Row_t(CPU_INFO_HEADERS.begin(), CPU_INFO_HEADERS.end()));
+    cpu_table.format()
+        .font_style({tabulate::FontStyle::bold})
+        .font_align(tabulate::FontAlign::center)
+        .padding_left(1)
+        .padding_right(1);
 
-    Row_t header{column_headers.begin(), column_headers.end()};
-    table.add_row(header);
-    table.format().font_color(Color::green);
-    std::vector<std::string> row = {"1"};
-    cortex::hw::CPU cpu = cortex::hw::cpu::FromJson(result.value()["cpu"]);
-    row.emplace_back(cpu.arch);
-    row.emplace_back(std::to_string(cpu.cores));
-    row.emplace_back(cpu.model);
-    row.emplace_back(std::to_string(cpu.usage));
-    std::string insts;
-    for (auto const& i : cpu.instructions) {
-      insts += i + " ";
-    };
-    row.emplace_back(insts);
-    table.add_row({row.begin(), row.end()});
-    std::cout << table << std::endl;
-    std::cout << std::endl;
+    cortex::hw::CPU cpu =
+        cortex::hw::cpu::FromJson(hardware_json_response.value()["cpu"]);
+    std::vector<std::string> cpu_row = {
+        "1",
+        cpu.arch,
+        std::to_string(cpu.cores),
+        cpu.model,
+        std::to_string(cpu.usage),
+        std::accumulate(cpu.instructions.begin(), cpu.instructions.end(),
+                        std::string{},
+                        [](const std::string& a, const std::string& b) {
+                          return a + (a.empty() ? "" : " ") + b;
+                        })};
+    cpu_table.add_row(Row_t(cpu_row.begin(), cpu_row.end()));
+    std::cout << cpu_table << std::endl << std::endl;
   }
 
-  if (!ho.has_value() || ho.value().show_os) {
+  // OS Section
+  if (!query_flags.has_value() || query_flags.value().show_os) {
     std::cout << "OS Information:" << std::endl;
-    Table table;
-    std::vector<std::string> column_headers{"#", "Version", "Name"};
+    tabulate::Table os_table;
+    os_table.add_row(Row_t(OS_INFO_HEADERS.begin(), OS_INFO_HEADERS.end()));
+    os_table.format()
+        .font_style({tabulate::FontStyle::bold})
+        .font_align(tabulate::FontAlign::center)
+        .padding_left(1)
+        .padding_right(1);
 
-    Row_t header{column_headers.begin(), column_headers.end()};
-    table.add_row(header);
-    table.format().font_color(Color::green);
-    std::vector<std::string> row = {"1"};
-    cortex::hw::OS os = cortex::hw::os::FromJson(result.value()["os"]);
-    row.emplace_back(os.version);
-    row.emplace_back(os.name);
-    table.add_row({row.begin(), row.end()});
-    std::cout << table << std::endl;
-    std::cout << std::endl;
+    cortex::hw::OS os =
+        cortex::hw::os::FromJson(hardware_json_response.value()["os"]);
+    std::vector<std::string> os_row = {"1", os.version, os.name};
+    os_table.add_row(Row_t(os_row.begin(), os_row.end()));
+    std::cout << os_table << std::endl << std::endl;
   }
 
-  if (!ho.has_value() || ho.value().show_ram) {
+  // RAM Section
+  if (!query_flags.has_value() || query_flags.value().show_ram) {
     std::cout << "RAM Information:" << std::endl;
-    Table table;
-    std::vector<std::string> column_headers{"#", "Total (MiB)",
-                                            "Available (MiB)"};
+    tabulate::Table ram_table;
+    ram_table.add_row(Row_t(RAM_INFO_HEADERS.begin(), RAM_INFO_HEADERS.end()));
+    ram_table.format()
+        .font_style({tabulate::FontStyle::bold})
+        .font_align(tabulate::FontAlign::center)
+        .padding_left(1)
+        .padding_right(1);
 
-    Row_t header{column_headers.begin(), column_headers.end()};
-    table.add_row(header);
-    table.format().font_color(Color::green);
-    std::vector<std::string> row = {"1"};
-    cortex::hw::Memory m = cortex::hw::memory::FromJson(result.value()["ram"]);
-    row.emplace_back(std::to_string(m.total_MiB));
-    row.emplace_back(std::to_string(m.available_MiB));
-    table.add_row({row.begin(), row.end()});
-    std::cout << table << std::endl;
-    std::cout << std::endl;
+    cortex::hw::Memory ram =
+        cortex::hw::memory::FromJson(hardware_json_response.value()["ram"]);
+    std::vector<std::string> ram_row = {"1", std::to_string(ram.total_MiB),
+                                        std::to_string(ram.available_MiB)};
+    ram_table.add_row(Row_t(ram_row.begin(), ram_row.end()));
+    std::cout << ram_table << std::endl << std::endl;
   }
 
-  if (!ho.has_value() || ho.value().show_gpu) {
+  // GPU Section
+  if (!query_flags.has_value() || query_flags.value().show_gpu) {
     std::cout << "GPU Information:" << std::endl;
-    Table table;
-    std::vector<std::string> column_headers{"#",
-                                            "GPU ID",
-                                            "Name",
-                                            "Version",
-                                            "Total (MiB)",
-                                            "Available (MiB)",
-                                            "Driver Version",
-                                            "Compute Capability",
-                                            "Activated"};
-
-    Row_t header{column_headers.begin(), column_headers.end()};
-    table.add_row(header);
-    table.format().font_color(Color::green);
-    int count = 1;
+    tabulate::Table gpu_table;
+    gpu_table.add_row(Row_t(GPU_INFO_HEADERS.begin(), GPU_INFO_HEADERS.end()));
+    gpu_table.format()
+        .font_style({tabulate::FontStyle::bold})
+        .font_align(tabulate::FontAlign::center)
+        .padding_left(1)
+        .padding_right(1);
 
     std::vector<cortex::hw::GPU> gpus =
-        cortex::hw::gpu::FromJson(result.value()["gpus"]);
-    for (auto const& gpu : gpus) {
-      std::vector<std::string> row = {std::to_string(count)};
-      row.emplace_back(gpu.id);
-      row.emplace_back(gpu.name);
-      row.emplace_back(gpu.version);
-      row.emplace_back(std::to_string(gpu.total_vram));
-      row.emplace_back(std::to_string(gpu.free_vram));
-      row.emplace_back(
-          std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).driver_version);
-      row.emplace_back(
-          std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).compute_cap);
-      row.emplace_back(gpu.is_activated ? "Yes" : "No");
-      table.add_row({row.begin(), row.end()});
-      count++;
+        cortex::hw::gpu::FromJson(hardware_json_response.value()["gpus"]);
+    int gpu_index = 1;
+    for (const auto& gpu : gpus) {
+      std::vector<std::string> gpu_row = {
+          std::to_string(gpu_index),
+          gpu.id,
+          gpu.name,
+          gpu.version,
+          std::to_string(gpu.total_vram),
+          std::to_string(gpu.free_vram),
+          std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).driver_version,
+          std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).compute_cap,
+          gpu.is_activated ? "Yes" : "No"};
+      gpu_table.add_row(Row_t(gpu_row.begin(), gpu_row.end()));
+      gpu_index++;
     }
-
-    std::cout << table << std::endl;
-    std::cout << std::endl;
+    std::cout << gpu_table << std::endl << std::endl;
   }
-
-  if (!ho.has_value() || ho.value().show_storage) {
+  
+  // Storage Section
+  if (!query_flags.has_value() || query_flags.value().show_storage) {
     std::cout << "Storage Information:" << std::endl;
-    Table table;
-    std::vector<std::string> column_headers{"#", "Total (GiB)",
-                                            "Available (GiB)"};
+    tabulate::Table storage_table;
+    storage_table.add_row(Row_t(STORAGE_INFO_HEADERS.begin(), STORAGE_INFO_HEADERS.end()));
+    storage_table.format()
+        .font_style({tabulate::FontStyle::bold})
+        .font_align(tabulate::FontAlign::center)
+        .padding_left(1)
+        .padding_right(1);
 
-    Row_t header{column_headers.begin(), column_headers.end()};
-    table.add_row(header);
-    table.format().font_color(Color::green);
-    std::vector<std::string> row = {"1"};
-    cortex::hw::StorageInfo si =
-        cortex::hw::storage::FromJson(result.value()["storage"]);
-    row.emplace_back(std::to_string(si.total));
-    row.emplace_back(std::to_string(si.available));
-    table.add_row({row.begin(), row.end()});
-    std::cout << table << std::endl;
-    std::cout << std::endl;
+    cortex::hw::StorageInfo storage = cortex::hw::storage::FromJson(
+        hardware_json_response.value()["storage"]);
+    std::vector<std::string> storage_row = {"1", std::to_string(storage.total),
+                                            std::to_string(storage.available)};
+    storage_table.add_row(Row_t(storage_row.begin(), storage_row.end()));
+    std::cout << storage_table << std::endl << std::endl;
   }
-
-  if (!ho.has_value() || ho.value().show_power) {
+  
+  // Power Section
+  if (!query_flags.has_value() || query_flags.value().show_power) {
     std::cout << "Power Information:" << std::endl;
-    Table table;
-    std::vector<std::string> column_headers{"#", "Battery Life",
-                                            "Charging Status", "Power Saving"};
+    tabulate::Table power_table;
+    power_table.add_row(Row_t(POWER_INFO_HEADERS.begin(), POWER_INFO_HEADERS.end()));
+    power_table.format()
+        .font_style({tabulate::FontStyle::bold})
+        .font_align(tabulate::FontAlign::center)
+        .padding_left(1)
+        .padding_right(1);
 
-    Row_t header{column_headers.begin(), column_headers.end()};
-    table.add_row(header);
-    table.format().font_color(Color::green);
-    std::vector<std::string> row = {"1"};
-    cortex::hw::PowerInfo pi =
-        cortex::hw::power::FromJson(result.value()["power"]);
-    row.emplace_back(std::to_string(pi.battery_life));
-    row.emplace_back(pi.charging_status);
-    row.emplace_back(pi.is_power_saving ? "Yes" : "No");
-    table.add_row({row.begin(), row.end()});
-    std::cout << table << std::endl;
-    std::cout << std::endl;
+    cortex::hw::PowerInfo power =
+        cortex::hw::power::FromJson(hardware_json_response.value()["power"]);
+    std::vector<std::string> power_row = {
+        "1", std::to_string(power.battery_life), power.charging_status,
+        power.is_power_saving ? "Yes" : "No"};
+    power_table.add_row(Row_t(power_row.begin(), power_row.end()));
+    std::cout << power_table << std::endl << std::endl;
   }
 
   return true;
