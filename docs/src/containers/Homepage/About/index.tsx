@@ -169,7 +169,7 @@ const About = () => {
               <h3 className="mb-0">Hello</h3>
             </div>
             <p>
-              Hello, we're the Homebrew Computer Company, the team that built{" "}
+              Hello, we're Menlo Research, the team that built{" "}
               <a href="https://jan.ai" target="_blank">
                 Jan
               </a>
