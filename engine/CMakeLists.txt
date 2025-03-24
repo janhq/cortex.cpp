@@ -50,7 +50,6 @@ if(NOT CORTEX_CQA)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         # Add optimization flags for GCC/Clang
         add_compile_options($<$<CONFIG:Release>:-O3>)
-        add_compile_options($<$<CONFIG:Release>:-march=native>)
         add_compile_options($<$<CONFIG:Release>:-flto>)
         add_link_options($<$<CONFIG:Release>:-flto>)
     elseif(MSVC)
