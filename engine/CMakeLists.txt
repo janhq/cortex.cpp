@@ -45,11 +45,29 @@ else()
     message(STATUS "CORTEX_CQA is OFF.")
 endif()
 
+if(NOT CORTEX_CQA)
+    message(STATUS "Setting up optimization flags for Release builds")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        # Add optimization flags for GCC/Clang
+        add_compile_options($<$<CONFIG:Release>:-O3>)
+        add_compile_options($<$<CONFIG:Release>:-flto>)
+        add_link_options($<$<CONFIG:Release>:-flto>)
+    elseif(MSVC)
+        # Add optimization flags for MSVC
+        add_compile_options($<$<CONFIG:Release>:/O2>)
+        # Optional: Link-time optimization
+        add_compile_options($<$<CONFIG:Release>:/GL>)
+        add_link_options($<$<CONFIG:Release>:/LTCG>)
+    endif()
+endif()
+
 if(MSVC)
   add_compile_options(
       $<$<CONFIG:>:/MT> #---------|
       $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
       $<$<CONFIG:Release>:/MT> #--|
+      $<$<CONFIG:Release>:/O2> #--|-- Optimize for speed in Release mode
+      $<$<CONFIG:Release>:/Ob2> #-|-- Inline any suitable function
   )
 
   add_compile_options(/utf-8)
