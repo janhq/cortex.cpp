@@ -205,21 +205,21 @@ jobs:
         run: |
           mkdir dependencies
           cd dependencies
-          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx-cuda-cu11.7-x64.tar.gz
-          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx-cuda-cu12.0-x64.tar.gz
-          # wget.exe https://github.com/ggml-org/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx-x64.zip
-          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx2-cuda-cu11.7-x64.tar.gz
-          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx2-cuda-cu12.0-x64.tar.gz
-          wget.exe https://github.com/ggml-org/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx2-x64.zip
-          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx512-cuda-cu11.7-x64.tar.gz
-          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx512-cuda-cu12.0-x64.tar.gz
-          # wget.exe https://github.com/ggml-org/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx512-x64.zip
-          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-noavx-cuda-cu11.7-x64.tar.gz
-          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-noavx-cuda-cu12.0-x64.tar.gz
-          wget.exe https://github.com/ggml-org/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-noavx-x64.zip
-          wget.exe https://github.com/ggml-org/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-vulkan-x64.zip
-          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/cudart-llama-bin-win-cu11.7-x64.tar.gz
-          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/cudart-llama-bin-win-cu12.0-x64.tar.gz
+          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx-cuda-cu11.7-x64.tar.gz
+          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx-cuda-cu12.0-x64.tar.gz
+          # wget.exe https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx-x64.zip
+          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx2-cuda-cu11.7-x64.tar.gz
+          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx2-cuda-cu12.0-x64.tar.gz
+          wget.exe https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx2-x64.zip
+          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx512-cuda-cu11.7-x64.tar.gz
+          # wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx512-cuda-cu12.0-x64.tar.gz
+          # wget.exe https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-avx512-x64.zip
+          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-noavx-cuda-cu11.7-x64.tar.gz
+          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-noavx-cuda-cu12.0-x64.tar.gz
+          wget.exe https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-noavx-x64.zip
+          wget.exe https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-win-vulkan-x64.zip
+          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/cudart-llama-bin-win-cu11.7-x64.tar.gz
+          wget.exe https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/cudart-llama-bin-win-cu12.0-x64.tar.gz
 
       - name: Enable long paths
         run: |

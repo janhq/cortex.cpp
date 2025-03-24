@@ -289,8 +289,8 @@ jobs:
         run: |
           mkdir -p engine/templates/macos/Scripts/dependencies
           cd engine/templates/macos/Scripts/dependencies
-          wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-macos-arm64.tar.gz
-          wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-macos-x64.tar.gz
+          wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-macos-arm64.tar.gz
+          wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-macos-x64.tar.gz
 
           cd ../../
           chmod +x create_pkg_local.sh
