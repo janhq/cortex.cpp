@@ -39,7 +39,7 @@ on:
         type: string
         default: 'nightly'
         description: 'The channel to use for this job'
-      cortex-llamacpp-version:
+      llamacpp-version:
         required: true
         type: string
         default: '0.0.0'
@@ -289,8 +289,8 @@ jobs:
         run: |
           mkdir -p engine/templates/macos/Scripts/dependencies
           cd engine/templates/macos/Scripts/dependencies
-          wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-mac-arm64.tar.gz
-          wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-mac-amd64.tar.gz
+          wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-macos-arm64.tar.gz
+          wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-macos-x64.tar.gz
 
           cd ../../
           chmod +x create_pkg_local.sh
