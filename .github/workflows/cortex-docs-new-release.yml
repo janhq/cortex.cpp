@@ -6,9 +6,6 @@ on:
       - published
       - edited
       - released
-  pull_request:
-    branches:
-        - dev
 
 jobs:
   deploy:
