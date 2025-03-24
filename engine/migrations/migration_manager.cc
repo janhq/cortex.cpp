@@ -24,7 +24,7 @@ int GetSchemaVersion(SQLite::Database& db) {
       version =
           query.getColumn(0).getInt();  // Get the version from the first column
     }
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     // CTL_WRN("SQLite error: " << e.what());
   }
 
