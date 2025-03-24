@@ -566,6 +566,8 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
 
   s.process_info = result.value();
   if (wait_for_server_up(model_id, s.host, s.port)) {
+    s.start_time = std::chrono::system_clock::now().time_since_epoch() /
+                   std::chrono::milliseconds(1);
     Json::Value response;
     response["status"] = "Model loaded successfully with pid: " +
                          std::to_string(s.process_info.pid);
@@ -665,7 +667,35 @@ void LocalEngine::GetModelStatus(std::shared_ptr<Json::Value> json_body,
 }
 
 void LocalEngine::GetModels(std::shared_ptr<Json::Value> json_body,
-                            http_callback&& callback) {}
+                            http_callback&& callback) {
+  Json::Value json_resp;
+  Json::Value model_array(Json::arrayValue);
+  {
+    for (const auto& [m, s] : server_map_) {
+      Json::Value val;
+      val["id"] = m;
+      val["engine"] = kLlamaEngine;
+      val["start_time"] = s.start_time;
+      val["model_size"] = 0u;
+      val["vram"] = 0u;
+      val["ram"] = 0u;
+      val["object"] = "model";
+      model_array.append(val);
+    }
+  }
+
+  json_resp["object"] = "list";
+  json_resp["data"] = model_array;
+
+  Json::Value status;
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = 200;
+  callback(std::move(status), std::move(json_resp));
+  CTL_INF("Running models responded");
+  (void)json_body;
+}
 
 void LocalEngine::HandleOpenAiChatCompletion(
     std::shared_ptr<Json::Value> json_body, http_callback&& callback,

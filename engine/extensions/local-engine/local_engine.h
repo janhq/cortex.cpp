@@ -21,6 +21,7 @@ struct ServerAddress {
   std::string user_prompt;
   std::string ai_prompt;
   std::string system_prompt;
+  uint64_t start_time;
 };
 
 class LocalEngine : public EngineI {
