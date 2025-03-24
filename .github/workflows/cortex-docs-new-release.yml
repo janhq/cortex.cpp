@@ -53,8 +53,13 @@ jobs:
         run: yarn install
       - name: Build website
         working-directory: docs
-        run: export NODE_ENV=production && yarn build && cp _redirects build/_redirects
+        run: export NODE_ENV=production && yarn build
 
+      - name: Copy redirect file
+        working-directory: docs
+        continue-on-error: true
+        run: cp _redirects build/_redirects
+  
       - name: Publish to Cloudflare Pages Production
         uses: cloudflare/pages-action@v1
         with:
