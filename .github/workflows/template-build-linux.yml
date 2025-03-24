@@ -182,8 +182,8 @@ jobs:
             wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-noavx-cuda-cu12.0-x64.tar.gz
             wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-noavx-x64.tar.gz
             wget https://github.com/ggml-org/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-ubuntu-vulkan-x64.zip
-            wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/cuda-11-7-linux-amd64.tar.gz
-            wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/cuda-12-0-linux-amd64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/cudart-llama-bin-linux-cu11.7-x64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/cudart-llama-bin-win-cu12.0-x64.tar.gz
           else
             wget https://github.com/ggml-org/llama.cpp/releases/download/v${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-ubuntu-arm64.zip
           fi
