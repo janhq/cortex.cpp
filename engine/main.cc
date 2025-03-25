@@ -253,7 +253,13 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto validate_api_key = [config_service](const drogon::HttpRequestPtr& req) {
     auto api_keys = config_service->GetApiServerConfiguration()->api_keys;
     static const std::unordered_set<std::string> public_endpoints = {
-        "/openapi.json", "/healthz", "/processManager/destroy"};
+        "/openapi.json", "/healthz", "/processManager/destroy", "/events"};
+
+    if (req->getHeader("Authorization").empty() &&
+        req->path() == "/v1/configs") {
+      CTL_WRN("Require API key to access /v1/configs");
+      return false;
+    }
 
     // If API key is not set, skip validation
     if (api_keys.empty()) {
@@ -377,6 +383,7 @@ void print_help() {
                "~/cortexcpp)\n";
   std::cout << "  --host                  Host name (default: 127.0.0.1)\n";
   std::cout << "  --port                  Port number (default: 39281)\n";
+  std::cout << "  --api_configs           Keys to acess API endpoints\n";
   std::cout << "  --ignore_cout           Ignore cout output\n";
   std::cout << "  --loglevel              Set log level\n";
 
@@ -405,6 +412,7 @@ int main(int argc, char* argv[]) {
 
   std::optional<std::string> server_host;
   std::optional<int> server_port;
+  std::optional<std::string> api_keys;
   bool ignore_cout_log = false;
 #if defined(_WIN32)
   for (int i = 0; i < argc; i++) {
@@ -421,6 +429,8 @@ int main(int argc, char* argv[]) {
       server_host = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--port") {
       server_port = std::stoi(argv[i + 1]);
+    } else if (command == L"--api_keys") {
+      api_keys = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--ignore_cout") {
       ignore_cout_log = true;
     } else if (command == L"--loglevel") {
@@ -441,6 +451,8 @@ int main(int argc, char* argv[]) {
       server_host = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
       server_port = std::stoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "--api_keys") == 0) {
+      api_keys = argv[i + 1];
     } else if (strcmp(argv[i], "--ignore_cout") == 0) {
       ignore_cout_log = true;
     } else if (strcmp(argv[i], "--loglevel") == 0) {
@@ -473,6 +485,15 @@ int main(int argc, char* argv[]) {
           CTL_ERR("Error update " << config_path.string() << result.error());
         }
       }
+    }
+  }
+
+  if (api_keys) {
+    auto config = file_manager_utils::GetCortexConfig();
+    config.apiKeys = string_utils::SplitBy(*api_keys, ",");
+    auto result = file_manager_utils::UpdateCortexConfig(config);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
     }
   }
 
