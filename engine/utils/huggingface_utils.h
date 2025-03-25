@@ -339,7 +339,7 @@ inline cpp::result<std::string, std::string> GetModelAuthorCortexsoHub(
       return author.as<std::string>();
     }
     return "";
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return "";
   }
 }
