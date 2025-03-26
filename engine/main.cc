@@ -325,7 +325,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
           auto handlers = drogon::app().getHandlersInfo();
           bool has_ep = [req, &handlers]() {
             for (auto const& h : handlers) {
-              if (req->path() == std::get<0>(h))
+              if (string_utils::AreUrlPathsEqual(req->path(), std::get<0>(h)))
                 return true;
             }
             return false;
@@ -340,9 +340,12 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
           std::string supported_methods = [req, &handlers]() {
             std::string methods;
             for (auto const& h : handlers) {
-              if (req->path() == std::get<0>(h)) {
-                methods += drogon::to_string_view(std::get<1>(h));
-                methods += ", ";
+              if (string_utils::AreUrlPathsEqual(req->path(), std::get<0>(h))) {
+                auto m = drogon::to_string_view(std::get<1>(h));
+                if (methods.find(m) == std::string::npos) {
+                  methods += drogon::to_string_view(std::get<1>(h));
+                  methods += ", ";
+                }
               }
             }
             if (methods.size() < 2)
