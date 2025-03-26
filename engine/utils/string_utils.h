@@ -228,4 +228,5 @@ inline bool AreUrlPathsEqual(const std::string& path1,
 
   return true;
 }
+
 }  // namespace string_utils

@@ -60,8 +60,46 @@
 // Global var to signal drogon to shutdown
 volatile bool shutdown_signal;
 
-void RunServer(std::optional<std::string> host, std::optional<int> port,
-               bool ignore_cout) {
+struct ServerParams {
+  std::optional<std::string> server_host;
+  std::optional<int> server_port;
+  std::optional<std::string> api_keys;
+  std::optional<std::string> cors;
+  std::optional<std::string> allowed_origins;
+};
+
+void SetupServer(const ServerParams& params) {
+  auto config = file_manager_utils::GetCortexConfig();
+
+  if (params.server_host && *(params.server_host) != config.apiServerHost) {
+    config.apiServerHost = *(params.server_host);
+  }
+
+  if (params.server_port &&
+      *(params.server_port) != std::stoi(config.apiServerPort)) {
+    config.apiServerPort = std::to_string(*(params.server_port));
+  }
+
+  if (params.api_keys) {
+    config.apiKeys = string_utils::SplitBy(*(params.api_keys), ",");
+  }
+
+  if (params.cors) {
+    config.enableCors = *(params.cors) == "ON";
+  }
+
+  if (params.allowed_origins) {
+    config.allowedOrigins =
+        string_utils::SplitBy(*(params.allowed_origins), ",");
+  }
+
+  auto result = file_manager_utils::UpdateCortexConfig(config);
+  if (result.has_error()) {
+    CTL_ERR(result.error());
+  }
+}
+
+void RunServer(bool ignore_cout) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   auto signal_handler = +[](int sig) -> void {
     std::cout << "\rCaught interrupt signal:" << sig << ", shutting down\n";
@@ -81,23 +119,6 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), TRUE);
 #endif
   auto config = file_manager_utils::GetCortexConfig();
-  if (host.has_value() || port.has_value()) {
-    if (host.has_value() && *host != config.apiServerHost) {
-      config.apiServerHost = *host;
-    }
-
-    if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
-      config.apiServerPort = std::to_string(*port);
-    }
-
-    auto config_path = file_manager_utils::GetConfigurationPath();
-    auto result =
-        config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
-            config, config_path.string());
-    if (result.has_error()) {
-      CTL_ERR("Error update " << config_path.string() << result.error());
-    }
-  }
 
   if (!ignore_cout) {
     std::cout << "Host: " << config.apiServerHost
@@ -434,7 +455,8 @@ void print_help() {
                "~/cortexcpp)\n";
   std::cout << "  --host                  Host name (default: 127.0.0.1)\n";
   std::cout << "  --port                  Port number (default: 39281)\n";
-  std::cout << "  --api_configs           Keys to acess API endpoints\n";
+  std::cout << "  --api_keys              Keys to acess API endpoints\n";
+  std::cout << "  --cors                  Enable CORS (ON|OFF)\n";
   std::cout << "  --ignore_cout           Ignore cout output\n";
   std::cout << "  --loglevel              Set log level\n";
 
@@ -461,9 +483,7 @@ int main(int argc, char* argv[]) {
   // avoid printing logs to terminal
   is_server = true;
 
-  std::optional<std::string> server_host;
-  std::optional<int> server_port;
-  std::optional<std::string> api_keys;
+  ServerParams params;
   bool ignore_cout_log = false;
 #if defined(_WIN32)
   for (int i = 0; i < argc; i++) {
@@ -477,11 +497,19 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_data_folder_path =
           cortex::wc::WstringToUtf8(v);
     } else if (command == L"--host") {
-      server_host = cortex::wc::WstringToUtf8(argv[i + 1]);
+      params.server_host = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--port") {
-      server_port = std::stoi(argv[i + 1]);
+      params.server_port = std::stoi(argv[i + 1]);
     } else if (command == L"--api_keys") {
-      api_keys = cortex::wc::WstringToUtf8(argv[i + 1]);
+      params.api_keys = cortex::wc::WstringToUtf8(argv[i + 1]);
+    } else if (command == L"--cors") {
+      params.cors = cortex::wc::WstringToUtf8(argv[i + 1]);
+      if (*(params.cors) != "ON" && *(params.cors) != "OFF") {
+        print_help();
+        return 0;
+      }
+    } else if (command == L"--allowed_origins") {
+      params.allowed_origins = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--ignore_cout") {
       ignore_cout_log = true;
     } else if (command == L"--loglevel") {
@@ -499,11 +527,19 @@ int main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     } else if (strcmp(argv[i], "--host") == 0) {
-      server_host = argv[i + 1];
+      params.server_host = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
-      server_port = std::stoi(argv[i + 1]);
+      params.server_port = std::stoi(argv[i + 1]);
     } else if (strcmp(argv[i], "--api_keys") == 0) {
-      api_keys = argv[i + 1];
+      params.api_keys = argv[i + 1];
+    } else if (strcmp(argv[i], "--cors") == 0) {
+      params.cors = argv[i + 1];
+      if (*(params.cors) != "ON" && *(params.cors) != "OFF") {
+        print_help();
+        return 0;
+      }
+    } else if (strcmp(argv[i], "--allowed_origins") == 0) {
+      params.allowed_origins = argv[i + 1];
     } else if (strcmp(argv[i], "--ignore_cout") == 0) {
       ignore_cout_log = true;
     } else if (strcmp(argv[i], "--loglevel") == 0) {
@@ -539,14 +575,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (api_keys) {
-    auto config = file_manager_utils::GetCortexConfig();
-    config.apiKeys = string_utils::SplitBy(*api_keys, ",");
-    auto result = file_manager_utils::UpdateCortexConfig(config);
-    if (result.has_error()) {
-      CTL_ERR(result.error());
-    }
-  }
+  SetupServer(params);
 
   // check if migration is needed
   if (auto res = cortex::migr::MigrationManager(
@@ -568,6 +597,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  RunServer(server_host, server_port, ignore_cout_log);
+  RunServer(ignore_cout_log);
   return 0;
 }
