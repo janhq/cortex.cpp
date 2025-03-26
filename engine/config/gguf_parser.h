@@ -46,6 +46,7 @@ class GGUFHandler {
   size_t ReadArray(std::size_t offset, const std::string& key);
   void ModelConfigFromMetadata();
   void OpenFile(const std::string& file_path);
+  void CheckOffset(size_t offset) const;
 
   uint8_t* data_;
   size_t file_size_;

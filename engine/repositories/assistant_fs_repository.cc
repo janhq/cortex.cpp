@@ -103,7 +103,7 @@ cpp::result<void, std::string> AssistantFsRepository::DeleteAssistant(
     }
     try {
       std::filesystem::remove_all(path);
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       return cpp::fail("");
     }
   }
