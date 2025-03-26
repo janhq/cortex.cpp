@@ -1,25 +1,15 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22)
 
 project(cortex-server C CXX)
 
 include(CheckIncludeFileCXX)
 
-check_include_file_cxx(any HAS_ANY)
-check_include_file_cxx(string_view HAS_STRING_VIEW)
-check_include_file_cxx(coroutine HAS_COROUTINE)
-if(HAS_ANY
-   AND HAS_STRING_VIEW
-   AND HAS_COROUTINE)
-  set(CMAKE_CXX_STANDARD 20)
-elseif(HAS_ANY AND HAS_STRING_VIEW)
-  set(CMAKE_CXX_STANDARD 17)
-else()
-  set(CMAKE_CXX_STANDARD 14)
-endif()
+set(CMAKE_CXX_STANDARD 17)
+MESSAGE("CMAKE_CXX_STANDARD="${CMAKE_CXX_STANDARD})
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
+# set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Add CORTEX_CQA option
@@ -102,27 +92,36 @@ add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
-option(CMAKE_BUILD_TEST "Enable testing" OFF)
+option(CMAKE_BUILD_TEST "Enable testing" ON)
 option(CMAKE_BUILD_INJA_TEST "Enable inja example" OFF)
-if(CMAKE_BUILD_TEST)
+# if(CMAKE_BUILD_TEST)
   add_subdirectory(test)
-endif()
+# endif()
 
 add_subdirectory(cli)
 
 if(CMAKE_BUILD_INJA_TEST)
   add_subdirectory(examples/inja)
 endif()
+include(cmake/cli11.cmake)
+include(cmake/libarchive.cmake)
+include(cmake/curl.cmake)
+include(cmake/drogon.cmake)
+include(cmake/eventpp.cmake)
+include(cmake/gtest.cmake)
+include(cmake/indicators.cmake)
+include(cmake/inja.cmake)
 
-find_package(jsoncpp CONFIG REQUIRED)
-find_package(Drogon CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
-find_package(unofficial-minizip CONFIG REQUIRED)
-find_package(LibArchive REQUIRED)
-find_package(CURL REQUIRED)
-find_package(SQLiteCpp REQUIRED)
-find_package(eventpp CONFIG REQUIRED)
-find_package(lfreist-hwinfo CONFIG REQUIRED)
+include(cmake/lfreist-hwinfo.cmake)
+include(cmake/minizip.cmake)
+include(cmake/sqlitecpp.cmake)
+include(cmake/tabulate.cmake)
+include(cmake/yaml-cpp.cmake)
+
+find_library(JSONCPP
+  NAMES jsoncpp
+  HINTS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/jsoncpp-lib/lib/
+)
 
 ## Generating openapi json
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../docs/static/openapi/cortex.json" JSON_CONTENT)
@@ -184,7 +183,6 @@ file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
     "}\n"
 )
 ## End of generating openapi json
-
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
@@ -199,15 +197,22 @@ add_executable(${TARGET_NAME} main.cc
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+# MESSAGE("ssl="${CMAKE_CURRENT_BINARY_DIR}/openssl-src/include)
+target_include_directories(${TARGET_NAME} PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl/include)
+target_include_directories(${TARGET_NAME} PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/jsoncpp-lib/include)
+target_include_directories(${TARGET_NAME} PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/../build/_deps/libarchive-src/libarchive)
+target_include_directories(${TARGET_NAME} PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/../build/_deps/minizip-src)
 
-target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
-target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
-target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
-target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
-  ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${TARGET_NAME} PRIVATE minizip)
+target_link_libraries(${TARGET_NAME} PRIVATE archive)
+target_link_libraries(${TARGET_NAME} PRIVATE drogon)
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
-target_link_libraries(${TARGET_NAME} PRIVATE eventpp::eventpp)
-target_link_libraries(${TARGET_NAME} PRIVATE lfreist-hwinfo::hwinfo)
+target_link_libraries(${TARGET_NAME} PRIVATE ${JSONCPP})
+target_link_libraries(${TARGET_NAME} PRIVATE libcurl)
+target_link_libraries(${TARGET_NAME} PRIVATE eventpp)
+target_link_libraries(${TARGET_NAME} PRIVATE yaml-cpp)
+target_link_libraries(${TARGET_NAME} PRIVATE hwinfo)
+target_link_libraries(${TARGET_NAME} PRIVATE inja)
 
 # ##############################################################################
 
