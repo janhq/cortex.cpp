@@ -322,9 +322,36 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
         // Handle OPTIONS preflight requests
         if (req->method() == drogon::HttpMethod::Options) {
           auto resp = HttpResponse::newHttpResponse();
+          auto handlers = drogon::app().getHandlersInfo();
+          bool has_ep = [req, &handlers]() {
+            for (auto const& h : handlers) {
+              if (req->path() == std::get<0>(h))
+                return true;
+            }
+            return false;
+          }();
+          if (!has_ep) {
+            resp->setStatusCode(drogon::HttpStatusCode::k404NotFound);
+            stop(resp);
+            return;
+          }
+
           handle_cors(req, resp);
+          std::string supported_methods = [req, &handlers]() {
+            std::string methods;
+            for (auto const& h : handlers) {
+              if (req->path() == std::get<0>(h)) {
+                methods += drogon::to_string_view(std::get<1>(h));
+                methods += ", ";
+              }
+            }
+            if (methods.size() < 2)
+              return std::string();
+            return methods.substr(0, methods.size() - 2);
+          }();
 
           // Add more info to header
+          resp->addHeader("Access-Control-Allow-Methods", supported_methods);
           {
             const auto& val = req->getHeader("Access-Control-Request-Headers");
             if (!val.empty())
@@ -332,7 +359,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
           }
           // Set Access-Control-Max-Age
           resp->addHeader("Access-Control-Max-Age",
-                          "3600");  // Cache for 60 minutes
+                          "600");  // Cache for 10 minutes
           stop(resp);
           return;
         }
