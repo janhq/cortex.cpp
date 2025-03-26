@@ -7,9 +7,16 @@
 void ProcessManager::destroy(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  (void)req;
   auto loaded_engines = engine_service_->GetSupportedEngineNames();
   for (const auto& engine : loaded_engines.value()) {
-    engine_service_->UnloadEngine(engine);
+    auto result = engine_service_->UnloadEngine(engine);
+    if (!result) {
+      // Handle the error if any.
+      // Log the Error
+      LOG_ERROR << "Error unloading engine: " << result.error();
+      continue;
+    }
   }
   app().quit();
   Json::Value ret;

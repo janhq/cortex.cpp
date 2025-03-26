@@ -54,7 +54,7 @@ void FileLogger::CircularLogFile::writeLog(const char* logLine,
     lineBuffer_.push_back(line);
     AppendToFile(line + "\n");
     ++linesWrittenSinceLastTruncate_;
-    if (linesWrittenSinceLastTruncate_.load() >= TRUNCATE_CHECK_INTERVAL) {
+    if (static_cast<uint64_t>(linesWrittenSinceLastTruncate_.load()) >= TRUNCATE_CHECK_INTERVAL) {
 
       TruncateFileIfNeeded();
     }

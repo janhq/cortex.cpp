@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
-#include <vector>
 #include "utils/result.hpp"
 
 namespace hardware {
@@ -50,21 +49,21 @@ inline float GetQuantBit(GGMLType gt) {
   switch (gt) {
     case GGML_TYPE_I32:
     case GGML_TYPE_F32:
-      return 32.0;
+      return 32.0f;
     case GGML_TYPE_I16:
     case GGML_TYPE_BF16:
     case GGML_TYPE_F16:
-      return 16.0;
+      return 16.0f;
     case GGML_TYPE_IQ2_S:
     case GGML_TYPE_IQ2_XXS:
     case GGML_TYPE_IQ2_XS:
-      return 2.31;
+      return 2.31f;
     case GGML_TYPE_Q2_K:
-      return 2.5625;
+      return 2.5625f;
     case GGML_TYPE_IQ3_XXS:
     case GGML_TYPE_IQ3_S:
     case GGML_TYPE_Q3_K:
-      return 3.4375;
+      return 3.4375f;
     case GGML_TYPE_Q4_0_4_4:
     case GGML_TYPE_Q4_0_4_8:
     case GGML_TYPE_Q4_0_8_8:
@@ -73,25 +72,25 @@ inline float GetQuantBit(GGMLType gt) {
     case GGML_TYPE_Q4_0:
     case GGML_TYPE_Q4_1:
     case GGML_TYPE_Q4_K:
-      return 4.5;
+      return 4.5f;
     case GGML_TYPE_Q5_0:
     case GGML_TYPE_Q5_1:
     case GGML_TYPE_Q5_K:
-      return 5.5;
+      return 5.5f;
     case GGML_TYPE_Q6_K:
-      return 6.5625;
+      return 6.5625f;
     case GGML_TYPE_I8:
     case GGML_TYPE_Q8_0:
     case GGML_TYPE_Q8_1:
     case GGML_TYPE_Q8_K:
-      return 8.0;
+      return 8.0f;
 
     case GGML_TYPE_I64:
     case GGML_TYPE_F64:
-      return 64.0;
+      return 64.0f;
 
     default:
-      return 8.0;
+      return 8.0f;
   }
 }
 
@@ -177,59 +176,23 @@ struct GGMLTypeTrait {
 };
 
 const std::unordered_map<GGMLType, GGMLTypeTrait> kGGMLTypeTraits = {
-    {GGML_TYPE_F32, {.block_size = 1, .type_size = 4}},
-    {GGML_TYPE_F16, {.block_size = 1, .type_size = 2}},
-    {GGML_TYPE_Q4_0, {.block_size = 32, .type_size = 18, .is_quantized = true}},
-    {GGML_TYPE_Q4_1, {.block_size = 32, .type_size = 20, .is_quantized = true}},
-    {GGML_TYPE_Q5_0, {.block_size = 32, .type_size = 22, .is_quantized = true}},
-    {GGML_TYPE_Q5_1, {.block_size = 32, .type_size = 24, .is_quantized = true}},
-    {GGML_TYPE_Q8_0, {.block_size = 32, .type_size = 34, .is_quantized = true}},
-    {GGML_TYPE_Q8_1, {.block_size = 32, .type_size = 36, .is_quantized = true}},
-    {GGML_TYPE_Q2_K,
-     {.block_size = 256, .type_size = 84, .is_quantized = true}},
-    {GGML_TYPE_Q3_K,
-     {.block_size = 256, .type_size = 110, .is_quantized = true}},
-    {GGML_TYPE_Q4_K,
-     {.block_size = 256, .type_size = 144, .is_quantized = true}},
-    {GGML_TYPE_Q5_K,
-     {.block_size = 256, .type_size = 176, .is_quantized = true}},
-    {GGML_TYPE_Q6_K,
-     {.block_size = 256, .type_size = 210, .is_quantized = true}},
-    {GGML_TYPE_Q8_K,
-     {.block_size = 256, .type_size = 292, .is_quantized = true}},
-    {GGML_TYPE_IQ2_XXS,
-     {.block_size = 256, .type_size = 66, .is_quantized = true}},
-    {GGML_TYPE_IQ2_XS,
-     {.block_size = 256, .type_size = 74, .is_quantized = true}},
-    {GGML_TYPE_IQ3_XXS,
-     {.block_size = 256, .type_size = 98, .is_quantized = true}},
-    {GGML_TYPE_IQ1_S,
-     {.block_size = 256, .type_size = 50, .is_quantized = true}},
-    {GGML_TYPE_IQ4_NL,
-     {.block_size = 32, .type_size = 18, .is_quantized = true}},
-    {GGML_TYPE_IQ3_S,
-     {.block_size = 256, .type_size = 110, .is_quantized = true}},
-    {GGML_TYPE_IQ2_S,
-     {.block_size = 256, .type_size = 82, .is_quantized = true}},
-    {GGML_TYPE_IQ4_XS,
-     {.block_size = 256, .type_size = 136, .is_quantized = true}},
-    {GGML_TYPE_I8, {.block_size = 1, .type_size = 1}},
-    {GGML_TYPE_I16, {.block_size = 1, .type_size = 2}},
-    {GGML_TYPE_I32, {.block_size = 1, .type_size = 4}},
-    {GGML_TYPE_I64, {.block_size = 1, .type_size = 8}},
-    {GGML_TYPE_F64, {.block_size = 1, .type_size = 8}},
-    {GGML_TYPE_IQ1_M,
-     {.block_size = 256, .type_size = 56, .is_quantized = true}},
-    {GGML_TYPE_BF16, {.block_size = 1, .type_size = 2}},
-    {GGML_TYPE_Q4_0_4_4,
-     {.block_size = 32, .type_size = 18, .is_quantized = true}},
-    {GGML_TYPE_Q4_0_4_8,
-     {.block_size = 32, .type_size = 18, .is_quantized = true}},
-    {GGML_TYPE_Q4_0_8_8,
-     {.block_size = 32, .type_size = 18, .is_quantized = true}},
-    {GGML_TYPE_TQ1_0,
-     {.block_size = 256, .type_size = 54, .is_quantized = true}},
-    {GGML_TYPE_TQ2_0,
-     {.block_size = 256, .type_size = 66, .is_quantized = true}},
+    {GGML_TYPE_F32, {1, 4, false}},       {GGML_TYPE_F16, {1, 2, false}},
+    {GGML_TYPE_Q4_0, {32, 18, true}},     {GGML_TYPE_Q4_1, {32, 20, true}},
+    {GGML_TYPE_Q5_0, {32, 22, true}},     {GGML_TYPE_Q5_1, {32, 24, true}},
+    {GGML_TYPE_Q8_0, {32, 34, true}},     {GGML_TYPE_Q8_1, {32, 36, true}},
+    {GGML_TYPE_Q2_K, {256, 84, true}},    {GGML_TYPE_Q3_K, {256, 110, true}},
+    {GGML_TYPE_Q4_K, {256, 144, true}},   {GGML_TYPE_Q5_K, {256, 176, true}},
+    {GGML_TYPE_Q6_K, {256, 210, true}},   {GGML_TYPE_Q8_K, {256, 292, true}},
+    {GGML_TYPE_IQ2_XXS, {256, 66, true}}, {GGML_TYPE_IQ2_XS, {256, 74, true}},
+    {GGML_TYPE_IQ3_XXS, {256, 98, true}}, {GGML_TYPE_IQ1_S, {256, 50, true}},
+    {GGML_TYPE_IQ4_NL, {32, 18, true}},   {GGML_TYPE_IQ3_S, {256, 110, true}},
+    {GGML_TYPE_IQ2_S, {256, 82, true}},   {GGML_TYPE_IQ4_XS, {256, 136, true}},
+    {GGML_TYPE_I8, {1, 1, false}},        {GGML_TYPE_I16, {1, 2, false}},
+    {GGML_TYPE_I32, {1, 4, false}},       {GGML_TYPE_I64, {1, 8, false}},
+    {GGML_TYPE_F64, {1, 8, false}},       {GGML_TYPE_IQ1_M, {256, 56, true}},
+    {GGML_TYPE_BF16, {1, 2, false}},      {GGML_TYPE_Q4_0_4_4, {32, 18, true}},
+    {GGML_TYPE_Q4_0_4_8, {32, 18, true}}, {GGML_TYPE_Q4_0_8_8, {32, 18, true}},
+    {GGML_TYPE_TQ1_0, {256, 54, true}},   {GGML_TYPE_TQ2_0, {256, 66, true}},
 };
+
 }  // namespace hardware

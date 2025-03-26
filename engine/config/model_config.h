@@ -388,7 +388,8 @@ struct ModelConfig {
     oss << format_utils::print_comment("END REQUIRED");
     oss << format_utils::print_comment("BEGIN OPTIONAL");
 
-    oss << format_utils::print_float("size", size);
+    oss << format_utils::print_kv("size", std::to_string(size),
+                                  format_utils::MAGENTA);
     oss << format_utils::print_bool("stream", stream);
     oss << format_utils::print_float("top_p", top_p);
     oss << format_utils::print_float("temperature", temperature);

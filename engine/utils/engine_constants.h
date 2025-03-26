@@ -14,7 +14,7 @@ constexpr const auto kLlamaLibPath = "./engines/cortex.llamacpp";
 constexpr auto static kHuggingFaceHost = "huggingface.co";
 constexpr auto static kGitHubHost = "api.github.com";
 constexpr auto static kCortexFolderName = "cortexcpp";
-constexpr auto static kDefaultGHUserAgent = "cortexcpp";
+constexpr auto static kDefaultGHUserAgent = "menloresearch";
 
 constexpr auto static kWindowsOs = "windows";
 constexpr auto static kMacOs = "mac";

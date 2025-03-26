@@ -78,6 +78,16 @@ std::filesystem::path GetHomeDirectoryPath() {
   return std::filesystem::path(homeDir);
 }
 
+// Helper function to get XDG base directory, falling back to default if not set
+std::filesystem::path GetXDGDirectoryPath(const std::string& envVar,
+                                      const std::string& defaultPath) {
+  if (const char* envValue = std::getenv(envVar.c_str());
+      envValue && std::strlen(envValue) > 0) {
+    return std::filesystem::path(envValue);
+  }
+  return GetHomeDirectoryPath() / defaultPath;
+}
+
 std::filesystem::path GetConfigurationPath() {
 #ifndef CORTEX_CONFIG_FILE_PATH
 #define CORTEX_CONFIG_FILE_PATH kDefaultConfigurationPath
@@ -113,9 +123,14 @@ std::filesystem::path GetConfigurationPath() {
   std::string config_file_name{kCortexConfigurationFileName};
   config_file_name.append(env_postfix);
   // CTL_INF("Config file name: " + config_file_name);
-
+#if defined(__linux__)
+  auto config_base_path =
+      GetXDGDirectoryPath("XDG_CONFIG_HOME", ".config") / kCortexFolderName;
+  auto configuration_path = config_base_path / config_file_name;
+#else
   auto home_path = GetHomeDirectoryPath();
   auto configuration_path = home_path / config_file_name;
+#endif
   return configuration_path;
 }
 
@@ -150,52 +165,65 @@ cpp::result<void, std::string> UpdateCortexConfig(
 config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto config_path = GetConfigurationPath();
   auto default_data_folder_name = GetDefaultDataFolderName();
+#if defined(__linux__)
+  auto default_data_folder_path =
+      cortex_data_folder_path.empty()
+          ? file_manager_utils::GetXDGDirectoryPath("XDG_DATA_HOME",
+                                                ".local/share") /
+                default_data_folder_name
+          : std::filesystem::path(cortex_data_folder_path);
+#else
   auto default_data_folder_path =
       cortex_data_folder_path.empty()
           ? file_manager_utils::GetHomeDirectoryPath() /
                 default_data_folder_name
           : std::filesystem::path(cortex_data_folder_path);
+#endif
 
   return config_yaml_utils::CortexConfig{
 #if defined(_WIN32)
-      .logFolderPath =
+      /* .logFolderPath = */
           cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
 #else
-      .logFolderPath = default_data_folder_path.string(),
+      /* .logFolderPath = */ default_data_folder_path.string(),
 #endif
-      .logLlamaCppPath = kLogsLlamacppBaseName,
-      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
-      .logOnnxPath = kLogsOnnxBaseName,
+      /* .logLlamaCppPath = */ kLogsLlamacppBaseName,
+      /* .logOnnxPath = */ kLogsOnnxBaseName,
 #if defined(_WIN32)
-      .dataFolderPath =
+      /* .dataFolderPath = */
           cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
 #else
-      .dataFolderPath = default_data_folder_path.string(),
+      /* .dataFolderPath = */ default_data_folder_path.string(),
 #endif
-      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
-      .apiServerHost = config_yaml_utils::kDefaultHost,
-      .apiServerPort = config_yaml_utils::kDefaultPort,
-      .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
-      .checkedForLlamacppUpdateAt =
+      /* .maxLogLines = */ config_yaml_utils::kDefaultMaxLines,
+      /* .apiServerHost = */ config_yaml_utils::kDefaultHost,
+      /* .apiServerPort = */ config_yaml_utils::kDefaultPort,
+      /* .checkedForUpdateAt = */ config_yaml_utils::kDefaultCheckedForUpdateAt,
+      /* .checkedForLlamacppUpdateAt = */
           config_yaml_utils::kDefaultCheckedForLlamacppUpdateAt,
-      .latestRelease = config_yaml_utils::kDefaultLatestRelease,
-      .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
-      .enableCors = config_yaml_utils::kDefaultCorsEnabled,
-      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins,
-      .proxyUrl = "",
-      .verifyProxySsl = true,
-      .verifyProxyHostSsl = true,
-      .proxyUsername = "",
-      .proxyPassword = "",
-      .noProxy = config_yaml_utils::kDefaultNoProxy,
-      .verifyPeerSsl = true,
-      .verifyHostSsl = true,
+      /* .latestRelease = */ config_yaml_utils::kDefaultLatestRelease,
+      /* .latestLlamacppRelease = */ config_yaml_utils::kDefaultLatestLlamacppRelease,
+      /* .huggingFaceToken = */ "",
+      /* .gitHubUserAgent = */ "",
+      /* .gitHubToken = */ "",
+      /* .llamacppVariant = */ "",
+      /* .llamacppVersion = */ "",
+      /* .enableCors = */ config_yaml_utils::kDefaultCorsEnabled,
+      /* .allowedOrigins = */ config_yaml_utils::kDefaultEnabledOrigins,
+      /* .proxyUrl = */ "",
+      /* .verifyProxySsl = */ true,
+      /* .verifyProxyHostSsl = */ true,
+      /* .proxyUsername = */ "",
+      /* .proxyPassword = */ "",
+      /* .noProxy = */ config_yaml_utils::kDefaultNoProxy,
+      /* .verifyPeerSsl = */ true,
+      /* .verifyHostSsl = */ true,
 
-      .sslCertPath = "",
-      .sslKeyPath = "",
-      .supportedEngines = config_yaml_utils::kDefaultSupportedEngines,
-      .checkedForSyncHubAt = 0u,
-      .apiKeys = {},
+      /* .sslCertPath = */ "",
+      /* .sslKeyPath = */ "",
+      /* .supportedEngines = */ config_yaml_utils::kDefaultSupportedEngines,
+      /* .checkedForSyncHubAt = */ 0u,
+      /* .apiKeys = */ {},
   };
 }
 
@@ -204,6 +232,10 @@ cpp::result<void, std::string> CreateConfigFileIfNotExist() {
   if (std::filesystem::exists(config_path)) {
     // already exists, no need to create
     return {};
+  }
+  if (!std::filesystem::exists(config_path.parent_path())) {
+    // Ensure the configuration directory exists
+    std::filesystem::create_directories(config_path.parent_path());
   }
 
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
@@ -237,8 +269,13 @@ std::filesystem::path GetCortexDataPath() {
     data_folder_path = std::filesystem::path(config.dataFolderPath);
 #endif
   } else {
+#if defined(__linux__)
+    auto data_base_path = GetXDGDirectoryPath("XDG_DATA_HOME", ".local/share");
+    data_folder_path = data_base_path / GetDefaultDataFolderName();
+#else
     auto home_path = GetHomeDirectoryPath();
     data_folder_path = home_path / kCortexFolderName;
+#endif
   }
 
   if (!std::filesystem::exists(data_folder_path)) {
@@ -254,13 +291,19 @@ std::filesystem::path GetCortexLogPath() {
   // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
 
   // currently we will store cortex data at ~/cortexcpp
+  // On linux, we follow the xdg directory specification
   auto config = GetCortexConfig();
   std::filesystem::path log_folder_path;
   if (!config.logFolderPath.empty()) {
     log_folder_path = std::filesystem::path(config.logFolderPath);
   } else {
+#if defined(__linux__)
+    auto data_base_path = GetXDGDirectoryPath("XDG_DATA_HOME", ".local/share");
+    log_folder_path = data_base_path / GetDefaultDataFolderName() / "logs";
+#else
     auto home_path = GetHomeDirectoryPath();
     log_folder_path = home_path / kCortexFolderName;
+#endif
   }
 
   if (!std::filesystem::exists(log_folder_path)) {

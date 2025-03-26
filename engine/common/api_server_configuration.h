@@ -34,77 +34,60 @@ static const std::unordered_map<std::string, ApiConfigurationMetadata>
     CONFIGURATIONS = {
         {"cors",
          ApiConfigurationMetadata{
-             .name = "cors",
-             .desc = "Cross-Origin Resource Sharing configuration.",
-             .group = "CORS",
-             .accept_value = "[on|off]",
-             .default_value = "on"}},
+             "cors", "Cross-Origin Resource Sharing configuration.", "CORS",
+             "[on|off]", "on"}},
         {"allowed_origins",
          ApiConfigurationMetadata{
-             .name = "allowed_origins",
-             .desc = "Allowed origins for CORS. Comma separated. E.g. "
-                     "http://localhost,https://cortex.so",
-             .group = "CORS",
-             .accept_value = "comma separated",
-             .default_value = "*",
-             .allow_empty = true}},
-        {"proxy_url", ApiConfigurationMetadata{.name = "proxy_url",
-                                               .desc = "Proxy URL",
-                                               .group = "Proxy",
-                                               .accept_value = "string",
-                                               .default_value = ""}},
-        {"proxy_username", ApiConfigurationMetadata{.name = "proxy_username",
-                                                    .desc = "Proxy Username",
-                                                    .group = "Proxy",
-                                                    .accept_value = "string",
-                                                    .default_value = ""}},
-        {"proxy_password", ApiConfigurationMetadata{.name = "proxy_password",
-                                                    .desc = "Proxy Password",
-                                                    .group = "Proxy",
-                                                    .accept_value = "string",
-                                                    .default_value = ""}},
+             "allowed_origins",
+             "Allowed origins for CORS. Comma separated. E.g. "
+             "http://localhost,https://cortex.so",
+             "CORS", "comma separated", "*", true}},
+        {"proxy_url", ApiConfigurationMetadata{"proxy_url", "Proxy URL",
+                                               "Proxy", "string", ""}},
+        {"proxy_username",
+         ApiConfigurationMetadata{"proxy_username", "Proxy Username", "Proxy",
+                                  "string", ""}},
+        {"proxy_password",
+         ApiConfigurationMetadata{"proxy_password", "Proxy Password", "Proxy",
+                                  "string", ""}},
         {"verify_proxy_ssl",
-         ApiConfigurationMetadata{.name = "verify_proxy_ssl",
-                                  .desc = "Verify SSL for proxy",
-                                  .group = "Proxy",
-                                  .accept_value = "[on|off]",
-                                  .default_value = "on"}},
+         ApiConfigurationMetadata{"verify_proxy_ssl", "Verify SSL for proxy",
+                                  "Proxy", "[on|off]", "on"}},
         {"verify_proxy_host_ssl",
-         ApiConfigurationMetadata{.name = "verify_proxy_host_ssl",
-                                  .desc = "Verify SSL for proxy",
-                                  .group = "Proxy",
-                                  .accept_value = "[on|off]",
-                                  .default_value = "on"}},
-        {"no_proxy", ApiConfigurationMetadata{.name = "no_proxy",
-                                              .desc = "No proxy for hosts",
-                                              .group = "Proxy",
-                                              .accept_value = "string",
-                                              .default_value = ""}},
-        {"verify_peer_ssl", ApiConfigurationMetadata{.name = "verify_peer_ssl",
-                                                     .desc = "Verify peer SSL",
-                                                     .group = "Proxy",
-                                                     .accept_value = "[on|off]",
-                                                     .default_value = "on"}},
-        {"verify_host_ssl", ApiConfigurationMetadata{.name = "verify_host_ssl",
-                                                     .desc = "Verify host SSL",
-                                                     .group = "Proxy",
-                                                     .accept_value = "[on|off]",
-                                                     .default_value = "on"}},
+         ApiConfigurationMetadata{"verify_proxy_host_ssl",
+                                  "Verify SSL for proxy", "Proxy", "[on|off]",
+                                  "on"}},
+        {"no_proxy", ApiConfigurationMetadata{"no_proxy", "No proxy for hosts",
+                                              "Proxy", "string", ""}},
+        {"verify_peer_ssl",
+         ApiConfigurationMetadata{"verify_peer_ssl", "Verify peer SSL", "Proxy",
+                                  "[on|off]", "on"}},
+        {"verify_host_ssl",
+         ApiConfigurationMetadata{"verify_host_ssl", "Verify host SSL", "Proxy",
+                                  "[on|off]", "on"}},
         {"huggingface_token",
-         ApiConfigurationMetadata{.name = "huggingface_token",
-                                  .desc = "HuggingFace token to pull models",
-                                  .group = "Token",
-                                  .accept_value = "string",
-                                  .default_value = "",
-                                  .allow_empty = true}},
+         ApiConfigurationMetadata{
+             /* .name = */ "huggingface_token",
+             /* .desc = */ "HuggingFace token to pull models",
+             /* .group = */ "Token",
+             /* .accept_value = */ "string",
+             /* .default_value = */ "",
+             /* .allow_empty = */ true}},
+        {"github_token",
+         ApiConfigurationMetadata{/* .name = */ "github_token",
+                                  /* .desc = */ "Github token",
+                                  /* .group = */ "Token",
+                                  /* .accept_value = */ "string",
+                                  /* .default_value = */ "",
+                                  /* .allow_empty = */ true}},
         {"api_keys",
          ApiConfigurationMetadata{
-             .name = "api_keys",
-             .desc = "API header key to get access to server APIs",
-             .group = "Token",
-             .accept_value = "comma separated",
-             .default_value = "",
-             .allow_empty = true}},
+             /* .name = */ "api_keys",
+             /* .desc = */ "API header key to get access to server APIs",
+             /* .group = */ "Token",
+             /* .accept_value = */ " comma separated",
+             /* .default_value = */ "",
+             /* .allow_empty = */ true}},
 
 };
 
@@ -116,7 +99,8 @@ class ApiServerConfiguration {
       const std::string& proxy_url = "", const std::string& proxy_username = "",
       const std::string& proxy_password = "", const std::string& no_proxy = "",
       bool verify_peer_ssl = true, bool verify_host_ssl = true,
-      const std::string& hf_token = "", std::vector<std::string> api_keys = {})
+      const std::string& hf_token = "", const std::string& gh_token = "",
+      std::vector<std::string> api_keys = {})
       : cors{cors},
         allowed_origins{allowed_origins},
         verify_proxy_ssl{verify_proxy_ssl},
@@ -128,6 +112,7 @@ class ApiServerConfiguration {
         verify_peer_ssl{verify_peer_ssl},
         verify_host_ssl{verify_host_ssl},
         hf_token{hf_token},
+        gh_token{gh_token},
         api_keys{api_keys} {}
 
   // cors
@@ -148,6 +133,7 @@ class ApiServerConfiguration {
 
   // token
   std::string hf_token{""};
+  std::string gh_token{""};
 
   // authentication
   std::vector<std::string> api_keys;
@@ -168,6 +154,7 @@ class ApiServerConfiguration {
     root["verify_peer_ssl"] = verify_peer_ssl;
     root["verify_host_ssl"] = verify_host_ssl;
     root["huggingface_token"] = hf_token;
+    root["github_token"] = gh_token;
     root["api_keys"] = Json::Value(Json::arrayValue);
     for (const auto& api_key : api_keys) {
       root["api_keys"].append(api_key);
@@ -261,6 +248,15 @@ class ApiServerConfiguration {
                  return false;
                }
                hf_token = value.asString();
+               return true;
+             }},
+
+            {"github_token",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isString()) {
+                 return false;
+               }
+               gh_token = value.asString();
                return true;
              }},
 

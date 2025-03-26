@@ -67,7 +67,7 @@ jobs:
         run: |
           cd engine
           ./build/cortex --version
-          sed -i 's/huggingFaceToken: ""/huggingFaceToken: "${{ secrets.HUGGINGFACE_TOKEN_READ }}"/' ~/.cortexrc
+          sed -i 's/huggingFaceToken: ""/huggingFaceToken: "${{ secrets.HUGGINGFACE_TOKEN_READ }}"/' ~/.config/cortexcpp/.cortexrc
 
       - name: Run e2e tests
         run: |

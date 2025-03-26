@@ -476,7 +476,7 @@ const config: Config = {
             },
             {
               label: "Careers",
-              href: "https://homebrew.bamboohr.com/careers",
+              href: "https://menlo.bamboohr.com/careers",
             },
           ],
         },
@@ -487,7 +487,7 @@ const config: Config = {
         srcDark: "/img/logos/cortex-logo-mark.svg",
         width: 34,
       },
-      copyright: `©${new Date().getFullYear()} Homebrew Computer Company`,
+      copyright: `©${new Date().getFullYear()} Menlo Research`,
     },
     prism: {
       theme: prismThemes.github,

@@ -9,9 +9,10 @@ ServerStopCmd::ServerStopCmd(std::string host, int port)
 
 void ServerStopCmd::Exec() {
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host_ + ":" + std::to_string(port_),
-      .pathParams = {"processManager", "destroy"},
+      /* .protocol = */ "http",
+      /* .host = */ host_ + ":" + std::to_string(port_),
+      /* .pathParams = */ {"processManager", "destroy"},
+      /* .queries = */ {},
   };
 
   auto res = curl_utils::SimpleDeleteJson(url.ToFullPath());

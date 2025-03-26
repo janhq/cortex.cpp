@@ -2,22 +2,9 @@ project(cortex C CXX)
 
 include(CheckIncludeFileCXX)
 
-check_include_file_cxx(any HAS_ANY)
-check_include_file_cxx(string_view HAS_STRING_VIEW)
-check_include_file_cxx(coroutine HAS_COROUTINE)
-if(HAS_ANY
-   AND HAS_STRING_VIEW
-   AND HAS_COROUTINE)
-  set(CMAKE_CXX_STANDARD 20)
-elseif(HAS_ANY AND HAS_STRING_VIEW)
-  set(CMAKE_CXX_STANDARD 17)
-else()
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(MSVC)
@@ -74,6 +61,7 @@ find_package(lfreist-hwinfo CONFIG REQUIRED)
 
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/cpuid/cpu_info.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/normalize_engine.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_logger.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/dylib_path_manager.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/command_line_parser.cc

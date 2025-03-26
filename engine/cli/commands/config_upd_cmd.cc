@@ -82,9 +82,10 @@ void commands::ConfigUpdCmd::Exec(
   }
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "configs"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "configs"},
+      /* .queries = */ {},
   };
 
   auto json = NormalizeJson(non_null_opts);

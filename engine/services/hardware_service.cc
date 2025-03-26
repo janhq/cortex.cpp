@@ -52,12 +52,12 @@ HardwareInfo HardwareService::GetHardwareInfo() {
     };
   }
 
-  return HardwareInfo{.cpu = cpu_info_.GetCPUInfo(),
-                      .os = cortex::hw::GetOSInfo(),
-                      .ram = cortex::hw::GetMemoryInfo(),
-                      .storage = cortex::hw::GetStorageInfo(),
-                      .gpus = gpus,
-                      .power = cortex::hw::GetPowerInfo()};
+  return HardwareInfo{/* .cpu = */ cpu_info_.GetCPUInfo(),
+                      /* .os = */ cortex::hw::GetOSInfo(),
+                      /* .ram = */ cortex::hw::GetMemoryInfo(),
+                      /* .storage = */ cortex::hw::GetStorageInfo(),
+                      /* .gpus = */ gpus,
+                      /* .power = */ cortex::hw::GetPowerInfo()};
 }
 
 bool HardwareService::Restart(const std::string& host, int port) {
@@ -106,9 +106,19 @@ bool HardwareService::Restart(const std::string& host, int port) {
     return false;
   }
 
+#ifdef _MSC_VER
+  char* value = nullptr;
+  size_t len = 0;
+  _dupenv_s(&value, &len, "CUDA_VISIBLE_DEVICES");
+#else
   const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+#endif
+
   if (value) {
     LOG_INFO << "CUDA_VISIBLE_DEVICES is set to: " << value;
+#ifdef _MSC_VER
+    free(value);
+#endif
   } else {
     LOG_WARN << "CUDA_VISIBLE_DEVICES is not set.";
   }
@@ -128,9 +138,18 @@ bool HardwareService::Restart(const std::string& host, int port) {
     return false;
   }
 
+#ifdef _MSC_VER
+  char* vk_value = nullptr;
+  _dupenv_s(&vk_value, &len, "GGML_VK_VISIBLE_DEVICES");
+#else
   const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+#endif
+
   if (vk_value) {
     LOG_INFO << "GGML_VK_VISIBLE_DEVICES is set to: " << vk_value;
+#ifdef _MSC_VER
+    free(vk_value);
+#endif
   } else {
     LOG_WARN << "GGML_VK_VISIBLE_DEVICES is not set.";
   }
@@ -197,10 +216,10 @@ bool HardwareService::Restart(const std::string& host, int port) {
   commands.push_back(get_data_folder_path());
   commands.push_back("--loglevel");
   commands.push_back(luh::LogLevelStr(luh::global_log_level));
-  auto pid = cortex::process::SpawnProcess(commands);
-  if (pid < 0) {
+  auto result = cortex::process::SpawnProcess(commands);
+  if (result.has_error()) {
     // Fork failed
-    std::cerr << "Could not start server: " << std::endl;
+    std::cerr << "Could not start server: " << result.error() << std::endl;
     return false;
   } else {
     // Parent process
@@ -240,7 +259,7 @@ bool HardwareService::SetActivateHardwareConfig(
   auto priority = [&ahc](int software_id) -> int {
     for (size_t i = 0; i < ahc.gpus.size(); i++) {
       if (ahc.gpus[i] == software_id)
-        return i;
+        return static_cast<int>(i);
       break;
     }
     return INT_MAX;
@@ -264,7 +283,7 @@ bool HardwareService::SetActivateHardwareConfig(
       for (size_t i = 0; i < ahc_gpus.size(); i++) {
         // if activated id or priority changes
         if (ahc_gpus[i] != activated_ids[i].first ||
-            i != activated_ids[i].second)
+            i != (uint64_t)activated_ids[i].second)
           need_update = true;
         break;
       }
@@ -347,12 +366,12 @@ void HardwareService::UpdateHardwareInfos() {
       };
 
       auto res = db_service_->AddHardwareEntry(
-          HwEntry{.uuid = gpu.uuid,
-                  .type = "gpu",
-                  .hardware_id = std::stoi(gpu.id),
-                  .software_id = std::stoi(gpu.id),
-                  .activated = activated(),
-                  .priority = INT_MAX});
+          HwEntry{/* .uuid = */ gpu.uuid,
+                  /* .type = */ "gpu",
+                  /* .hardware_id = */ std::stoi(gpu.id),
+                  /* .software_id = */ std::stoi(gpu.id),
+                  /* .activated = */ activated(),
+                  /* .priority = */ INT_MAX});
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
@@ -390,16 +409,33 @@ void HardwareService::UpdateHardwareInfos() {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   bool has_deactivated_gpu = a.value().size() != activated_gpu_af.size();
   if (!gpus.empty() && has_deactivated_gpu) {
+#ifdef _MSC_VER
+    char* value = nullptr;
+    size_t len = 0;
+    _dupenv_s(&value, &len, "CUDA_VISIBLE_DEVICES");
+#else
     const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+#endif
     if (value) {
       LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
+#ifdef _MSC_VER
+      free(value);
+#endif
     } else {
       need_restart = true;
     }
 
+#ifdef _MSC_VER
+    char* vk_value = nullptr;
+    _dupenv_s(&vk_value, &len, "GGML_VK_VISIBLE_DEVICES");
+#else
     const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+#endif
     if (vk_value) {
       LOG_INFO << "GGML_VK_VISIBLE_DEVICES: " << vk_value;
+#ifdef _MSC_VER
+      free(vk_value);
+#endif
     } else {
       need_restart = true;
     }
@@ -412,7 +448,7 @@ void HardwareService::UpdateHardwareInfos() {
     for (auto const& p : activated_gpu_af) {
       gpus.push_back(p.first);
     }
-    ahc_ = {.gpus = gpus};
+    ahc_ = {/* .gpus = */ gpus};
   }
 }
 
@@ -458,12 +494,18 @@ void HardwareService::CheckDependencies() {
       std::filesystem::create_directories(fmu::GetCortexDataPath() / "deps");
     }
     auto download_task{DownloadTask{
-        .id = "vulkan",
-        .type = DownloadType::Miscellaneous,
-        .items = {DownloadItem{
-            .id = "vulkan",
-            .downloadUrl = "https://catalog.jan.ai/libvulkan.so",
-            .localPath = fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+        /* .id = */ "vulkan",
+        /* .status = */ DownloadTask::Status::Pending,
+        /* .type = */ DownloadType::Miscellaneous,
+        /* .items = */
+        {DownloadItem{
+            /* .id = */ "vulkan",
+            /* .downloadUrl = */ "https://catalog.jan.ai/libvulkan.so",
+            /* .localPath = */ fmu::GetCortexDataPath() / "deps" /
+                "libvulkan.so",
+            /* .checksum = */ std::nullopt,
+            /* .bytes = */ std::nullopt,
+            /* .downloadedBytes = */ std::nullopt,
         }},
     }};
     auto result = DownloadService().AddDownloadTask(

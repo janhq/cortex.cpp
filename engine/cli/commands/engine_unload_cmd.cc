@@ -18,9 +18,10 @@ cpp::result<void, std::string> EngineUnloadCmd::Exec(
   }
 
   auto load_engine_url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "engines", engine, "load"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "engines", engine, "load"},
+      /* .queries =  */ {},
   };
   auto load_engine_result =
       curl_utils::SimpleDeleteJson(load_engine_url.ToFullPath());

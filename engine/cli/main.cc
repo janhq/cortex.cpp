@@ -9,6 +9,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
+#include "utils/widechar_conv.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -47,7 +48,7 @@ void SetupLogger(trantor::FileLogger& async_logger, bool verbose) {
 
     std::filesystem::create_directories(
 #if defined(_WIN32)
-        std::filesystem::u8path(config.logFolderPath) /
+        std::filesystem::path(cortex::wc::Utf8ToWstring(config.logFolderPath)) /
 #else
         std::filesystem::path(config.logFolderPath) /
 #endif

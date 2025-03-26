@@ -137,12 +137,23 @@ jobs:
 
 
       - name: Run setup config
+        if: runner.os != 'Linux'
         run: |
           cd engine
           echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
           # ./build/cortex
           cat ~/.cortexrc
+
+      - name: Run setup config
+        if: runner.os == 'Linux'
+        run: |
+          cd engine
+          mkdir -p ~/.config/cortexcpp/
+          echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.config/cortexcpp/.cortexrc
+          echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.config/cortexcpp/.cortexrc
+          # ./build/cortex
+          cat ~/.config/cortexcpp/.cortexrc
 
       - name: Run unit tests
         run: |
@@ -152,6 +163,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
 
       - name: Run setup config
+        if: runner.os != 'Linux'
         run: |
           cd engine
           echo "apiServerPort: 3928" > ~/.cortexrc
@@ -159,6 +171,17 @@ jobs:
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
           # ./build/cortex
           cat ~/.cortexrc
+      
+      - name: Run setup config
+        if: runner.os == 'Linux'
+        run: |
+          cd engine
+          mkdir -p ~/.config/cortexcpp/
+          echo "apiServerPort: 3928" > ~/.config/cortexcpp/.cortexrc
+          echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" >> ~/.config/cortexcpp/.cortexrc
+          echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.config/cortexcpp/.cortexrc
+          # ./build/cortex
+          cat ~/.config/cortexcpp/.cortexrc
 
       - name: Run e2e tests
         if: github.event_name != 'schedule' && runner.os != 'Windows' && github.event.pull_request.draft == false
@@ -226,6 +249,13 @@ jobs:
           cd engine
           make package
 
+      - name: Upload E2E Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-log-${{ matrix.os }}-${{ matrix.name }}
+          path: ./engine/e2e-test/logs
+      
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -414,11 +444,21 @@ jobs:
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
       - name: Run setup config
+        if: runner.os != 'Linux'
         run: |
           cd engine
           echo "gitHubToken: ${{ secrets.GITHUB_TOKEN }}" > ~/.cortexrc
           # ./build/cortex
           cat ~/.cortexrc
+
+      - name: Run setup config
+        if: runner.os == 'Linux'
+        run: |
+          cd engine
+          mkdir -p ~/.config/cortexcpp/
+          echo "gitHubToken: ${{ secrets.GITHUB_TOKEN }}" > ~/.config/cortexcpp/.cortexrc
+          # ./build/cortex
+          cat ~/.config/cortexcpp/.cortexrc
 
       - name: Run unit tests
         run: |
@@ -428,12 +468,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
 
       - name: Run setup config
+        if: runner.os != 'Linux'
         run: |
           cd engine
           echo "apiServerPort: 3928" > ~/.cortexrc
           echo "gitHubToken: ${{ secrets.GITHUB_TOKEN }}" > ~/.cortexrc
           # ./build/cortex
           cat ~/.cortexrc
+      
+      - name: Run setup config
+        if: runner.os == 'Linux'
+        run: |
+          cd engine
+          mkdir -p ~/.config/cortexcpp/
+          echo "apiServerPort: 3928" > ~/.config/cortexcpp/.cortexrc
+          echo "gitHubToken: ${{ secrets.GITHUB_TOKEN }}" > ~/.config/cortexcpp/.cortexrc
+          # ./build/cortex
+          cat ~/.config/cortexcpp/.cortexrc
 
       - name: Run e2e tests
         if: github.event_name != 'schedule' && runner.os != 'Windows' && github.event.pull_request.draft == false

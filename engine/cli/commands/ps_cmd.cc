@@ -12,9 +12,10 @@ namespace commands {
 
 void PsCmd::Exec(const std::string& host, int port) {
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"inferences", "server", "models"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"inferences", "server", "models"},
+      /* .queries = */ {},
   };
   auto res = curl_utils::SimpleGetJson(url.ToFullPath());
   if (res.has_error()) {

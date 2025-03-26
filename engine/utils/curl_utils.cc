@@ -86,7 +86,7 @@ std::shared_ptr<Header> GetHeaders(const std::string& url) {
 
       // for debug purpose
       auto min_token_size = 6;
-      if (token.size() < min_token_size) {
+      if (token.size() < (unsigned)min_token_size) {
         CTL_WRN("Hugging Face token is too short");
       } else {
         CTL_INF("Using authentication with Hugging Face token: " +
@@ -110,7 +110,7 @@ std::shared_ptr<Header> GetHeaders(const std::string& url) {
 
       // for debug purpose
       auto min_token_size = 6;
-      if (gh_token.size() < min_token_size) {
+      if (gh_token.size() < (unsigned)min_token_size) {
         CTL_WRN("Github token is too short");
       } else {
         CTL_INF("Using authentication with Github token: " +

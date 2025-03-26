@@ -25,21 +25,6 @@ class CommandLineParser {
 
   void SetupConfigsCommands();
 
-  void EngineInstall(CLI::App* parent, const std::string& engine_name,
-                     std::string& version, std::string& src);
-
-  void EngineUninstall(CLI::App* parent, const std::string& engine_name);
-
-  void EngineUpdate(CLI::App* parent, const std::string& engine_name);
-
-  void EngineGet(CLI::App* parent);
-
-  void EngineUse(CLI::App* parent, const std::string& engine_name);
-
-  void EngineLoad(CLI::App* parent, const std::string& engine_name);
-
-  void EngineUnload(CLI::App* parent, const std::string& engine_name);
-
   void ModelUpdate(CLI::App* parent);
 
   CLI::App app_;
@@ -47,13 +32,13 @@ class CommandLineParser {
   std::shared_ptr<cortex::DylibPathManager> dylib_path_manager_;
   std::shared_ptr<DatabaseService> db_service_;
   std::shared_ptr<EngineService> engine_service_;
-  std::vector<std::string> supported_engines_;
 
   struct CmlData {
     std::string model_id;
     std::string msg;
     std::string model_alias;
     std::string model_path;
+    std::string engine_name;
     std::string engine_version = "latest";
     std::string engine_src;
     std::string cortex_version;
@@ -67,13 +52,12 @@ class CommandLineParser {
     bool display_gpu_mode = false;
     bool display_available_model = false;
     std::string filter = "";
-    std::string log_level = "INFO";
 
     bool show_menu = false;
 
-    int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;
+    std::unordered_map<std::string, std::string> server_start_options;
     std::string model_src;
   };
   CmlData cml_data_;

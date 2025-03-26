@@ -17,6 +17,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/github_release_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/normalize_engine.h"
 #include "utils/result.hpp"
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
@@ -35,17 +36,9 @@ std::string GetSuitableCudaVersion(const std::string& engine,
   } else if (cuda_driver_semver.major == 12) {
     suitable_toolkit_version = "12.0";
   }
-
+  (void)engine;
   return suitable_toolkit_version;
 }
-
-// Need to change this after we rename repositories
-std::string NormalizeEngine(const std::string& engine) {
-  if (engine == kLlamaEngine) {
-    return kLlamaRepo;
-  }
-  return engine;
-};
 
 std::string Repo2Engine(const std::string& r) {
   if (r == kLlamaRepo) {
@@ -65,7 +58,7 @@ std::string GetEnginePath(std::string_view e) {
 cpp::result<void, std::string> EngineService::InstallEngineAsync(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   CTL_INF("InstallEngineAsync: " << ne << ", " << version << ", "
                                  << variant_name.value_or(""));
   auto os = hw_inf_.sys_inf->os;
@@ -114,7 +107,7 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
           found_cuda = true;
           // extract binary
           auto cuda_path = file_manager_utils::GetCudaToolkitPath(
-              NormalizeEngine(engine), true);
+              cortex::engine::NormalizeEngine(engine), true);
           archive_utils::ExtractArchive(path + "/" + cf, cuda_path.string(),
                                         true);
         }
@@ -140,7 +133,7 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
   } else {
     auto [v, ar] = engine_matcher_utils::GetVersionAndArch(matched_variant);
     auto engine_path = file_manager_utils::GetEnginesContainerPath() /
-                       NormalizeEngine(engine) / ar / v;
+                       cortex::engine::NormalizeEngine(engine) / ar / v;
     CTL_INF("engine_path: " << engine_path.string());
     archive_utils::ExtractArchive(path + "/" + matched_variant,
                                   engine_path.string(), true);
@@ -157,6 +150,7 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
   }
+  (void)version;
 
   return true;
 }
@@ -164,7 +158,7 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
 cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
 
   // TODO: handle uninstall remote engine
   // only delete a remote engine if no model are using it
@@ -345,14 +339,19 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     CTL_INF("Finished!");
   };
 
-  auto downloadTask =
-      DownloadTask{.id = selected_variant->name,
-                   .type = DownloadType::Engine,
-                   .items = {DownloadItem{
-                       .id = selected_variant->name,
-                       .downloadUrl = selected_variant->browser_download_url,
-                       .localPath = variant_path,
-                   }}};
+  auto downloadTask = DownloadTask{
+      /* .id = */ selected_variant->name,
+      /* .status = */ DownloadTask::Status::Pending,
+      /* .type = */ DownloadType::Engine,
+      /* .items = */
+      {DownloadItem{
+          /* .id = */ selected_variant->name,
+          /* .downloadUrl = */ selected_variant->browser_download_url,
+          /* .localPath = */ variant_path,
+          /* .checksum = */ std::nullopt,
+          /* .bytes = */ std::nullopt,
+          /* .downloadedBytes = */ std::nullopt,
+      }}};
 
   auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
   if (add_task_result.has_error()) {
@@ -381,10 +380,12 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
       GetSuitableCudaVersion(engine, hw_inf_.cuda_driver_version);
 
   auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = jan_host,
-      .pathParams = {"dist", "cuda-dependencies", suitable_toolkit_version,
-                     hw_inf_.sys_inf->os, cuda_toolkit_file_name},
+      /* .protocol = */ "https",
+      /* .host = */ jan_host,
+      /* .pathParams = */
+      {"dist", "cuda-dependencies", suitable_toolkit_version,
+       hw_inf_.sys_inf->os, cuda_toolkit_file_name},
+      /* .queries = */ {},
   };
 
   auto cuda_toolkit_url = url_parser::FromUrl(url_obj);
@@ -396,11 +397,18 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
       cuda_toolkit_file_name;
   CTL_DBG("Download to: " << cuda_toolkit_local_path.string());
   auto downloadCudaToolkitTask{DownloadTask{
-      .id = download_id,
-      .type = DownloadType::CudaToolkit,
-      .items = {DownloadItem{.id = download_id,
-                             .downloadUrl = cuda_toolkit_url,
-                             .localPath = cuda_toolkit_local_path}},
+      /* .id = */ download_id,
+      /* .status = */ DownloadTask::Status::Pending,
+      /* .type = */ DownloadType::CudaToolkit,
+      /* .items = */
+      {DownloadItem{
+          /* .id = */ download_id,
+          /* .downloadUrl = */ cuda_toolkit_url,
+          /* .localPath = */ cuda_toolkit_local_path,
+          /* .checksum = */ std::nullopt,
+          /* .bytes = */ std::nullopt,
+          /* .downloadedBytes = */ std::nullopt,
+      }},
   }};
 
   auto on_finished = [engine](const DownloadTask& finishedTask) {
@@ -441,7 +449,7 @@ std::string EngineService::GetMatchedVariant(
 
 cpp::result<std::vector<EngineService::EngineRelease>, std::string>
 EngineService::GetEngineReleases(const std::string& engine) const {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   return github_release_utils::GetReleases("menloresearch", ne);
 }
 
@@ -449,7 +457,7 @@ cpp::result<std::vector<EngineService::EngineVariant>, std::string>
 EngineService::GetEngineVariants(const std::string& engine,
                                  const std::string& version,
                                  bool filter_compatible_only) const {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   auto engine_release =
       github_release_utils::GetReleaseByVersion("menloresearch", ne, version);
 
@@ -517,7 +525,7 @@ cpp::result<DefaultEngineVariant, std::string>
 EngineService::SetDefaultEngineVariant(const std::string& engine,
                                        const std::string& version,
                                        const std::string& variant) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   auto is_installed = IsEngineVariantReady(engine, version, variant);
   if (is_installed.has_error()) {
     return cpp::fail(is_installed.error());
@@ -550,16 +558,16 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
   }
 
   return DefaultEngineVariant{
-      .engine = engine,
-      .version = normalized_version,
-      .variant = variant,
+      engine,              //engine
+      normalized_version,  //version
+      variant,             //varient
   };
 }
 
 cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
     const std::string& engine, const std::string& version,
     const std::string& variant) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
   auto installed_engines = GetInstalledEngineVariants(ne);
   if (installed_engines.has_error()) {
@@ -571,8 +579,8 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
   for (const auto& installed_engine : installed_engines.value()) {
     CLI_LOG("Installed: name: " + installed_engine.name +
             ", version: " + installed_engine.version);
-    if (installed_engine.name == variant &&
-            installed_engine.version == normalized_version ||
+    if ((installed_engine.name == variant &&
+         installed_engine.version == normalized_version) ||
         installed_engine.version == "v" + normalized_version) {
       return true;
     }
@@ -582,7 +590,7 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
 
 cpp::result<DefaultEngineVariant, std::string>
 EngineService::GetDefaultEngineVariant(const std::string& engine) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   // current we don't support other engine
   if (ne != kLlamaRepo) {
     return cpp::fail("Engine " + engine + " is not supported yet!");
@@ -598,15 +606,15 @@ EngineService::GetDefaultEngineVariant(const std::string& engine) {
   }
 
   return DefaultEngineVariant{
-      .engine = engine,
-      .version = version,
-      .variant = variant,
+      engine,   //engine
+      version,  //version
+      variant,  //varient
   };
 }
 
 cpp::result<std::vector<EngineVariantResponse>, std::string>
 EngineService::GetInstalledEngineVariants(const std::string& engine) const {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   auto os = hw_inf_.sys_inf->os;
 
   auto engines_variants_dir =
@@ -632,9 +640,10 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
         try {
           auto node = YAML::LoadFile(version_txt_path.string());
           auto ev = EngineVariantResponse{
-              .name = node["name"].as<std::string>(),
-              .version = "v" + node["version"].as<std::string>(),
-              .engine = engine,
+              node["name"].as<std::string>(),           // name
+              "v" + node["version"].as<std::string>(),  // version
+              engine,                                   // engine
+              "",                                       // type
           };
           variants.push_back(ev);
         } catch (const YAML::Exception& e) {
@@ -649,14 +658,14 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
 }
 
 bool EngineService::IsEngineLoaded(const std::string& engine) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   return engines_.find(ne) != engines_.end();
 }
 
 cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
     const std::string& engine_name) {
   std::lock_guard<std::mutex> lock(engines_mutex_);
-  auto ne = NormalizeEngine(engine_name);
+  auto ne = cortex::engine::NormalizeEngine(engine_name);
   if (engines_.find(ne) == engines_.end()) {
     return cpp::fail("Engine " + engine_name + " is not loaded yet!");
   }
@@ -666,7 +675,7 @@ cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
 
 cpp::result<void, std::string> EngineService::LoadEngine(
     const std::string& engine_name) {
-  auto ne = NormalizeEngine(engine_name);
+  auto ne = cortex::engine::NormalizeEngine(engine_name);
   std::lock_guard<std::mutex> lock(engines_mutex_);
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded");
@@ -738,12 +747,12 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     auto func = dylib->get_function<EngineI*()>("get_engine");
     auto engine_obj = func();
     auto load_opts = EngineI::EngineLoadOption{
-        .engine_path = engine_dir_path,
-        .deps_path = cuda_path,
-        .is_custom_engine_path = custom_engine_path,
-        .log_path = log_path,
-        .max_log_lines = config.maxLogLines,
-        .log_level = logging_utils_helper::global_log_level,
+        /* .engine_path = */ engine_dir_path,
+        /* .deps_path = */ cuda_path,
+        /* .is_custom_engine_path = */ custom_engine_path,
+        /* .log_path = */ log_path,
+        /* .max_log_lines = */ config.maxLogLines,
+        /* .log_level = */ logging_utils_helper::global_log_level,
     };
     engine_obj->Load(load_opts);
 
@@ -762,7 +771,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 void EngineService::RegisterEngineLibPath() {
   auto engine_names = GetSupportedEngineNames().value();
   for (const auto& engine : engine_names) {
-    auto ne = NormalizeEngine(engine);
+    auto ne = cortex::engine::NormalizeEngine(engine);
     try {
       auto engine_dir_path_res = GetEngineDirPath(engine);
       if (engine_dir_path_res.has_error()) {
@@ -771,7 +780,7 @@ void EngineService::RegisterEngineLibPath() {
         continue;
       }
       auto engine_dir_path = engine_dir_path_res.value().first;
-      auto custom_engine_path = engine_dir_path_res.value().second;
+      //[unused] auto custom_engine_path = engine_dir_path_res.value().second;
       auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
 
       // register deps
@@ -800,7 +809,7 @@ void EngineService::RegisterEngineLibPath() {
 
 cpp::result<std::pair<std::filesystem::path, bool>, std::string>
 EngineService::GetEngineDirPath(const std::string& engine_name) {
-  auto ne = NormalizeEngine(engine_name);
+  auto ne = cortex::engine::NormalizeEngine(engine_name);
 
   auto selected_engine_variant = GetDefaultEngineVariant(ne);
 
@@ -843,7 +852,7 @@ EngineService::GetEngineDirPath(const std::string& engine_name) {
 
 cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
 
   std::lock_guard<std::mutex> lock(engines_mutex_);
   if (!IsEngineLoaded(ne)) {
@@ -881,8 +890,9 @@ std::vector<EngineV> EngineService::GetLoadedEngines() {
 
 cpp::result<github_release_utils::GitHubRelease, std::string>
 EngineService::GetLatestEngineVersion(const std::string& engine) const {
-  auto ne = NormalizeEngine(engine);
-  auto res = github_release_utils::GetReleaseByVersion("menloresearch", ne, "latest");
+  auto ne = cortex::engine::NormalizeEngine(engine);
+  auto res =
+      github_release_utils::GetReleaseByVersion("menloresearch", ne, "latest");
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine " + engine + " latest version!");
   }
@@ -891,7 +901,7 @@ EngineService::GetLatestEngineVersion(const std::string& engine) const {
 
 cpp::result<bool, std::string> EngineService::IsEngineReady(
     const std::string& engine) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
 
   // Check for remote engine
   if (IsRemoteEngine(engine)) {
@@ -914,7 +924,7 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
 
 cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
     const std::string& engine) {
-  auto ne = NormalizeEngine(engine);
+  auto ne = cortex::engine::NormalizeEngine(engine);
   auto default_variant = GetDefaultEngineVariant(ne);
 
   if (default_variant.has_error()) {
@@ -976,10 +986,10 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   auto res = InstallEngineAsync(engine, latest_version->tag_name,
                                 default_variant->variant);
 
-  return EngineUpdateResult{.engine = engine,
-                            .variant = default_variant->variant,
-                            .from = default_variant->version,
-                            .to = latest_version->tag_name};
+  return EngineUpdateResult{/*.engine =*/engine,
+                            /*.variant =*/default_variant->variant,
+                            /*.from =*/default_variant->version,
+                            /*.to =*/latest_version->tag_name};
 }
 
 cpp::result<std::vector<cortex::db::EngineEntry>, std::string>

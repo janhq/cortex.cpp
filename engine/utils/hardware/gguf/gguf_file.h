@@ -25,11 +25,12 @@
 #include "ggml.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
-
-// #define GGUF_LOG(msg)                                                  \
-//   do {                                                                 \
-//     std::cout << __FILE__ << "(@" << __LINE__ << "): " << msg << '\n'; \
-//   } while (false)
+/*
+#define GGUF_LOG(msg)                                                  \
+  do {                                                                 \
+    std::cout << __FILE__ << "(@" << __LINE__ << "): " << msg << '\n'; \
+  } while (false)
+*/
 
 #define GGUF_LOG(msg)
 namespace hardware {
@@ -538,6 +539,7 @@ inline std::optional<GGUFFile> ParseGgufFile(const std::string& path) {
     }
     gf.tensor_infos = tis;
   }
+  (void) version;
   return gf;
 }
 }  // namespace hardware

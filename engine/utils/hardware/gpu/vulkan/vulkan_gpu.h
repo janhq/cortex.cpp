@@ -210,8 +210,7 @@ GetGpuUsage() {
             auto vram_total = get_vram(vram_total_path, 10) / 1024 / 1024;
             auto vram_usage = get_vram(vram_used_path, 10) / 1024 / 1024;
             auto device_id = get_vram(device_id_path, 16);
-            res[device_id] = AmdGpuUsage{.total_vram_MiB = vram_total,
-                                         .used_vram_MiB = vram_usage};
+            res[device_id] = AmdGpuUsage{vram_total, vram_usage};
           }
         } else {
           return cpp::fail("Error: Unable to open " + vendor_path.string());
@@ -433,8 +432,8 @@ class VulkanGpu {
       for (uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
         if (memory_properties.memoryHeaps[i].flags &
             VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-          gpu_avail_MiB +=
-              memory_properties.memoryHeaps[i].size / (1024ull * 1024ull);
+          gpu_avail_MiB += static_cast<int>(
+              memory_properties.memoryHeaps[i].size / (1024ull * 1024ull));
         }
       }
 
@@ -449,21 +448,25 @@ class VulkanGpu {
       used_vram_MiB = gpus_usages[device_properties.deviceName];
 
 #endif
-      int free_vram_MiB =
-          total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
+      auto free_vram_MiB =
+          total_vram_MiB > used_vram_MiB
+              ? static_cast<int>(total_vram_MiB - used_vram_MiB)
+              : 0;
       if (device_properties.vendorID == kNvidiaVendor ||
           device_properties.vendorID == kAmdVendor) {
         gpus.emplace_back(cortex::hw::GPU{
-            .id = std::to_string(id),
-            .device_id = device_properties.deviceID,
-            .name = device_properties.deviceName,
-            .version = std::to_string(device_properties.driverVersion),
-            .add_info = cortex::hw::AmdAddInfo{},
-            .free_vram = free_vram_MiB,
-            .total_vram = total_vram_MiB,
-            .uuid = uuid_to_string(device_id_properties.deviceUUID),
-            .vendor = GetVendorStr(device_properties.vendorID),
-            .gpu_type = static_cast<GpuType>(device_properties.deviceType)});
+            std::to_string(id),                               // id
+            device_properties.deviceID,                       // device_id
+            device_properties.deviceName,                     // name
+            std::to_string(device_properties.driverVersion),  // version
+            cortex::hw::AmdAddInfo{},  // add_info (GPUAddInfo)
+            free_vram_MiB,             // free_vram
+            total_vram_MiB,            // total_vram
+            uuid_to_string(device_id_properties.deviceUUID),  // uuid
+            true,  // is_activated (default value)
+            GetVendorStr(device_properties.vendorID),           // vendor
+            static_cast<GpuType>(device_properties.deviceType)  // gpu_type
+        });
       }
       id++;
     }
@@ -507,8 +510,10 @@ class VulkanGpu {
       total_vram_MiB = gpus_[i].free_vram;
       used_vram_MiB = gpus_usages[gpus_[i].name];
 #endif
-      int free_vram_MiB =
-          total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
+      auto free_vram_MiB =
+          total_vram_MiB > used_vram_MiB
+              ? static_cast<int>(total_vram_MiB - used_vram_MiB)
+              : 0;
       gpus_[i].free_vram = free_vram_MiB;
     }
 

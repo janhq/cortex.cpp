@@ -13,7 +13,6 @@ constexpr std::string_view kProdVariant = "prod";
 constexpr std::string_view kBetaVariant = "beta";
 constexpr std::string_view kNightlyVariant = "nightly";
 constexpr char kLogsLlamacppBaseName[] = "./logs/cortex.log";
-constexpr char kLogsTensorrtllmBaseName[] = "./logs/cortex.log";
 constexpr char kLogsOnnxBaseName[] = "./logs/cortex.log";
 
 inline std::string cortex_config_file_path;

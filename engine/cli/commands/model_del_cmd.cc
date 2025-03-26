@@ -18,9 +18,10 @@ void ModelDelCmd::Exec(const std::string& host, int port,
   }
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "models", model_handle},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "models", model_handle},
+      /* .queries = */ {},
   };
 
   auto res = curl_utils::SimpleDeleteJson(url.ToFullPath());

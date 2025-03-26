@@ -42,9 +42,6 @@ class ModelService {
   cpp::result<std::string, std::string> AbortDownloadModel(
       const std::string& task_id);
 
-  cpp::result<std::string, std::string> DownloadModelFromCortexso(
-      const std::string& name, const std::string& branch = "main");
-
   cpp::result<DownloadTask, std::string> DownloadModelFromCortexsoAsync(
       const std::string& name, const std::string& branch = "main",
       std::optional<std::string> temp_model_id = std::nullopt);
@@ -70,8 +67,6 @@ class ModelService {
   cpp::result<ModelPullInfo, std::string> GetModelPullInfo(
       const std::string& model_handle);
 
-  cpp::result<std::string, std::string> HandleUrl(const std::string& url);
-
   cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
       const std::string& url, std::optional<std::string> temp_model_id,
       std::optional<std::string> temp_name);
@@ -94,26 +89,12 @@ class ModelService {
   std::string GetEngineByModelId(const std::string& model_id) const;
 
  private:
-  /**
-   * Handle downloading model which have following pattern: author/model_name
-   */
-  cpp::result<std::string, std::string> DownloadHuggingFaceGgufModel(
-      const std::string& author, const std::string& modelName,
-      std::optional<std::string> fileName);
-
-  /**
-   * Handling cortexso models. Will look through cortexso's HF repository and
-   * listing all the branches, except main. Then print out the selection for user.
-   */
-  cpp::result<std::string, std::string> HandleCortexsoModel(
-      const std::string& modelName);
-
   cpp::result<std::optional<std::string>, std::string> MayFallbackToCpu(
       const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
       int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
   void ProcessBgrTasks();
-  
+
   int GetCpuThreads() const;
 
   std::shared_ptr<DatabaseService> db_service_;

@@ -127,7 +127,7 @@ struct CpuInfo {
       std::this_thread::sleep_for(std::chrono::duration<double>(1));
       jiffies_initialized = true;
     }
-    
+
     auto get_jiffies = [](int index) -> Jiffies {
       std::ifstream filestat("/proc/stat");
       if (!filestat.is_open()) {
@@ -187,12 +187,9 @@ struct CpuInfo {
       return CPU{};
     auto cpu = res[0];
     cortex::cpuid::CpuInfo inst;
-    float usage = GetCPUUsage();
-    return CPU{.cores = cpu.numPhysicalCores(),
-               .arch = std::string(GetArch()),
-               .model = cpu.modelName(),
-               .usage = usage,
-               .instructions = inst.instructions()};
+    auto usage = static_cast<float>(GetCPUUsage());
+    return CPU{cpu.numPhysicalCores(), std::string(GetArch()), cpu.modelName(),
+               usage, inst.instructions()};
   }
 };
 }  // namespace cortex::hw
