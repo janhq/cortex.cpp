@@ -86,7 +86,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 #else
     CLI_LOG("default");
 #endif
-(void) c;
+    (void)c;
   };
   app_.add_flag_function("-v,--version", cb, "Get Cortex version");
 
@@ -436,7 +436,7 @@ void CommandLineParser::SetupConfigsCommands() {
 
     auto is_empty = true;
     for (const auto& [key, value] : config_update_opts_) {
-      if (!value.empty() || CONFIGURATIONS.at(key).allow_empty) {
+      if (!value.empty() || key == "api_keys") {
         is_empty = false;
         break;
       }

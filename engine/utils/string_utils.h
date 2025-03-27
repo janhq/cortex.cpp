@@ -4,6 +4,7 @@
 #include <cctype>
 #include <chrono>
 #include <iomanip>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -206,4 +207,32 @@ inline std::string EscapeJson(const std::string& s) {
   }
   return o.str();
 }
+
+// Add a method to compares two url paths
+inline bool AreUrlPathsEqual(const std::string& path1,
+                             const std::string& path2) {
+  auto has_placeholder = [](const std::string& s) {
+    if (s.empty())
+      return false;
+    return s.find_first_of('{') < s.find_last_of('}');
+  };
+  std::vector<std::string> parts1 = SplitBy(path1, "/");
+  std::vector<std::string> parts2 = SplitBy(path2, "/");
+
+  // Check if both strings have the same number of parts
+  if (parts1.size() != parts2.size()) {
+    return false;
+  }
+
+  for (size_t i = 0; i < parts1.size(); ++i) {
+    if (has_placeholder(parts1[i]) || has_placeholder(parts2[i]))
+      continue;
+    if (parts1[i] != parts2[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  // namespace string_utils

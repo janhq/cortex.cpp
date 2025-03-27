@@ -60,11 +60,49 @@
 // Global var to signal drogon to shutdown
 volatile bool shutdown_signal;
 
-void RunServer(std::optional<std::string> host, std::optional<int> port,
-               bool ignore_cout) {
+struct ServerParams {
+  std::optional<std::string> server_host;
+  std::optional<int> server_port;
+  std::optional<std::string> api_keys;
+  std::optional<std::string> cors;
+  std::optional<std::string> allowed_origins;
+};
+
+void SetupServer(const ServerParams& params) {
+  auto config = file_manager_utils::GetCortexConfig();
+
+  if (params.server_host && *(params.server_host) != config.apiServerHost) {
+    config.apiServerHost = *(params.server_host);
+  }
+
+  if (params.server_port &&
+      *(params.server_port) != std::stoi(config.apiServerPort)) {
+    config.apiServerPort = std::to_string(*(params.server_port));
+  }
+
+  if (params.api_keys) {
+    config.apiKeys = string_utils::SplitBy(*(params.api_keys), ",");
+  }
+
+  if (params.cors) {
+    config.enableCors = *(params.cors) == "ON";
+  }
+
+  if (params.allowed_origins) {
+    config.allowedOrigins =
+        string_utils::SplitBy(*(params.allowed_origins), ",");
+  }
+
+  auto result = file_manager_utils::UpdateCortexConfig(config);
+  if (result.has_error()) {
+    CTL_ERR(result.error());
+  }
+}
+
+void RunServer(bool ignore_cout) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   auto signal_handler = +[](int sig) -> void {
-    std::cout << "\rCaught interrupt signal:" << sig << ", shutting down\n";;
+    std::cout << "\rCaught interrupt signal:" << sig << ", shutting down\n";
     shutdown_signal = true;
   };
   signal(SIGINT, signal_handler);
@@ -81,23 +119,6 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), TRUE);
 #endif
   auto config = file_manager_utils::GetCortexConfig();
-  if (host.has_value() || port.has_value()) {
-    if (host.has_value() && *host != config.apiServerHost) {
-      config.apiServerHost = *host;
-    }
-
-    if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
-      config.apiServerPort = std::to_string(*port);
-    }
-
-    auto config_path = file_manager_utils::GetConfigurationPath();
-    auto result =
-        config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
-            config, config_path.string());
-    if (result.has_error()) {
-      CTL_ERR("Error update " << config_path.string() << result.error());
-    }
-  }
 
   if (!ignore_cout) {
     std::cout << "Host: " << config.apiServerHost
@@ -254,7 +275,13 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto validate_api_key = [config_service](const drogon::HttpRequestPtr& req) {
     auto api_keys = config_service->GetApiServerConfiguration()->api_keys;
     static const std::unordered_set<std::string> public_endpoints = {
-        "/openapi.json", "/healthz", "/processManager/destroy"};
+        "/openapi.json", "/healthz", "/processManager/destroy", "/events"};
+
+    if (req->getHeader("Authorization").empty() &&
+        req->path() == "/v1/configs") {
+      CTL_WRN("Require API key to access /v1/configs");
+      return false;
+    }
 
     // If API key is not set, skip validation
     if (api_keys.empty()) {
@@ -283,54 +310,105 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
     return false;
   };
 
+  auto handle_cors = [config_service](const drogon::HttpRequestPtr& req,
+                                      const drogon::HttpResponsePtr& resp) {
+    const std::string& origin = req->getHeader("Origin");
+    CTL_INF("Origin: " << origin);
+
+    auto allowed_origins =
+        config_service->GetApiServerConfiguration()->allowed_origins;
+
+    auto is_contains_asterisk =
+        std::find(allowed_origins.begin(), allowed_origins.end(), "*");
+    if (is_contains_asterisk != allowed_origins.end()) {
+      resp->addHeader("Access-Control-Allow-Origin", "*");
+      resp->addHeader("Access-Control-Allow-Methods", "*");
+      return;
+    }
+
+    // Check if the origin is in our allowed list
+    auto it = std::find(allowed_origins.begin(), allowed_origins.end(), origin);
+    if (it != allowed_origins.end()) {
+      resp->addHeader("Access-Control-Allow-Origin", origin);
+    } else if (allowed_origins.empty()) {
+      resp->addHeader("Access-Control-Allow-Origin", "*");
+    }
+    resp->addHeader("Access-Control-Allow-Methods", "*");
+  };
+
   drogon::app().registerPreRoutingAdvice(
-      [&validate_api_key](
+      [&validate_api_key, &handle_cors](
           const drogon::HttpRequestPtr& req,
-          std::function<void(const drogon::HttpResponsePtr&)>&& cb,
-          drogon::AdviceChainCallback&& ccb) {
+          std::function<void(const drogon::HttpResponsePtr&)>&& stop,
+          drogon::AdviceChainCallback&& pass) {
+        // Handle OPTIONS preflight requests
+        if (req->method() == drogon::HttpMethod::Options) {
+          auto resp = HttpResponse::newHttpResponse();
+          auto handlers = drogon::app().getHandlersInfo();
+          bool has_ep = [req, &handlers]() {
+            for (auto const& h : handlers) {
+              if (string_utils::AreUrlPathsEqual(req->path(), std::get<0>(h)))
+                return true;
+            }
+            return false;
+          }();
+          if (!has_ep) {
+            resp->setStatusCode(drogon::HttpStatusCode::k404NotFound);
+            stop(resp);
+            return;
+          }
+
+          handle_cors(req, resp);
+          std::string supported_methods = [req, &handlers]() {
+            std::string methods;
+            for (auto const& h : handlers) {
+              if (string_utils::AreUrlPathsEqual(req->path(), std::get<0>(h))) {
+                auto m = drogon::to_string_view(std::get<1>(h));
+                if (methods.find(m) == std::string::npos) {
+                  methods += drogon::to_string_view(std::get<1>(h));
+                  methods += ", ";
+                }
+              }
+            }
+            if (methods.size() < 2)
+              return std::string();
+            return methods.substr(0, methods.size() - 2);
+          }();
+
+          // Add more info to header
+          resp->addHeader("Access-Control-Allow-Methods", supported_methods);
+          {
+            const auto& val = req->getHeader("Access-Control-Request-Headers");
+            if (!val.empty())
+              resp->addHeader("Access-Control-Allow-Headers", val);
+          }
+          // Set Access-Control-Max-Age
+          resp->addHeader("Access-Control-Max-Age",
+                          "600");  // Cache for 10 minutes
+          stop(resp);
+          return;
+        }
+
         if (!validate_api_key(req)) {
           Json::Value ret;
           ret["message"] = "Invalid API Key";
           auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
           resp->setStatusCode(drogon::k401Unauthorized);
-          cb(resp);
+          stop(resp);
           return;
         }
-        ccb();
+        pass();
       });
 
   // CORS
   drogon::app().registerPostHandlingAdvice(
-      [config_service](const drogon::HttpRequestPtr& req,
-                       const drogon::HttpResponsePtr& resp) {
+      [config_service, &handle_cors](const drogon::HttpRequestPtr& req,
+                                     const drogon::HttpResponsePtr& resp) {
         if (!config_service->GetApiServerConfiguration()->cors) {
           CTL_INF("CORS is disabled!");
           return;
         }
-
-        const std::string& origin = req->getHeader("Origin");
-        CTL_INF("Origin: " << origin);
-
-        auto allowed_origins =
-            config_service->GetApiServerConfiguration()->allowed_origins;
-
-        auto is_contains_asterisk =
-            std::find(allowed_origins.begin(), allowed_origins.end(), "*");
-        if (is_contains_asterisk != allowed_origins.end()) {
-          resp->addHeader("Access-Control-Allow-Origin", "*");
-          resp->addHeader("Access-Control-Allow-Methods", "*");
-          return;
-        }
-
-        // Check if the origin is in our allowed list
-        auto it =
-            std::find(allowed_origins.begin(), allowed_origins.end(), origin);
-        if (it != allowed_origins.end()) {
-          resp->addHeader("Access-Control-Allow-Origin", origin);
-        } else if (allowed_origins.empty()) {
-          resp->addHeader("Access-Control-Allow-Origin", "*");
-        }
-        resp->addHeader("Access-Control-Allow-Methods", "*");
+        handle_cors(req, resp);
       });
 
   // ssl
@@ -378,6 +456,8 @@ void print_help() {
                "~/cortexcpp)\n";
   std::cout << "  --host                  Host name (default: 127.0.0.1)\n";
   std::cout << "  --port                  Port number (default: 39281)\n";
+  std::cout << "  --api_keys              Keys to acess API endpoints\n";
+  std::cout << "  --cors                  Enable CORS (ON|OFF)\n";
   std::cout << "  --ignore_cout           Ignore cout output\n";
   std::cout << "  --loglevel              Set log level\n";
 
@@ -404,8 +484,7 @@ int main(int argc, char* argv[]) {
   // avoid printing logs to terminal
   is_server = true;
 
-  std::optional<std::string> server_host;
-  std::optional<int> server_port;
+  ServerParams params;
   bool ignore_cout_log = false;
 #if defined(_WIN32)
   for (int i = 0; i < argc; i++) {
@@ -419,9 +498,19 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_data_folder_path =
           cortex::wc::WstringToUtf8(v);
     } else if (command == L"--host") {
-      server_host = cortex::wc::WstringToUtf8(argv[i + 1]);
+      params.server_host = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--port") {
-      server_port = std::stoi(argv[i + 1]);
+      params.server_port = std::stoi(argv[i + 1]);
+    } else if (command == L"--api_keys") {
+      params.api_keys = cortex::wc::WstringToUtf8(argv[i + 1]);
+    } else if (command == L"--cors") {
+      params.cors = cortex::wc::WstringToUtf8(argv[i + 1]);
+      if (*(params.cors) != "ON" && *(params.cors) != "OFF") {
+        print_help();
+        return 0;
+      }
+    } else if (command == L"--allowed_origins") {
+      params.allowed_origins = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--ignore_cout") {
       ignore_cout_log = true;
     } else if (command == L"--loglevel") {
@@ -439,9 +528,19 @@ int main(int argc, char* argv[]) {
     } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     } else if (strcmp(argv[i], "--host") == 0) {
-      server_host = argv[i + 1];
+      params.server_host = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
-      server_port = std::stoi(argv[i + 1]);
+      params.server_port = std::stoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "--api_keys") == 0) {
+      params.api_keys = argv[i + 1];
+    } else if (strcmp(argv[i], "--cors") == 0) {
+      params.cors = argv[i + 1];
+      if (*(params.cors) != "ON" && *(params.cors) != "OFF") {
+        print_help();
+        return 0;
+      }
+    } else if (strcmp(argv[i], "--allowed_origins") == 0) {
+      params.allowed_origins = argv[i + 1];
     } else if (strcmp(argv[i], "--ignore_cout") == 0) {
       ignore_cout_log = true;
     } else if (strcmp(argv[i], "--loglevel") == 0) {
@@ -477,6 +576,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  SetupServer(params);
+
   // check if migration is needed
   if (auto res = cortex::migr::MigrationManager(
                      cortex::db::Database::GetInstance().db())
@@ -497,6 +598,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  RunServer(server_host, server_port, ignore_cout_log);
+  RunServer(ignore_cout_log);
   return 0;
 }

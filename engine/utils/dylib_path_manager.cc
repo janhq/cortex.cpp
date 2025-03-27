@@ -1,5 +1,6 @@
 #include "dylib_path_manager.h"
 #include "utils/logging_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace cortex {
 
@@ -12,8 +13,7 @@ cpp::result<void, std::string> DylibPathManager::RegisterPath(
       return cpp::fail("Path does not exist: " + path.string());
     }
 
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring wide_path = converter.from_bytes(path.string());
+    auto wide_path = cortex::wc::Utf8ToWstring(path.string());
 
     auto cookie = AddDllDirectory(wide_path.c_str());
     if (cookie == nullptr) {

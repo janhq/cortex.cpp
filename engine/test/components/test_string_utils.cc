@@ -329,3 +329,51 @@ TEST(LTrimTest, MixedSpaces) {
   LTrim(s);
   EXPECT_EQ(s, "HelloWorld   ");
 }
+
+TEST_F(StringUtilsTestSuite, UrlPaths_SimilarStrings) {
+  std::string str1 = "/v1/threads/{1}/messages/{2}";
+  std::string str2 = "/v1/threads/xxx/messages/yyy";
+  EXPECT_TRUE( AreUrlPathsEqual(str1, str2));
+}
+
+TEST_F(StringUtilsTestSuite, UrlPaths_DifferentPaths) {
+  std::string str1 = "/v1/threads/{1}/messages/{2}";
+  std::string str2 = "/v1/threads/xxx/messages/yyy/extra";
+  EXPECT_FALSE(AreUrlPathsEqual(str1, str2));
+}
+
+TEST_F(StringUtilsTestSuite, UrlPaths_DifferentPlaceholderCounts) {
+  std::string str1 = "/v1/threads/{1}/messages/{2}";
+  std::string str2 = "/v1/threads/{1}/messages/{2}/{3}";
+  EXPECT_FALSE(AreUrlPathsEqual(str1, str2));
+}
+
+TEST_F(StringUtilsTestSuite, UrlPaths_NoPlaceholders) {
+  std::string str1 = "/v1/threads/1/messages/2";
+  std::string str2 = "/v1/threads/xxx/messages/yyy";
+  EXPECT_FALSE(AreUrlPathsEqual(str1, str2));
+}
+
+TEST_F(StringUtilsTestSuite, UrlPaths_EmptyStrings) {
+  std::string str1 = "";
+  std::string str2 = "";
+  EXPECT_TRUE(AreUrlPathsEqual(str1, str2));
+}
+
+TEST_F(StringUtilsTestSuite, UrlPaths_SinglePlaceholder) {
+  std::string str1 = "/v1/threads/{1}";
+  std::string str2 = "/v1/threads/xxx";
+  EXPECT_TRUE(AreUrlPathsEqual(str1, str2));
+}
+
+TEST_F(StringUtilsTestSuite, UrlPaths_MultiplePlaceholdersSameFormat) {
+  std::string str1 = "/v1/threads/{1}/messages/{2}/comments/{3}";
+  std::string str2 = "/v1/threads/xxx/messages/yyy/comments/zzz";
+  EXPECT_TRUE(AreUrlPathsEqual(str1, str2));
+}
+
+TEST_F(StringUtilsTestSuite, UrlPaths_NonPlaceholderDifferences) {
+  std::string str1 = "/v1/threads/{1}/messages/{2}";
+  std::string str2 = "/v2/threads/xxx/messages/yyy";
+  EXPECT_FALSE(AreUrlPathsEqual(str1, str2));
+}
