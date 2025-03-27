@@ -312,8 +312,18 @@ class TestApiCreateFile:
     )
 
     fuzzy_filenames = st.text(
-        alphabet=st.characters(min_codepoint=1, max_codepoint=0xFFFF, blacklist_characters='\\/\0'),
-        min_size=1, max_size=255
+        alphabet=st.characters(
+            min_codepoint=1,
+            max_codepoint=0x10FFFF, # New: Full range including Supplementary Planes
+
+            blacklist_categories=(
+                'Cs',
+                'Cc',
+            ),
+            blacklist_characters='\\/\0'
+        ),
+        min_size=1,
+        max_size=255 # Common filesystem limit
     )
 
     @HYPOTHESIS_SETTINGS
