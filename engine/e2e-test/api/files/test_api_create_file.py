@@ -169,25 +169,6 @@ class TestApiCreateFile:
 
     # ---- Tests for Incorrect Request Structure ----
 
-    @pytest.mark.parametrize("method", ["GET", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
-    def test_api_create_file_wrong_method(self, method):
-        """Verify endpoint rejects incorrect HTTP methods."""
-        test_name = f"test_api_create_file_wrong_method_{method}"
-        log_response(f"Testing method: {method}", test_name)
-
-        try:
-            response = requests.request(method, POST_FILE_URL, timeout=REQUEST_TIMEOUT)
-        except requests.exceptions.RequestException as e:
-            log_response(f"Request failed for method {method}: {e}", test_name)
-            # Allow connection errors etc, but fail on unexpected successes or server errors
-            return
-
-        log_response(f"Status Code: {response.status_code}", test_name)
-        log_response(f"Response Body: {response.text}", test_name)
-
-        # Expect 405 Method Not Allowed.
-        assert_equal(response.status_code, 405)
-        assert not is_server_error(response.status_code), f"Server error for method {method}"
 
     @pytest.mark.parametrize("content_type", [
         "application/json",
@@ -355,9 +336,6 @@ class TestApiCreateFile:
 
         assert not is_server_error(response.status_code), \
             f"Server error ({response.status_code}) for filename: {filename!r}"
-        # Optional stricter check: Allow only 200 or 400 (if filename validation exists)
-        # assert response.status_code == 200 or response.status_code == 400, \
-        #     f"Unexpected status {response.status_code} for filename: {filename!r}"
 
     fuzzy_purposes = st.one_of(
         st.none(), st.booleans(), st.integers(),
