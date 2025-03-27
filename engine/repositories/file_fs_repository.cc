@@ -18,14 +18,10 @@ std::filesystem::path SanitizePath(const std::filesystem::path& user_input,
   std::filesystem::path resolved_path = std::filesystem::weakly_canonical(
       std::filesystem::path(basedir) / std::filesystem::path(user_input));
   /* Ensure the resolved path is within our basedir */
-  for (auto p = resolved_path; !p.empty(); p = p.parent_path()) {
-    if (std::filesystem::equivalent(p, abs_base)) {
-      return resolved_path;
-    }
-    if (p == p.parent_path()) {  // reached the root directory
-      break;
-    }
+  if (resolved_path.string().find(abs_base.string()) != std::string::npos) {
+    return resolved_path;
   }
+
   return {};
 }
 
