@@ -5,3 +5,4 @@ requests
 pyyaml
 jsonschema
 tenacity
+hypothesis
