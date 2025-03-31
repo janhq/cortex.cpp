@@ -315,7 +315,8 @@ class TestApiCreateFile:
     ])
     def test_api_create_file_path_traversal_filename(self, malicious_filename):
         """Verify API rejects filenames attempting path traversal using '..'."""
-        test_name = f"test_api_create_file_path_traversal_filename_{malicious_filename.replace('/', '_').replace('\\', '_').replace('.', '_')}"
+        sanitized_part = malicious_filename.replace('/', '_').replace('\\', '_').replace('.', '_')
+        test_name = f"test_api_create_file_path_traversal_filename_{sanitized_part}"
         log_response(f"Testing potentially malicious filename: {malicious_filename!r}", test_name)
 
         file_content = b"Path traversal attempt"
