@@ -236,7 +236,6 @@ class TestApiCreateFile:
     # ---- Test for Large File (can be slow) ----
     # Mark this test as 'slow' using pytest markers if needed:
     # @pytest.mark.slow
-    # You can run slow tests with `pytest -m slow` and skip them with `pytest -m "not slow"`
     @pytest.mark.skip(reason="Test requires significant resources/time, enable manually if needed")
     def test_api_create_file_very_large_file(self, tmp_path):
         """Verify API handles very large files (e.g., > 100MB). SKIPPED by default."""
@@ -253,7 +252,6 @@ class TestApiCreateFile:
                 # Note: This creates a sparse file on filesystems that support it (like ext4, NTFS)
                 # which takes up little actual disk space but reports the large size.
                 # If the server reads the whole declared size, this test is still valid.
-                # If you need actual dense data, write in chunks.
                 f.seek(large_size_bytes - 1)
                 f.write(b"\0")
             log_response(f"Large file created: {large_file_path}", test_name)
@@ -302,6 +300,43 @@ class TestApiCreateFile:
                  except OSError as e:
                      log_response(f"Warning: Failed to delete large temp file {large_file_path}: {e}", test_name)
 
+    # ----- Security Tests -----
+
+    @pytest.mark.parametrize("malicious_filename", [
+        "../sensitive.conf",
+        "test/../../etc/passwd",
+        "..\\windows\\system32\\config", # Windows style added for coverage
+        "....//tricky.txt",
+        "file/name/with/../in/middle.txt",
+        "/absolute/path/../file.txt",
+        "nul../file.txt",
+        "file.txt..",
+        "..file.txt"
+    ])
+    def test_api_create_file_path_traversal_filename(self, malicious_filename):
+        """Verify API rejects filenames attempting path traversal using '..'."""
+        test_name = f"test_api_create_file_path_traversal_filename_{malicious_filename.replace('/', '_').replace('\\', '_').replace('.', '_')}"
+        log_response(f"Testing potentially malicious filename: {malicious_filename!r}", test_name)
+
+        file_content = b"Path traversal attempt"
+        file_obj = io.BytesIO(file_content)
+
+        files = {"file": (malicious_filename, file_obj, "application/octet-stream")}
+        data = {"purpose": EXPECTED_PURPOSE}
+
+        try:
+            response = requests.post(POST_FILE_URL, files=files, data=data, timeout=REQUEST_TIMEOUT)
+        except requests.exceptions.RequestException as e:
+             log_response(f"Request failed client-side for filename {malicious_filename!r}: {e}", test_name)
+             pytest.fail(f"Request failed before reaching server for filename {malicious_filename!r}", pytrace=False)
+
+        log_response(f"Status Code: {response.status_code}", test_name)
+        log_response(f"Response Body (first 500 chars): {response.text[:500]}...", test_name)
+
+        assert 400 <= response.status_code < 500, \
+            f"Expected 4xx status code for malicious filename '{malicious_filename}', got {response.status_code}"
+        assert not is_server_error(response.status_code), f"Server error occurred for filename {malicious_filename}"
+
 
     # ----- Fuzzing Tests using Hypothesis (from previous response) -----
 
@@ -320,7 +355,7 @@ class TestApiCreateFile:
                 'Cs',
                 'Cc',
             ),
-            blacklist_characters='\\/\0'
+            blacklist_characters='\\/\0' # Blacklist slashes, backslashes, null bytes
         ),
         min_size=1,
         max_size=255 # Common filesystem limit
@@ -344,8 +379,14 @@ class TestApiCreateFile:
             log_response(f"Request failed: {e}", test_name)
             return
 
+        # This fuzz test checks broader filename handling, not just path traversal which is tested above.
+        # A strict check might be: assert response.status_code == 200
+        # However, some generated filenames might be legitimately invalid (e.g., too long if server enforces < 255, specific chars).
+        # Therefore, only check for server errors which indicate unexpected crashes.
+        # Client errors (4xx) might be acceptable for certain fuzz inputs.
         assert not is_server_error(response.status_code), \
             f"Server error ({response.status_code}) for filename: {filename!r}"
+
 
     fuzzy_purposes = st.one_of(
         st.none(), st.booleans(), st.integers(),
@@ -362,8 +403,10 @@ class TestApiCreateFile:
         file_obj = io.BytesIO(b"Purpose fuzz test")
         files = {"file": ("purpose_test.txt", file_obj, "text/plain")}
         if isinstance(purpose, bytes):
+             # Try decoding bytes, replace errors if needed for data field
              data = {"purpose": purpose.decode('utf-8', errors='replace')}
         else:
+             # Convert other types to string as multipart typically sends strings
              data = {"purpose": str(purpose)}
 
         try:
@@ -377,12 +420,14 @@ class TestApiCreateFile:
         assert not is_server_error(response.status_code), \
             f"Server error ({response.status_code}) for purpose: {purpose!r}"
 
+        # Check logic based on whether the fuzz input matches the expected valid purpose
         if str(purpose) == EXPECTED_PURPOSE:
             assert response.status_code == 200, \
                 f"Expected 200 for valid purpose '{EXPECTED_PURPOSE}', got {response.status_code}"
         elif response.status_code == 200:
+             # This might indicate the server is too lenient with 'purpose' validation
              log_response(f"WARNING: Received 200 OK for unexpected purpose: {purpose!r}", test_name)
-        else: # Expecting 4xx
+        else: # Expecting 4xx for invalid purposes
             assert 400 <= response.status_code < 500, \
                 f"Expected client error (4xx) for invalid purpose {purpose!r}, got {response.status_code}"
 
@@ -442,8 +487,14 @@ class TestApiCreateFile:
         assert not is_server_error(response.status_code), \
             f"Server error ({response.status_code}) for combined input: fn={filename!r}, p={purpose_val!r}, len={len(content)}"
 
-        # Further checks depend heavily on API logic (is purpose_val always invalid unless 'assistants'?)
+        # Basic logic checks, might need refinement based on specific API rules
         if purpose_val == EXPECTED_PURPOSE and response.status_code != 200:
              log_response(f"WARNING: Expected 200 for valid purpose but got {response.status_code} in combined test.", test_name)
         elif purpose_val != EXPECTED_PURPOSE and not (400 <= response.status_code < 500):
-             log_response(f"WARNING: Expected 4xx for invalid purpose '{purpose_val}' but got {response.status_code} in combined test.", test_name)
+             # If purpose is invalid, expect 4xx. If we get 200 or 5xx, log a warning/potentially fail.
+             # Allow 200 if *maybe* the filename or content caused a specific override? Less likely.
+             # Focus on avoiding 5xx primarily.
+             if response.status_code == 200:
+                 log_response(f"WARNING: Received 200 OK for invalid purpose '{purpose_val!r}' in combined test.", test_name)
+             else: # Not 200, not 4xx, not 5xx (already asserted above) -> Unexpected status code
+                 log_response(f"INFO: Unexpected status {response.status_code} for invalid purpose '{purpose_val!r}' in combined test.", test_name)
