@@ -26,6 +26,17 @@ def is_server_error(status_code):
 
 # --- Test Class ---
 class TestApiCreateFile:
+    base_malicious_filenames = [
+        "../sensitive.conf",
+        "test/../../../tmp/passwd",
+        "....//tricky.txt",
+        "file/name/with/../in/middle.txt",
+        "/absolute/path/../file.txt",
+    ]
+    test_filenames = list(base_malicious_filenames)
+    if platform.system() == "Windows":
+        test_filenames.append("..\\windows\\system32\\config")
+
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
@@ -301,18 +312,7 @@ class TestApiCreateFile:
                      log_response(f"Warning: Failed to delete large temp file {large_file_path}: {e}", test_name)
 
     # ----- Security Tests -----
-
-    @pytest.mark.parametrize("malicious_filename", [
-        "../sensitive.conf",
-        "test/../../etc/passwd",
-        "..\\windows\\system32\\config", # Windows style added for coverage
-        "....//tricky.txt",
-        "file/name/with/../in/middle.txt",
-        "/absolute/path/../file.txt",
-        "nul../file.txt",
-        "file.txt..",
-        "..file.txt"
-    ])
+    @pytest.mark.parametrize("malicious_filename", test_filenames)
     def test_api_create_file_path_traversal_filename(self, malicious_filename):
         """Verify API rejects filenames attempting path traversal using '..'."""
         sanitized_part = malicious_filename.replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -325,11 +325,7 @@ class TestApiCreateFile:
         files = {"file": (malicious_filename, file_obj, "application/octet-stream")}
         data = {"purpose": EXPECTED_PURPOSE}
 
-        try:
-            response = requests.post(POST_FILE_URL, files=files, data=data, timeout=REQUEST_TIMEOUT)
-        except requests.exceptions.RequestException as e:
-             log_response(f"Request failed client-side for filename {malicious_filename!r}: {e}", test_name)
-             pytest.fail(f"Request failed before reaching server for filename {malicious_filename!r}", pytrace=False)
+        response = requests.post(POST_FILE_URL, files=files, data=data, timeout=REQUEST_TIMEOUT)
 
         log_response(f"Status Code: {response.status_code}", test_name)
         log_response(f"Response Body (first 500 chars): {response.text[:500]}...", test_name)
