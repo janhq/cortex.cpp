@@ -14,13 +14,47 @@ static std::pair<Json::Value, Json::Value> CreateResponse(
   res["message"] = msg;
   return {status, res};
 }
+
+// this is mostly copied from local_engine.cc
+struct StreamContext {
+  std::shared_ptr<std::function<void(Json::Value&&, Json::Value&&)>> callback;
+  bool need_stop;
+
+  static size_t write_callback(char* ptr, size_t size, size_t nmemb,
+                               void* userdata) {
+    auto* ctx = static_cast<StreamContext*>(userdata);
+    size_t data_length = size * nmemb;
+    if (data_length <= 6)
+      return data_length;
+
+    std::string chunk{ptr, data_length};
+    CTL_INF(chunk);
+    Json::Value status;
+    status["is_stream"] = true;
+    status["has_error"] = false;
+    status["status_code"] = 200;
+    Json::Value chunk_json;
+    chunk_json["data"] = chunk;
+
+    if (chunk.find("[DONE]") != std::string::npos) {
+      status["is_done"] = true;
+      ctx->need_stop = false;
+    } else {
+      status["is_done"] = false;
+    }
+
+    (*ctx->callback)(std::move(status), std::move(chunk_json));
+    return data_length;
+  };
+};
+
 }  // namespace
 
 VllmEngine::VllmEngine()
     : cortex_port_{std::stoi(
           file_manager_utils::GetCortexConfig().apiServerPort)},
-      port_offsets_{true}  // cortex_port + 0 is always used (by cortex itself)
-{}
+      port_offsets_{true},  // cortex_port + 0 is always used (by cortex itself)
+      queue_{2 /* threadNum */, "vLLM engine"} {}
 
 VllmEngine::~VllmEngine() {
   // NOTE: what happens if we can't kill subprocess?
@@ -84,14 +118,62 @@ void VllmEngine::HandleChatCompletion(
     port = model_process_map_[model].port;
   }
 
+  const std::string url =
+      "http://127.0.0.1:" + std::to_string(port) + "/v1/chat/completions";
+  const std::string json_str = json_body->toStyledString();
+
   bool stream = (*json_body)["stream"].asBool();
   if (stream) {
-    auto [status, res] = CreateResponse("stream=true is not yet supported", 400);
-    callback(std::move(status), std::move(res));
+    queue_.runTaskInQueue([url = std::move(url), json_str = std::move(json_str),
+                           callback = std::move(callback)] {
+      CURL* curl = curl_easy_init();
+      if (!curl) {
+        auto [status, res] = CreateResponse("Internal server error", 500);
+        callback(std::move(status), std::move(res));
+      }
+
+      struct curl_slist* headers = nullptr;
+      headers = curl_slist_append(headers, "Content-Type: application/json");
+
+      curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+      curl_easy_setopt(curl, CURLOPT_POST, 1L);
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str.c_str());
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, json_str.length());
+      curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+
+      StreamContext ctx;
+      ctx.callback =
+          std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
+              callback);
+      ctx.need_stop = true;
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+                       StreamContext::write_callback);
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
+
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        auto msg = curl_easy_strerror(res);
+        auto [status, res] = CreateResponse(msg, 500);
+        callback(std::move(status), std::move(res));
+      }
+
+      curl_slist_free_all(headers);
+      curl_easy_cleanup(curl);
+      if (ctx.need_stop) {
+        Json::Value status;
+        status["is_done"] = true;
+        status["has_error"] = false;
+        status["is_stream"] = true;
+        status["status_code"] = 200;
+        callback(std::move(status), Json::Value{});
+      }
+
+      return;
+    });
   } else {
-    const std::string url =
-        "http://127.0.0.1:" + std::to_string(port) + "/v1/chat/completions";
-    auto result = curl_utils::SimplePostJson(url, json_body->toStyledString());
+    // non-streaming
+    auto result = curl_utils::SimplePostJson(url, json_str);
 
     if (result.has_error()) {
       auto [status, res] = CreateResponse(result.error(), 400);
@@ -173,7 +255,7 @@ void VllmEngine::LoadModel(
 
     // https://docs.astral.sh/uv/reference/cli/#uv-run
     std::vector<std::string> cmd =
-        python_utils::BuildUvCommand("run", env_dir.string());
+        python_utils::UvBuildCommand("run", env_dir.string());
     cmd.push_back("vllm");
     cmd.push_back("serve");
     cmd.push_back(model_path.string());

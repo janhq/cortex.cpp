@@ -2,6 +2,7 @@
 #include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
 #include "python_utils.h"
+#include "trantor/utils/ConcurrentTaskQueue.h"
 
 class VllmEngine : public EngineI {
  private:
@@ -15,6 +16,9 @@ class VllmEngine : public EngineI {
   mutable std::shared_mutex mutex_;
   std::unordered_map<std::string, python_utils::PythonSubprocess>
       model_process_map_;
+
+  // TODO: will use cortex's main TaskQueue once llama.cpp PR is merged
+  trantor::ConcurrentTaskQueue queue_;
 
  public:
   VllmEngine();

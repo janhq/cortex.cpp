@@ -433,6 +433,7 @@ cpp::result<void, std::string> EngineService::DownloadVllm(
     std::vector<std::string> cmd =
         python_utils::UvBuildCommand("venv", vllm_path.string());
     cmd.push_back("--relocatable");
+    cmd.push_back("--seed");
     auto result = cortex::process::SpawnProcess(cmd);
     if (result.has_error())
       return cpp::fail(result.error());
