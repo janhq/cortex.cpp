@@ -84,11 +84,18 @@ void RunCmd::Exec(bool run_detach,
       CLI_LOG("Error: " + model_entry.error());
       return;
     }
-    yaml_handler.ModelConfigFromFile(
-        fmu::ToAbsoluteCortexDataPath(
-            fs::path(model_entry.value().path_to_model_yaml))
-            .string());
-    auto mc = yaml_handler.GetModelConfig();
+
+    config::ModelConfig mc;
+    if (model_entry.value().engine == kVllmEngine) {
+      // vLLM engine doesn't have model config
+      mc.engine = kVllmEngine;
+    } else {
+      yaml_handler.ModelConfigFromFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      mc = yaml_handler.GetModelConfig();
+    }
 
     // Check if engine existed. If not, download it
     {

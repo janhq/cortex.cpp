@@ -137,7 +137,11 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
       new_data["content"] = user_input;
       histories_.push_back(std::move(new_data));
 
-      Json::Value json_data = mc.ToJson();
+      // vLLM doesn't support params used model config
+      Json::Value json_data;
+      if (mc.engine != kVllmEngine) {
+        json_data = mc.ToJson();
+      }
       json_data["engine"] = mc.engine;
 
       Json::Value msgs_array(Json::arrayValue);
