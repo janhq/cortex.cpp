@@ -86,7 +86,7 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
 #endif
 }
 
-void GGUFHandler::CheckOffset(int offset) const {
+void GGUFHandler::CheckOffset(size_t offset) const {
   if (offset > file_size_)
     throw std::runtime_error("Unexpected EOF");
 }

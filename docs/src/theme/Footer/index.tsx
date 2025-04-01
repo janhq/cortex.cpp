@@ -141,8 +141,8 @@ function Footer(): JSX.Element | null {
             width={160}
             className="mb-4"
             sources={{
-              light: useBaseUrl("/img/logos/homebrew-dark.svg"),
-              dark: useBaseUrl("/img/logos/homebrew-white.svg"),
+              light: useBaseUrl("/img/logos/menlo.svg"),
+              dark: useBaseUrl("/img/logos/menlo.svg"),
             }}
           />
         </div>

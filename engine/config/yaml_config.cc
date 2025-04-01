@@ -55,7 +55,7 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       }
     }
 
-  } catch (const YAML::BadFile& e) {
+  } catch (const YAML::BadFile&) {
     throw;
   }
 }

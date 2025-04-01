@@ -107,7 +107,7 @@ TEST_F(DownloadTaskQueueTest, ConcurrentPushAndPop) {
   std::atomic<int> poppedTasks{0};
 
   for (int i = 0; i < 4; ++i) {
-    pushThreads.emplace_back([this, i, &pushedTasks]() {
+    pushThreads.emplace_back([this, i, numTasks, &pushedTasks]() {
       for (int j = 0; j < numTasks; ++j) {
         queue.push(CreateDownloadTask("task_" + std::to_string(i) + "_" +
                                       std::to_string(j)));
@@ -115,7 +115,7 @@ TEST_F(DownloadTaskQueueTest, ConcurrentPushAndPop) {
       }
     });
 
-    popThreads.emplace_back([this, &poppedTasks, &pushedTasks]() {
+    popThreads.emplace_back([this, numTasks, &poppedTasks, &pushedTasks]() {
       while (poppedTasks.load() < pushedTasks.load() ||
              pushedTasks.load() < numTasks * 4) {
         if (auto task = queue.pop()) {
