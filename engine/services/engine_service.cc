@@ -201,6 +201,16 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     } else {
       return cpp::fail("No variant provided");
     }
+  } else if (ne == kVllmEngine) {
+    // variant is ignored for vLLM
+    if (version == std::nullopt) {
+      path_to_remove = python_utils::GetEnvsPath() / "vllm";
+
+      // we only clean uv cache when all vLLM versions are deleted
+      python_utils::UvCleanCache();
+    } else {
+      path_to_remove = python_utils::GetEnvsPath() / "vllm" / version.value();
+    }
   } else {
     return cpp::fail("Not implemented for engine " + ne);
   }
@@ -394,8 +404,8 @@ cpp::result<void, std::string> EngineService::DownloadVllm(
   // NOTE: everything below is not async
   // to make it async, we have to run everything in a thread (spawning and waiting
   // for subprocesses)
-  if (!python_utils::IsUvInstalled()) {
-    auto result = python_utils::InstallUv();
+  if (!python_utils::UvIsInstalled()) {
+    auto result = python_utils::UvInstall();
     if (result.has_error())
       return result;
   }
@@ -421,21 +431,20 @@ cpp::result<void, std::string> EngineService::DownloadVllm(
   // initialize venv
   if (!fs::exists(vllm_path / ".venv")) {
     std::vector<std::string> cmd =
-        python_utils::BuildUvCommand("venv", vllm_path.string());
+        python_utils::UvBuildCommand("venv", vllm_path.string());
     cmd.push_back("--relocatable");
     auto result = cortex::process::SpawnProcess(cmd);
     if (result.has_error())
       return cpp::fail(result.error());
 
     // TODO: check return code
-    // NOTE: these are not async
     cortex::process::WaitProcess(result.value());
   }
 
   // install vLLM
   {
     std::vector<std::string> cmd =
-        python_utils::BuildUvCommand("pip", vllm_path.string());
+        python_utils::UvBuildCommand("pip", vllm_path.string());
     cmd.push_back("install");
     cmd.push_back("vllm==" + concrete_version);
     auto result = cortex::process::SpawnProcess(cmd);
@@ -444,7 +453,6 @@ cpp::result<void, std::string> EngineService::DownloadVllm(
 
     // TODO: check return code
     // one reason this may fail is that the requested version does not exist
-    // NOTE: these are not async
     cortex::process::WaitProcess(result.value());
   }
 

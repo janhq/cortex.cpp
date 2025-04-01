@@ -14,12 +14,11 @@ std::filesystem::path GetEnvsPath();
 std::filesystem::path GetUvPath();
 
 // UV-related functions
-bool IsUvInstalled();
-cpp::result<void, std::string> InstallUv();
-std::vector<std::string> BuildUvCommand(const std::string& action,
+bool UvIsInstalled();
+cpp::result<void, std::string> UvInstall();
+std::vector<std::string> UvBuildCommand(const std::string& action,
                                         const std::string& directory = "");
-// cpp::result<void, std::string> UvDownloadDeps(
-//     const std::filesystem::path& yaml_path);
+bool UvCleanCache();
 
 struct PythonSubprocess {
   cortex::process::ProcessInfo proc_info;
