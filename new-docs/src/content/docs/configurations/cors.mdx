@@ -1,0 +1,180 @@
+---
+title: CORS Configuration Guide
+description: Setting up CORS
+# slug: "cors"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+This document describes how to configure Cross-Origin Resource Sharing (CORS) settings for the API server
+using the CLI commands and the HTTP API endpoints.
+
+## Command Line Interface (CLI)
+
+Basic Usage
+
+```bash
+cortex config [OPTIONS] [COMMAND]
+```
+
+To display all current configurations:
+
+```bash
+cortex config status
+```
+
+Example Output:
+```md
++-----------------+-------------------+
+| Config name     | Value             |
++-----------------+-------------------+
+| allowed_origins | http://localhost  |
++-----------------+-------------------+
+| allowed_origins | https://cortex.so |
++-----------------+-------------------+
+| cors            | true              |
++-----------------+-------------------+
+```
+
+### Options
+
+| Option                        | Description                                                  | Example                                                              |
+| ----------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `-h, --help`                  | Print help message and exit                                  |
+| `--cors [on/off]`             | Toggle CORS functionality                                    | cortex config --cors on                                              |
+| `--allowed_origins [origins]` | Set allowed origins for CORS, comma separated without spaces | `cortex config --allowed_origins http://localhost,https://cortex.so` |
+
+### Examples
+
+1. Toggle CORS on:
+
+   ```bash
+   cortex config --cors on
+   ```
+
+2. Toggle CORS off:
+
+   ```bash
+   cortex config --cors off
+   ```
+
+3. Set allowed origins:
+
+   ```bash
+   cortex config --allowed_origins http://localhost,https://cortex.so
+   ```
+
+4. View current configuration:
+   ```bash
+   cortex config status
+   ```
+
+## CORS API Configuration
+
+This document describes the REST API endpoints available for managing CORS configurations.
+
+### Endpoints
+
+To get the current configuration via http.
+
+```http
+GET /v1/configs
+```
+```sh
+curl GET http://127.0.0.1:39281/v1/configs
+```
+```json
+{
+  "allowed_origins": [
+    "http://localhost:39281",
+    "http://127.0.0.1:39281",
+    "http://0.0.0.0:39281"
+  ],
+  "cors": true,
+  "huggingface_token": "",
+  "no_proxy": "example.com,::1,localhost,127.0.0.1",
+  "proxy_password": "",
+  "proxy_url": "",
+  "proxy_username": "",
+  "verify_host_ssl": true,
+  "verify_peer_ssl": true,
+  "verify_proxy_host_ssl": true,
+  "verify_proxy_ssl": true
+}
+```
+
+To update the current configuration.
+
+```http
+PATCH /v1/configs
+```
+
+Request Headers
+
+```
+Content-Type: application/json
+```
+
+Request Body
+```json
+{
+  "cors": true,
+  "allowed_origins": ["http://localhost:39281"]
+}
+```
+
+Response
+```json
+{
+  "config": {
+    "allowed_origins": ["http://localhost:39281"],
+    "cors": true
+  },
+  "message": "Configuration updated successfully"
+}
+```
+
+Equivalent cURL command:
+
+```bash
+curl --location --request PATCH 'http://127.0.0.1:39281/v1/configs' \
+--header 'Content-Type: application/json' \
+--data '{
+    "cors": true,
+    "allowed_origins": [
+        "http://localhost:39281"
+    ]
+}'
+```
+```json
+{
+  "config": {
+    "allowed_origins": [
+      "http://localhost:39281"
+    ],
+    "cors": false,
+    "huggingface_token": "",
+    "no_proxy": "example.com,::1,localhost,127.0.0.1",
+    "proxy_password": "",
+    "proxy_url": "",
+    "proxy_username": "",
+    "verify_host_ssl": true,
+    "verify_peer_ssl": true,
+    "verify_proxy_host_ssl": true,
+    "verify_proxy_ssl": true
+  },
+  "message": "Configuration updated successfully"
+}
+```
+
+## Notes
+
+- Origins for CORS should be provided as comma-separated values without spaces
+- The `--allowed_origins` option only takes effect when CORS is enabled
+
+## Best Practices
+
+1. Always verify CORS status after toggling
+2. Double-check allowed origins to prevent security issues
+3. Use the `status` command to confirm changes have been applied correctly

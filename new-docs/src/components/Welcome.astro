@@ -1,0 +1,317 @@
+---
+import "@fontsource/press-start-2p";
+import "@fontsource/vt323";
+import Navigation from "./Navigation.astro";
+---
+
+<div class="container">
+    <Navigation />
+
+    <main>
+        <div class="hero">
+            <div class="scanlines"></div>
+            <div class="big-logo-container">
+                <svg width="400" height="320" viewBox="0 0 50 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <mask id="mask0_1240_1528" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="40">
+                        <path d="M50 0H0V40H50V0Z" fill="white"/>
+                    </mask>
+                    <g mask="url(#mask0_1240_1528)">
+                        <path d="M49.9999 35.4286C49.9999 37.9529 48.6358 40 46.9543 40H3.04554C1.36352 40 0 37.9529 0 35.4286V4.57209C0 2.0465 1.36352 0 3.04554 0H46.9543C48.6358 0 49.9999 2.0465 49.9999 4.57209V35.4286Z" fill="#98CBF9"/>
+                        <path d="M47.0327 1.04053H4.26747C2.62855 1.04053 1.30084 3.03358 1.30084 5.49349V35.5469C1.30084 38.0056 2.62855 39.9992 4.26747 39.9992H46.9538C48.6358 39.9992 49.9999 37.9521 49.9999 35.4278V5.49349C49.9999 3.03358 48.6716 1.04053 47.0327 1.04053Z" fill="#98CBF9"/>
+                        <path d="M3 4.5C3 3.67157 3.67157 3 4.5 3H45.5C46.3284 3 47 3.67157 47 4.5V35.5C47 36.3284 46.3284 37 45.5 37H4.5C3.67157 37 3 36.3284 3 35.5V4.5Z" stroke="#202020" stroke-miterlimit="10"/>
+                        <path d="M6 6H44V34H6V6Z" fill="#202020"/>
+                        <path d="M16 18H10V12H16V18Z" fill="white"/>
+                        <path d="M12 18H16V14H12V18Z" fill="#98CBF9"/>
+                        <path d="M16 18H10V12H16V18Z" fill="white"/>
+                        <path d="M12 18H16V14H12V18Z" fill="#98CBF9"/>
+                        <path d="M40 18H34V12H40V18Z" fill="white"/>
+                        <path d="M36 18H40V14H36V18Z" fill="#98CBF9"/>
+                        <path d="M40 30H10V24H40V30Z" fill="white"/>
+                        <path d="M40 30H12V26H40V30Z" fill="#98CBF9"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <div class="terminal-content">
+                    <div class="typing-text">Run LLMs Locally</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cards-section">
+            <div class="cards">
+                <a href="https://jan.ai" class="card">
+                    <div class="card-content">
+                        <div class="pixel-icon">👋</div>
+                        <h3>Jan AI</h3>
+                        <p>Our OSS Sister</p>
+                    </div>
+                </a>
+                <a href="https://menlo.ai" class="card">
+                    <div class="card-content">
+                        <div class="pixel-icon"><img src="/menlo.png" alt="Menlo" width="23%" height="23%" /></div>
+                        <h3>Menlo Labs</h3>
+                        <p>Our Parent</p>
+                    </div>
+                </a>
+
+                <a href="https://menlo.ai/products/jade" class="card">
+                    <div class="card-content">
+                        <div class="pixel-icon">💻</div>
+                        <h3>Jade</h3>
+                        <p>Our Enterprise Sister</p>
+                    </div>
+                </a>
+
+                <a href="https://discord.gg/pCbZPnSN" class="card">
+                    <div class="card-content">
+                        <div class="pixel-icon">🎮</div>
+                        <h3>Community</h3>
+                        <p>Our Friends</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+    .container {
+        background: #202020;
+        min-height: 100vh;
+        color: #98cbf9;
+        font-family: "VT323", monospace;
+        padding: 2rem;
+        position: relative;
+    }
+
+    .big-logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 40px;
+        position: relative;
+        z-index: 10;
+        animation: floating 3s ease-in-out infinite;
+    }
+
+    @keyframes floating {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); }
+        100% { transform: translateY(0px); }
+    }
+
+    .hero {
+        min-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding-top: 40px;
+        margin-bottom: 100px;
+    }
+
+    .terminal {
+        background: #000;
+        padding: 2rem;
+        border-radius: 10px;
+        border: 2px solid #98cbf9;
+        width: 80%;
+        max-width: 800px;
+        box-shadow: 0 0 20px rgba(152, 203, 249, 0.2);
+    }
+
+    .terminal-header {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .red {
+        background: #ff5f56;
+    }
+    .yellow {
+        background: #ffbd2e;
+    }
+    .green {
+        background: #27c93f;
+    }
+
+    .terminal-content {
+        font-family: "Press Start 2P", cursive;
+        font-size: 2rem;
+        text-align: center;
+    }
+
+    .typing-text {
+        border-right: 4px solid #98cbf9;
+        animation: blink 1s step-end infinite;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .cards-section {
+        padding-top: 60px;
+        position: relative;
+    }
+
+    .cards-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        max-width: 800px;
+        height: 2px;
+        background: linear-gradient(to right, transparent, #98cbf9, transparent);
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        padding: 2rem;
+    }
+
+    .card {
+        background: #000;
+        border: 2px solid #98cbf9;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: #98cbf9;
+        transition: all 0.3s ease;
+        transform-style: preserve-3d;
+        position: relative;
+    }
+
+    .card:hover {
+        transform: translateY(-10px) rotateX(5deg);
+        box-shadow: 0 0 20px rgba(152, 203, 249, 0.3);
+        border-color: #fff;
+    }
+
+    .pixel-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .card h3 {
+        font-family: "Press Start 2P", cursive;
+        font-size: 1.2rem;
+        margin: 0.5rem 0;
+    }
+
+    .card p {
+        font-size: 1.1rem;
+        opacity: 0.8;
+    }
+
+    .scanlines {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.03) 50%,
+            rgba(0, 0, 0, 0.03) 50%
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+    }
+
+    @keyframes blink {
+        0%,
+        100% {
+            border-color: #98cbf9;
+        }
+        50% {
+            border-color: transparent;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .big-logo-container svg {
+            width: 300px;
+            height: 240px;
+        }
+        
+        .terminal-content {
+            font-size: 1.5rem;
+        }
+
+        .hero {
+            margin-bottom: 80px;
+        }
+
+        .cards-section {
+            padding-top: 40px;
+        }
+
+        .cards {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+    }
+
+    @media (max-width: 580px) {
+        .big-logo-container svg {
+            width: 220px;
+            height: 176px;
+        }
+        
+        .terminal-content {
+            font-size: 1.2rem;
+        }
+
+        .typing-text {
+            display: inline-block;
+            padding: 0 0.5rem;
+        }
+        
+        .hero {
+            margin-bottom: 60px;
+        }
+
+        .cards-section {
+            padding-top: 30px;
+        }
+
+        .cards {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .card h3 {
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 400px) {
+        .big-logo-container svg {
+            width: 180px;
+            height: 144px;
+        }
+        
+        .terminal-content {
+            font-size: 1rem;
+        }
+        
+        .pixel-icon {
+            font-size: 2.5rem;
+        }
+    }
+</style>

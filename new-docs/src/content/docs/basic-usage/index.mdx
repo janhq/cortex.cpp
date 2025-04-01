@@ -1,0 +1,219 @@
+---
+title: Cortex Basic Usage
+description: Cortex Usage Overview
+---
+
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Cortex has an [API server](https://cortex.so/api-reference) that runs at `localhost:39281`.
+
+The port parameter can be set in [`.cortexrc`](/docs/architecture/cortexrc) with the `apiServerPort` parameter.
+
+## Server
+
+By default the server will be started on port `39281`.
+```bash
+cortex start
+```
+
+Start a server with different port number.
+```sh
+cortex-p <port_number>
+```
+
+To create a directory for storing logs and other files.
+```sh
+cortex --data_folder_path <your_directory>
+```
+
+To terminate the cortex server.
+```bash
+curl --request DELETE \
+  --url http://127.0.0.1:39281/processManager/destroy
+```
+
+## Engines
+Cortex currently supports 2 specialized ones for different multi-modal foundation models: llama.cpp and ONNXRuntime.
+
+By default, Cortex installs `llama.cpp` as it main engine as it can be used in most laptops,
+desktop environments and operating systems.
+
+For more information, check out [Engine Management](/docs/engines).
+
+Here are some commands to get you started.
+
+### List all available engines.
+```bash
+curl --request GET \
+  --url http://127.0.0.1:39281/v1/engines
+```
+```json
+{
+  "llama-cpp": [
+    {
+      "engine": "llama-cpp",
+      "name": "linux-amd64-avx2-cuda-12-0",
+      "version": "v0.1.49"
+    }
+  ]
+}
+```
+
+### Install an Engine (eg llama-cpp)
+```bash
+curl http://127.0.0.1:39281/v1/engines/llama-cpp/install \
+  --request POST \
+  --header 'Content-Type: application/json'
+```
+```json
+{
+  "message": "Engine starts installing!"
+}
+```
+
+## Models
+
+### Pull a Model
+```sh
+curl --request POST \
+  --url http://127.0.0.1:39281/v1/models/pull \
+  -H "Content-Type: application/json" \
+  --data '{"model": "tinyllama:1b-gguf-q3-km"}'
+```
+```json
+{
+  "message": "Model start downloading!",
+  "task": {
+    "id": "tinyllama:1b-gguf-q3-km",
+    "items": [
+      {
+        "bytes": 0,
+        "checksum": "N/A",
+        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q3-km/metadata.yml",
+        "downloadedBytes": 0,
+        "id": "metadata.yml",
+        "localPath": "/home/rpg/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q3-km/metadata.yml"
+      },
+      {
+        "bytes": 0,
+        "checksum": "N/A",
+        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q3-km/model.gguf",
+        "downloadedBytes": 0,
+        "id": "model.gguf",
+        "localPath": "/home/rpg/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q3-km/model.gguf"
+      },
+      {
+        "bytes": 0,
+        "checksum": "N/A",
+        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q3-km/model.yml",
+        "downloadedBytes": 0,
+        "id": "model.yml",
+        "localPath": "/home/rpg/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q3-km/model.yml"
+      }
+    ],
+    "type": "Model"
+  }
+}
+```
+
+If the model download was interrupted, this request will download the remainder of the model files.
+
+The downloaded models are saved to the [Cortex Data Folder](/docs/architecture/data-folder).
+
+### Stop Model Download
+```sh
+curl --request DELETE \
+  --url http://127.0.0.1:39281/v1/models/pull \
+  --header 'Content-Type: application/json' \
+  --data '{"taskId": "tinyllama:tinyllama:1b-gguf-q3-km"}'
+```
+
+### List All Models
+```bash
+curl --request GET \
+  --url http://127.0.0.1:39281/v1/models
+```
+
+### Delete a Model
+```bash
+curl --request DELETE \
+  --url http://127.0.0.1:39281/v1/models/tinyllama:1b-gguf-q3-km
+```
+```json
+{
+  "message":"Deleted successfully!"
+}
+```
+
+## Run Models
+### Start Model
+```bash
+# Start the model
+curl --request POST \
+  --url http://127.0.0.1:39281/v1/models/start \
+  --header 'Content-Type: application/json' \
+  --data '{"model": "llama3.1:8b-gguf-q4-km"}'
+```
+```json
+{
+  "message":"Started successfully!"
+}
+```
+
+### Create Chat Completion
+```bash
+# Invoke the chat completions endpoint
+curl --request POST \
+  --url http://localhost:39281/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  --data '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a Haiku about cats and AI"
+      },
+    ],
+    "model": "tinyllama:1b-gguf",
+    "stream": false,
+}'
+```
+```json
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Whiskers soft as code\nMachines mimic their gaze\nFurry, digital dreamer",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1737722349,
+  "id": "5vjsnGlRQfxw6CNzzkph",
+  "model": "_",
+  "object": "chat.completion",
+  "system_fingerprint": "_",
+  "usage": {
+    "completion_tokens": 19,
+    "prompt_tokens": 19,
+    "total_tokens": 38
+  }
+}
+```
+
+### Stop Model
+```bash
+curl --request POST \
+  --url http://127.0.0.1:39281/v1/models/stop \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "tinyllama:1b-gguf"
+}'
+```
+```json
+{
+  "message":"Stopped successfully!"
+}
+```

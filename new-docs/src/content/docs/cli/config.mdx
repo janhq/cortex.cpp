@@ -1,0 +1,103 @@
+---
+title: Cortex Config
+description: Cortex config command
+# slug: "config"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# `cortex config`
+
+:::warning
+At the moment, the `cortex config` command only supports a few configurations. More
+configurations will be added soon.
+:::
+
+This command allows you to update server configurations such as CORS and Allowed Headers.
+
+## Usage
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex config [options] [subcommand]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe config [options] [subcommand]
+  ```
+  </TabItem>
+</Tabs>
+
+**Options**:
+
+| Option           | Description                               | Required | Default value        | Example |
+|------------------|-------------------------------------------|----------|----------------------|---------|
+| `--cors`         | Toggle CORS                               | No       | true                 | `on`, `off` |
+| `--allowed_origins`| Allowed origins for CORS                | No       | `http://localhost:39281`, `http://127.0.0.1:39281` | `http://localhost:3000`  |
+| `-h`, `--help`   | Display help information for the command. | No       | -                    | `-h`          |
+
+---
+# Subcommands:
+
+## `cortex config status`
+:::info
+This CLI command calls the following API endpoint:
+- [Get Configurations](/api-reference#tag/configurations/get/v1/configs)
+:::
+This command returns all server configurations.
+
+**Usage**:
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex config status
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe config status
+
+  ```
+  </TabItem>
+</Tabs>
+
+For example, it returns the following:
+
+```
++-----------------------+-------------------------------------+
+| Config name           | Value                               |
++-----------------------+-------------------------------------+
+| allowed_origins       | http://localhost:39281              |
++-----------------------+-------------------------------------+
+| allowed_origins       | http://127.0.0.1:39281              |
++-----------------------+-------------------------------------+
+| allowed_origins       | http://0.0.0.0:39281                |
++-----------------------+-------------------------------------+
+| cors                  | true                                |
++-----------------------+-------------------------------------+
+| huggingface_token     |                                     |
++-----------------------+-------------------------------------+
+| no_proxy              | example.com,::1,localhost,127.0.0.1 |
++-----------------------+-------------------------------------+
+| proxy_password        |                                     |
++-----------------------+-------------------------------------+
+| proxy_url             |                                     |
++-----------------------+-------------------------------------+
+| proxy_username        |                                     |
++-----------------------+-------------------------------------+
+| verify_host_ssl       | true                                |
++-----------------------+-------------------------------------+
+| verify_peer_ssl       | true                                |
++-----------------------+-------------------------------------+
+| verify_proxy_host_ssl | true                                |
++-----------------------+-------------------------------------+
+| verify_proxy_ssl      | true                                |
++-----------------------+-------------------------------------+
+
+```

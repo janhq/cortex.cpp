@@ -1,0 +1,115 @@
+---
+title: Cortex Configs
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# `cortex configs`
+
+This command allows you to customize the Cortex's configurations.
+
+
+
+**Usage**:
+
+```bash
+cortex configs [options]
+```
+
+**Options**:
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+
+## `cortex configs get`
+
+This command returns a config detail defined by a config `name`.
+
+
+
+**Usage**:
+
+```bash
+cortex configs get <name>
+```
+For example, it returns the following:
+```bash
+┌─────────┬────────┐
+│ (index) │ Values │
+├─────────┼────────┤
+│ apiKey  │ ''     │
+└─────────┴────────┘
+
+```
+:::info
+To get a config name, run the [`configs list`](/docs/cli/configs/list) command first.
+:::
+**Options**:
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `name`        | The name of the config that you want to retrieve.     | Yes      | -             | `openai`|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+
+## `cortex configs list`
+
+This command lists all the cortex's configurations.
+
+
+
+**Usage**:
+
+```bash
+cortex configs list [options]
+```
+For example, it returns the following:
+```bash
+┌────────────────┬────────┬───────────────────────────┐
+│ (index)        │ apiKey │ Values                    │
+├────────────────┼────────┼───────────────────────────┤
+│ dataFolderPath │        │ 'C:\\Users\\ACER\\cortex' │
+│ initialized    │        │ true                      │
+│ cortexCppHost  │        │ '127.0.0.1'               │
+│ cortexCppPort  │        │ 3929                      │
+│ openai         │ ''     │                           │
+│ groq           │ ''     │                           │
+│ mistral        │ ''     │                           │
+│ anthropic      │ ''     │                           │
+└────────────────┴────────┴───────────────────────────┘
+
+```
+**Options**:
+
+| Option                    | Description                                        | Required | Default value | Example              |
+|---------------------------|----------------------------------------------------|----------|---------------|----------------------|
+| `-h`, `--help`            | Display help information for the command.                          | No       | -             | `-h`             |
+
+## `cortex configs set`
+
+This command sets a specific configuration within Cortex.
+
+
+
+**Usage**:
+
+```bash
+cortex configs set [options]
+```
+
+Example:
+```bash
+# Set the OpenAI API key
+cortex configs set -k apiKey -v yourAPIKey -g openai
+```
+
+**Options**:
+
+| Option                | Description                         | Required | Default value | Example          |
+|-----------------------|-------------------------------------|----------|---------------|------------------|
+| `-k, --key <key>`     | Configuration key.                   | Yes      | -             | `-k configKey`   |
+| `-v, --value <value>` | Configuration value.                 | Yes      | -             | `-v configValue` |
+| `-g, --group <group>` | Configuration group.                 | Yes       | -             | `-g configGroup` |
+| `-h, --help`          | Display help information for the command.            | No       | -             | `-h`             |

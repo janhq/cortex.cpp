@@ -1,0 +1,66 @@
+---
+title: Hugging Face
+description: Cortex supports all `GGUF` and `ONNX` models available in Huggingface repositories, providing access to a wide range of models.
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+Cortex.cpp supports all `GGUF` from the [Hugging Face Hub](https://huggingface.co).
+
+You can pull HuggingFace models via:
+- repository handle: eg `author/model_id`
+- direct url: eg `https://huggingface.co/QuantFactory/OpenMath2-Llama3.1-8B-GGUF/blob/main/OpenMath2-Llama3.1-8B.Q4_0.gguf`
+
+
+## GGUF
+To view all available `GGUF` models on HuggingFace, select the `GGUF` tag in the Libraries section.
+
+![HF GGUF](/img/docs/gguf.png)
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+    ## Pull the Codestral-22B-v0.1-GGUF model from the bartowski organization
+    cortex pull bartowski/Codestral-22B-v0.1-GGUF
+
+    # Pull the gemma-7b model from the google organization
+    cortex pull https://huggingface.co/QuantFactory/OpenMath2-Llama3.1-8B-GGUF/blob/main/OpenMath2-Llama3.1-8B.Q4_0.gguf
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+    ## Pull the Codestral-22B-v0.1-GGUF model from the bartowski organization
+    cortex.exe pull bartowski/Codestral-22B-v0.1-GGUF
+
+    # Pull the gemma-7b model from the google organization
+    cortex.exe pull google/gemma-7b
+  ```
+  </TabItem>
+</Tabs>
+
+<!-- ## ONNX
+![HF ONNX](/img/docs/onnx.png)
+To view all available `ONNX` models on HuggingFace, select the `ONNX` tag in the Libraries section.
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+    ## Pull the XLM-Roberta-Large-Vit-B-16Plus model from the immich-app organization
+    cortex pull immich-app/XLM-Roberta-Large-Vit-B-16Plus
+
+    # Pull the mt0-base model from the bigscience organization
+    cortex pull bigscience/mt0-base
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+    ## Pull the XLM-Roberta-Large-Vit-B-16Plus model from the immich-app organization
+    cortex.exe pull immich-app/XLM-Roberta-Large-Vit-B-16Plus
+
+    # Pull the mt0-base model from the bigscience organization
+    cortex.exe pull bigscience/mt0-base
+  ```
+  </TabItem>
+</Tabs>
+
+## TensorRT-LLM
+We are still working to support all available `TensorRT-LLM` models on HuggingFace. For now, Cortex.cpp only supports built-in `TensorRT-LLM` models, which can be downloaded from the [Cortex Model Repos](/docs/capabilities/models/sources/cortex-hub). -->

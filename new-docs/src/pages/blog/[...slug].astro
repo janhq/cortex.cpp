@@ -1,0 +1,263 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from "../../layouts/Layout.astro";
+import Navigation from '../../components/Navigation.astro';
+import "@fontsource/press-start-2p";
+import "@fontsource/vt323";
+
+export async function getStaticPaths() {
+  const blogEntries = await getCollection('blog');
+  return blogEntries.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+
+<Layout title={`${entry.data.title} - Cortex Blog`}>
+  <div class="container">
+    <Navigation activeTab="blog" />
+    
+    <main>
+      <article class="blog-post">
+        <header class="post-header">
+          <h1 class="post-title">{entry.data.title}</h1>
+          <div class="post-meta">
+            <span class="date">{entry.data.date}</span>
+            <span class="author">by {entry.data.author}</span>
+          </div>
+        </header>
+        
+        <div class="post-content">
+          {entry.data.image && <img src={entry.data.image} alt={entry.data.title} class="featured-image" />}
+          
+          <Content />
+          
+          <div class="post-footer">
+            <div class="tags">
+              {entry.data.tags.map(tag => (
+                <span class="tag">{tag}</span>
+              ))}
+            </div>
+            <div class="share">
+              <a href="#" class="share-link">Share</a>
+              <a href="#" class="share-link">Tweet</a>
+            </div>
+          </div>
+        </div>
+      </article>
+      
+      <div class="back-link">
+        <a href="/blog" class="back-btn">← Back to Blog</a>
+      </div>
+    </main>
+  </div>
+</Layout>
+
+<style>
+  .container {
+    background: #202020;
+    min-height: 100vh;
+    color: #98cbf9;
+    font-family: "VT323", monospace;
+    padding: 2rem;
+    position: relative;
+  }
+  
+  main {
+    padding-top: 80px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .blog-post {
+    background: #000;
+    border: 2px solid #98cbf9;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 0 20px rgba(152, 203, 249, 0.2);
+  }
+  
+  .post-header {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .post-title {
+    font-family: "Press Start 2P", cursive;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #98cbf9;
+    line-height: 1.4;
+    text-shadow: 0 0 10px rgba(152, 203, 249, 0.3);
+  }
+  
+  .post-meta {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    font-size: 1.2rem;
+    opacity: 0.8;
+  }
+  
+  .featured-image {
+    width: 100%;
+    border-radius: 8px;
+    margin: 1.5rem 0 2.5rem;
+    border: 1px solid rgba(152, 203, 249, 0.3);
+  }
+  
+  .post-content {
+    font-size: 1.2rem;
+    line-height: 1.6;
+  }
+  
+  .post-content :global(h2) {
+    font-family: "Press Start 2P", cursive;
+    font-size: 1.5rem;
+    margin: 2.5rem 0 1.5rem;
+    color: #98cbf9;
+  }
+  
+  .post-content :global(p) {
+    margin-bottom: 1.5rem;
+  }
+  
+  .post-content :global(ul), .post-content :global(ol) {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  
+  .post-content :global(li) {
+    margin-bottom: 0.8rem;
+  }
+  
+  .post-content :global(table) {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 2px solid #98cbf9;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 2rem 0;
+  }
+  
+  .post-content :global(th), .post-content :global(td) {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(152, 203, 249, 0.3);
+  }
+  
+  .post-content :global(th) {
+    font-family: "Press Start 2P", cursive;
+    font-size: 0.9rem;
+    background: rgba(152, 203, 249, 0.1);
+    color: #fff;
+  }
+  
+  .post-content :global(tr:last-child td) {
+    border-bottom: none;
+  }
+  
+  .post-content :global(pre) {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: #0a0a0a;
+    border: 2px solid #98cbf9;
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+  
+  .post-content :global(code) {
+    font-family: monospace;
+    color: #98cbf9;
+  }
+  
+  .post-footer {
+    margin-top: 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(152, 203, 249, 0.3);
+    padding-top: 1.5rem;
+  }
+  
+  .tags {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  
+  .tag {
+    display: inline-block;
+    background: rgba(152, 203, 249, 0.1);
+    color: #98cbf9;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(152, 203, 249, 0.3);
+  }
+  
+  .share {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .share-link {
+    color: #98cbf9;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  .share-link:hover {
+    color: #fff;
+    text-decoration: underline;
+  }
+  
+  .back-link {
+    margin-bottom: 3rem;
+  }
+  
+  .back-btn {
+    display: inline-block;
+    color: #98cbf9;
+    text-decoration: none;
+    font-family: "Press Start 2P", cursive;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+  }
+  
+  .back-btn:hover {
+    color: #fff;
+    transform: translateX(-5px);
+  }
+  
+  @media (max-width: 768px) {
+    .post-title {
+      font-size: 1.5rem;
+    }
+    
+    .post-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    
+    .post-content {
+      font-size: 1.1rem;
+    }
+    
+    .post-content :global(h2) {
+      font-size: 1.3rem;
+    }
+    
+    .post-footer {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+  }
+</style> 

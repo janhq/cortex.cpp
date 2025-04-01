@@ -1,0 +1,37 @@
+---
+title: Cortex Engines Init
+description: Cortex engines subcommands.
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# `cortex engines init`
+This command sets up and downloads the required dependencies to run the available engines within Cortex. Currently, Cortex supports three engines:
+- `Llama.cpp`
+- `Onnx`
+- `Tensorrt-llm`
+## Usage
+```bash
+cortex engines init [options] <name>
+```
+For Example:
+```bash
+## Llama.cpp engine
+cortex engines init llama-cpp
+
+## ONNX engine
+cortex engines init onnxruntime
+
+## Tensorrt-LLM engine
+cortex engines init tensorrt-llm
+
+```
+
+## Options
+
+| Option                    | Description                                        | Required | Default value | Example              |
+|---------------------------|----------------------------------------------------|----------|---------------|----------------------|
+| `name`            | The name of the engine you want to run.                         | Yes       | -             | -             |
+| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`             |

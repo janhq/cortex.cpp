@@ -1,0 +1,114 @@
+---
+title: Cortex Model Repos
+description: Cortex's built-in models are hosted on Huggingface, supporting multi-engine repositories.
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+![cortex repo](/img/docs/repo.png)
+
+[Cortex Model Repos](https://huggingface.co/cortexso) are Cortex.cpp's built-in models hosted on Huggingface, which uses a single Git repository to hold different versions of a model, which can be pulled using Docker or Ollama-like syntax.
+
+:::info
+We also plan to provide alternative hosting locations or servers to replicate the content, ensuring access in regions where HuggingFace is blocked or has slow download speeds.
+::: 
+
+## Why HuggingFace?
+Cortex Model Repos are hosted on Huggingface for several reasons:
+- **Tag-Based Formats**: Inspired by Docker and Ollama, Cortex Model Repos uses a tag-based format (`model:version`) that simplifies managing multiple versions and formats of a model.
+- **Git and Git-LFS Based (Inspired by Ollama)**: Using Git and Git-LFS makes mirroring and version control easy.
+- **Mirror-Friendly Setup**: If Huggingface is blocked or slow, repositories can be mirrored across different locations.
+
+## Usage
+Download a built-in model from the [Cortex Model Repos](https://huggingface.co/cortexso) using a `model_id`. You can obtain the `model_id` from the Cortex model repository or the model's specific branch.
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+    # Stable
+    ## Download the default mistral model from: https://huggingface.co/cortexso/mistral/tree/main
+    cortex pull mistral
+
+    ## Download an ONNX version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/onnx
+    cortex pull mistral:onnx
+
+    ## Download a TensorRT-LLM version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/tensorrt-llm-linux-ada
+    cortex pull mistral:tensorrt-llm-linux-ada
+
+    ## Download a 7B version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/7b-gguf
+    cortex pull mistral:7b-gguf
+
+    # Beta
+    ## Download the default mistral model from: https://huggingface.co/cortexso/mistral/tree/main
+    cortex-beta pull mistral
+
+    ## Download an ONNX version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/onnx
+    cortex-beta pull mistral:onnx
+
+    ## Download a TensorRT-LLM version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/tensorrt-llm-linux-ada
+    cortex-beta pull mistral:tensorrt-llm-linux-ada
+
+    ## Download a 7B version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/7b-gguf
+    cortex-beta pull mistral:7b-gguf
+
+    # Nightly
+    ## Download the default mistral model from: https://huggingface.co/cortexso/mistral/tree/main
+    cortex-nightly pull mistral
+
+    ## Download an ONNX version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/onnx
+    cortex-nightly pull mistral:onnx
+
+    ## Download a TensorRT-LLM version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/tensorrt-llm-linux-ada
+    cortex-nightly pull mistral:tensorrt-llm-linux-ada
+
+    ## Download a 7B version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/7b-gguf
+    cortex-nightly pull mistral:7b-gguf
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+    # Stable
+    ## Download the default mistral model from: https://huggingface.co/cortexso/mistral/tree/main
+    cortex.exe pull mistral
+
+    ## Download an ONNX version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/onnx
+    cortex.exe pull mistral:onnx
+
+    ## Download a TensorRT-LLM version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/tensorrt-llm-linux-ada
+    cortex.exe pull mistral:tensorrt-llm-linux-ada
+
+    ## Download a 7B version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/7b-gguf
+    cortex.exe pull mistral:7b-gguf
+
+    # Beta
+    ## Download the default mistral model from: https://huggingface.co/cortexso/mistral/tree/main
+    cortex-beta.exe pull mistral
+
+    ## Download an ONNX version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/onnx
+    cortex-beta.exe pull mistral:onnx
+
+    ## Download a TensorRT-LLM version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/tensorrt-llm-linux-ada
+    cortex-beta.exe pull mistral:tensorrt-llm-linux-ada
+
+    ## Download a 7B version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/7b-gguf
+    cortex-beta.exe pull mistral:7b-gguf
+
+    # Nightly
+    ## Download the default mistral model from: https://huggingface.co/cortexso/mistral/tree/main
+    cortex-nightly.exe pull mistral
+
+    ## Download an ONNX version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/onnx
+    cortex-nightly.exe pull mistral:onnx
+
+    ## Download a TensorRT-LLM version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/tensorrt-llm-linux-ada
+    cortex-nightly.exe pull mistral:tensorrt-llm-linux-ada
+
+    ## Download a 7B version of the mistral model from: https://huggingface.co/cortexso/mistral/tree/7b-gguf
+    cortex-nightly.exe pull mistral:7b-gguf
+  ```
+  </TabItem>
+</Tabs>

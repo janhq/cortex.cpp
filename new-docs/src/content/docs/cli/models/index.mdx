@@ -1,0 +1,395 @@
+---
+title: Cortex Models
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# `cortex models`
+
+This command allows you to start, stop, and manage various local or remote model operations within Cortex.
+
+
+**Usage**:
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models [options] [subcommand]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models [options]
+  ```
+  </TabItem>
+</Tabs>
+
+**Options**:
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+
+---
+# Subcommands:
+
+## `cortex models get`
+
+:::info
+This CLI command calls the following API endpoint:
+- [Get Model](/api-reference#tag/models/get/v1/models/{id})
+:::
+
+This command returns a model detail defined by a `model_id`.
+
+**Usage**:
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models get <model_id>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models get <model_id>
+  ```
+  </TabItem>
+</Tabs>
+
+For example, it returns the following:
+
+```json
+{
+	"ai_template" : "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+	"created" : 127638593791813,
+	"ctx_len" : 8192,
+	"dynatemp_exponent" : 1.0,
+	"dynatemp_range" : 0.0,
+	"engine" : "llama-cpp",
+	"files" :
+	[
+		"models/cortex.so/llama3.1/8b-gguf-q4-km/model.gguf"
+	],
+	"frequency_penalty" : 0.0,
+	"gpu_arch" : "",
+	"id" : "llama3.1:8b-gguf-q4-km",
+	"ignore_eos" : false,
+	"max_tokens" : 8192,
+	"min_keep" : 0,
+	"min_p" : 0.050000000000000003,
+	"mirostat" : false,
+	"mirostat_eta" : 0.10000000000000001,
+	"mirostat_tau" : 5.0,
+	"model" : "llama3.1:8b-gguf-q4-km",
+	"n_parallel" : 1,
+	"n_probs" : 0,
+	"name" : "llama3.1:8b-gguf-q4-km",
+	"ngl" : 33,
+	"object" : "",
+	"os" : "",
+	"owned_by" : "",
+	"penalize_nl" : false,
+	"precision" : "",
+	"presence_penalty" : 0.0,
+	"prompt_template" : "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+	"quantization_method" : "",
+	"repeat_last_n" : 64,
+	"repeat_penalty" : 1.0,
+	"seed" : -1,
+	"size" : 4920739981,
+	"stop" :
+	[
+		"<|end_of_text|>",
+		"<|eot_id|>",
+		"<|eom_id|>"
+	],
+	"stream" : true,
+	"system_template" : "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n",
+	"temperature" : 0.59999999999999998,
+	"text_model" : false,
+	"tfs_z" : 1.0,
+	"top_k" : 40,
+	"top_p" : 0.90000000000000002,
+	"typ_p" : 1.0,
+	"user_template" : "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n",
+	"version" : "1"
+}
+```
+:::info
+This command uses a `model_id` from the model that you have downloaded or available in your file system.
+:::
+
+**Options**:
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `model_id`        | The identifier of the model you want to retrieve.     | Yes      | -             | `mistral`|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+
+## `cortex models list`
+:::info
+This CLI command calls the following API endpoint:
+- [List Model](/api-reference#tag/models/get/v1/models)
+:::
+This command lists all the downloaded local and remote models.
+
+
+
+**Usage**:
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models list [options]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models list [options]
+  ```
+  </TabItem>
+</Tabs>
+
+For example, it returns the following:
+
+```
++---------+---------------------------------------------------------------------------+
+| (Index) | ID                                                                        |
++---------+---------------------------------------------------------------------------+
+| 1       | llama3.2:3b-gguf-q4-km                                                    |
++---------+---------------------------------------------------------------------------+
+| 2       | tinyllama:1b-gguf                                                         |
++---------+---------------------------------------------------------------------------+
+| 3       | TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q2_K.gguf |
++---------+---------------------------------------------------------------------------+
+```
+
+**Options**:
+
+| Option                    | Description                                        | Required | Default value | Example              |
+|---------------------------|----------------------------------------------------|----------|---------------|----------------------|
+| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`                 |
+| `-e`, `--engine`          | Display engines.                                   | No       | -             | `--engine`           |
+| `-v`, `--version`         | Display version for model.                         | No       | -             | `--version`          |
+| `--cpu_mode`              | Display CPU mode.                                  | No       | -             | `--cpu_mode`         |
+| `--gpu_mode`              | Display GPU mode.                                  | No       | -             | `--gpu_mode`         |
+
+
+## `cortex models start`
+
+:::info
+This CLI command calls the following API endpoint:
+- [Start Model](/api-reference#tag/models/post/v1/models/{modelId}/start)
+:::
+
+This command starts a model defined by a `model_id`.
+
+**Usage**:
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models start [options] <model_id>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models start [options] <model_id>
+  ```
+  </TabItem>
+</Tabs>
+
+:::info
+This command uses a `model_id` from the model that you have downloaded or available in your file system.
+:::
+
+**Options**:
+
+| Option                    | Description                                                               | Required | Default value                                | Example                |
+|---------------------------|---------------------------------------------------------------------------|----------|----------------------------------------------|------------------------|
+| `model_id`                | The identifier of the model you want to start.                            | Yes      | `Prompt to select from the available models` | `mistral`              |
+| `--gpus`                  | List of GPUs to use.                                                      | No       | -                                            | `[0,1]`                |
+| `--ctx_len`               | Maximum context length for inference.                                     | No       | `min(8192, max_model_context_length)`        | `1024`                 |
+| `-h`, `--help`            | Display help information for the command.                                 | No       | -                                            | `-h`                   |
+
+## `cortex models stop`
+
+:::info
+This CLI command calls the following API endpoint:
+- [Stop Model](/api-reference#tag/models/post/v1/models/{modelId}/stop)
+:::
+
+This command stops a model defined by a `model_id`.
+
+**Usage**:
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models stop <model_id>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models stop <model_id>
+  ```
+  </TabItem>
+</Tabs>
+
+:::info
+This command uses a `model_id` from the model that you have started before.
+:::
+
+**Options**:
+
+| Option                    | Description                                                                 | Required | Default value        | Example                |
+|---------------------------|-----------------------------------------------------------------------------|----------|----------------------|------------------------|
+| `model_id`                | The identifier of the model you want to stop.                               | Yes      | -                    | `mistral`       |
+| `-h`, `--help`            | Display help information for the command.                                   | No       | -                    | `-h`               |
+
+## `cortex models delete`
+
+:::info
+This CLI command calls the following API endpoint:
+- [Delete Model](/api-reference#tag/models/delete/v1/models/{id})
+:::
+
+This command deletes a local model defined by a `model_id`.
+
+**Usage**:
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models delete <model_id>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models delete <model_id>
+  ```
+  </TabItem>
+</Tabs>
+
+:::info
+This command uses a `model_id` from the model that you have downloaded or available in your file system.
+:::
+
+**Options**:
+
+| Option                    | Description                                                                 | Required | Default value        | Example                |
+|---------------------------|-----------------------------------------------------------------------------|----------|----------------------|------------------------|
+| `model_id`                | The identifier of the model you want to delete.                             | Yes      | -                    | `mistral`       |
+| `-h`, `--help`            | Display help for command.                                                   | No       | -                    | `-h`               |
+
+## `cortex models update`
+
+:::info
+This CLI command calls the following API endpoint:
+- [Update Model](/api-reference#tag/models/patch/v1/models/{modelId)
+:::
+
+This command updates the `model.yaml` file of a local model.
+
+**Usage**:
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models update [options]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models update [options]
+  ```
+  </TabItem>
+</Tabs>
+
+
+**Options**:
+
+| Option                    | Description                                                                 | Required | Default value        | Example                |
+|---------------------------|-----------------------------------------------------------------------------|----------|----------------------|------------------------|
+| `-h`, `--help`            | Display help for command.                                                   | No       | -                    | `-h`               |
+| `--model_id REQUIRED`     | Unique identifier for the model.              | Yes      | -           | `--model_id my_model` |
+| `--name`                  | Name of the model.                            | No       | -           | `--name "GPT Model"` |
+| `--model`                 | Model type or architecture.                   | No       | -           | `--model GPT-4`     |
+| `--version`               | Version of the model to use.                  | No       | -       | `--version 1.2.0`   |
+| `--stop`                  | Stop token to terminate generation.           | No       | -           | `--stop "</s>"`     |
+| `--top_p`                 | Sampling parameter for nucleus sampling.      | No       | -          | `--top_p 0.9`       |
+| `--temperature`           | Controls randomness in generation.            | No       | -          | `--temperature 0.8` |
+| `--frequency_penalty`     | Penalizes repeated tokens based on frequency. | No       | -          | `--frequency_penalty 0.5` |
+| `--presence_penalty`      | Penalizes repeated tokens based on presence.  | No       | `0.0`          | `--presence_penalty 0.6` |
+| `--max_tokens`            | Maximum number of tokens to generate.         | No       | -         | `--max_tokens 1500` |
+| `--stream`                | Stream output tokens as they are generated.   | No       | `false`        | `--stream true`     |
+| `--ngl`                   | Number of generations in parallel.            | No       | -           | `--ngl 4`           |
+| `--ctx_len`               | Maximum context length in tokens.             | No       | -         | `--ctx_len 1024`    |
+| `--engine`                | Compute engine for running the model.         | No       | -           | `--engine CUDA`     |
+| `--prompt_template`       | Template for the prompt structure.            | No       | -           | `--prompt_template "###"` |
+| `--system_template`       | Template for system-level instructions.       | No       | -           | `--system_template "SYSTEM"` |
+| `--user_template`         | Template for user inputs.                     | No       | -           | `--user_template "USER"` |
+| `--ai_template`           | Template for AI responses.                    | No       | -           | `--ai_template "ASSISTANT"` |
+| `--os`                    | Operating system environment.                 | No       | -           | `--os Ubuntu`       |
+| `--gpu_arch`              | GPU architecture specification.               | No       | -           | `--gpu_arch A100`   |
+| `--quantization_method`   | Quantization method for model weights.        | No       | -           | `--quantization_method int8` |
+| `--precision`             | Floating point precision for computations.    | No       | `float32`      | `--precision float16` |
+| `--tp`                    | Tensor parallelism.                           | No       | -           | `--tp 4`            |
+| `--trtllm_version`        | Version of the TRTLLM library.                | No       | -           | `--trtllm_version 2.0` |
+| `--text_model`            | The model used for text generation.           | No       | -           | `--text_model llama2` |
+| `--files`                 | File path or resources associated with the model. | No       | -           | `--files config.json` |
+| `--created`               | Creation date of the model.                   | No       | -           | `--created 2024-01-01` |
+| `--object`                | The object type (e.g., model or file).        | No       | -           | `--object model`    |
+| `--owned_by`              | The owner or creator of the model.            | No       | -           | `--owned_by "Company"` |
+| `--seed`                  | Seed for random number generation.            | No       | -           | `--seed 42`         |
+| `--dynatemp_range`        | Range for dynamic temperature scaling.        | No       | -           | `--dynatemp_range 0.7-1.0` |
+| `--dynatemp_exponent`     | Exponent for dynamic temperature scaling.     | No       | -           | `--dynatemp_exponent 1.2` |
+| `--top_k`                 | Top K sampling to limit token selection.      | No       | -           | `--top_k 50`        |
+| `--min_p`                 | Minimum probability threshold for tokens.     | No       | -           | `--min_p 0.1`       |
+| `--tfs_z`                 | Token frequency selection scaling factor.     | No       | -           | `--tfs_z 0.5`       |
+| `--typ_p`                 | Typicality-based token selection probability. | No       | -           | `--typ_p 0.9`       |
+| `--repeat_last_n`         | Number of last tokens to consider for repetition penalty. | No       | -           | `--repeat_last_n 64` |
+| `--repeat_penalty`        | Penalty for repeating tokens.                 | No       | -           | `--repeat_penalty 1.2` |
+| `--mirostat`              | Mirostat sampling method for stable generation. | No       | -           | `--mirostat 1`      |
+| `--mirostat_tau`          | Target entropy for Mirostat.                  | No       | -           | `--mirostat_tau 5.0` |
+| `--mirostat_eta`          | Learning rate for Mirostat.                   | No       | -           | `--mirostat_eta 0.1` |
+| `--penalize_nl`           | Penalize new lines in generation.             | No       | `false`        | `--penalize_nl true` |
+| `--ignore_eos`            | Ignore the end of sequence token.             | No       | `false`        | `--ignore_eos true` |
+| `--n_probs`               | Number of probability outputs to return.      | No       | -           | `--n_probs 5`       |
+
+## `cortex models import`
+
+This command imports the local model using the model's `gguf` file.
+
+**Usage**:
+
+:::info
+This CLI command calls the following API endpoint:
+- [Import Model](/api-reference#tag/models/post/v1/models/import)
+:::
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models import --model_id <model_id> --model_path </path/to/your/model.gguf>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models import --model_id <model_id> --model_path </path/to/your/model.gguf>
+  ```
+  </TabItem>
+</Tabs>
+
+**Options**:
+
+| Option                    | Description                                                                 | Required | Default value        | Example                |
+|---------------------------|-----------------------------------------------------------------------------|----------|----------------------|------------------------|
+| `-h`, `--help`            | Display help for command.                                                   | No       | -                    | `-h`               |
+| `--model_id`                | The identifier of the model.                             | Yes      | -                    | `mistral`       |
+| `--model_path`                | The path of the model source file.                             | Yes      | -                    | `/path/to/your/model.gguf`       |

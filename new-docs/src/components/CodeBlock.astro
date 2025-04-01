@@ -1,0 +1,96 @@
+---
+export interface Props {
+  code: string;
+  language?: string;
+}
+
+const { code, language = "bash" } = Astro.props;
+const trimmedCode = code.trim();
+---
+
+<div class="code-block-container">
+  <pre><code class={`language-${language}`}>{trimmedCode}</code></pre>
+  <button class="copy-btn" data-command={trimmedCode}>
+    <span class="copy-icon">📋</span>
+  </button>
+</div>
+
+<style>
+  .code-block-container {
+    position: relative;
+    margin: 2rem 0;
+  }
+  
+  .code-block-container pre {
+    margin: 0;
+    padding: 1.5rem;
+    background: #0a0a0a;
+    border: 2px solid #98cbf9;
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+  
+  .code-block-container code {
+    font-family: monospace;
+    color: #98cbf9;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  
+  .copy-btn {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(152, 203, 249, 0.5);
+    border-radius: 5px;
+    color: #98cbf9;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    z-index: 10;
+  }
+  
+  .copy-btn:hover {
+    transform: scale(1.1);
+    color: #fff;
+    border-color: #fff;
+  }
+  
+  .copy-btn.copied {
+    color: #4CAF50;
+    border-color: #4CAF50;
+  }
+</style>
+
+<script>
+  // This script needs to be client-side only
+  // We'll use client:only or client:load directive when importing this component
+  const copyButtons = document.querySelectorAll('.copy-btn');
+  
+  copyButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const command = button.getAttribute('data-command');
+      if (command) {
+        navigator.clipboard.writeText(command).then(() => {
+          // Visual feedback for copy success
+          button.classList.add('copied');
+          const iconElement = button.querySelector('.copy-icon');
+          if (iconElement) {
+            iconElement.textContent = '✓';
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+              button.classList.remove('copied');
+              iconElement.textContent = '📋';
+            }, 2000);
+          }
+        });
+      }
+    });
+  });
+</script> 

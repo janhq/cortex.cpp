@@ -1,0 +1,41 @@
+---
+title: Model Overview
+description: The Model section overview
+---
+
+Models in cortex are used for inference purposes (e.g., chat completion, embedding, etc.) after they
+have been downloaded locally. Currently, we support different engines including `llama.cpp` with the
+GGUF model format, and ONNX for edge or different model deployments.
+
+In the future, you will also be able to run remote models (like OpenAI GPT-4 and Claude 3.5 Sonnet) via
+Cortex. Support for OpenAI and Anthropic engines is under development and will be available soon.
+
+When you run `cortex start` in the terminal, cortex automatically starts an API server. (This
+functionality was inspired by the Docker CLI.) The cortex server manages various model endpoints which
+can facilitate the following:
+- **Model Operations**: Run and stop models.
+- **Model Management**: Pull and manage your local models.
+
+## Model Formats
+
+Cortex supports three model formats and each model format require specific engine to run:
+- GGUF - run with `llama-cpp` engine
+- ONNX - run with `onnxruntime` engine
+
+:::info
+For details on each format, see the [Model Formats](/docs/capabilities/models/model-yaml#model-formats) page.
+:::
+
+## Cortex Hub Models
+
+To make it easy to run state-of-the-art open source models, we quantize popular models and upload these
+versions the our own space in HuggingFace at [Cortex's HuggingFace](https://huggingface.co/cortexso).
+These models are ready to be downloaded and you can check them out at the link above or in our [Models section](/models).
+
+### Model Variants
+
+Built-in models are made available across the following variants:
+
+- **By format**: `gguf` and `onnx`
+- **By Size**: `7b`, `13b`, and more.
+- **By quantization method**: `q4`, `q8`, and more.
