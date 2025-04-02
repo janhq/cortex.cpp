@@ -1,3 +1,9 @@
+// Note on subprocess lifecycle
+// In LoadModel(), we will wait until /health returns 200. Thus, in subsequent
+// calls to the subprocess, if the server is working normally, /health is
+// guaranteed to return 200. If it doesn't, it either means the subprocess has
+// died or the server hangs (for whatever reason).
+
 #include "vllm_engine.h"
 #include <fstream>
 #include "services/engine_service.h"
@@ -82,6 +88,7 @@ std::vector<EngineVariantResponse> VllmEngine::GetVariants() {
   return variants;
 }
 
+// TODO: once llama-server is merged, check if checking 'v' is still needed
 void VllmEngine::Load(EngineLoadOption opts) {
   version_ = opts.engine_path;  // engine path actually contains version info
   if (version_[0] == 'v')
@@ -95,7 +102,7 @@ void VllmEngine::HandleChatCompletion(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
-  // request validation should be in controller
+  // NOTE: request validation should be in controller
   if (!json_body->isMember("model")) {
     auto [status, error] =
         CreateResponse("Missing required fields: model", 400);
@@ -188,11 +195,49 @@ void VllmEngine::HandleChatCompletion(
   }
 };
 
+// NOTE: we don't have an option to pass --task embed to vLLM spawn yet
 void VllmEngine::HandleEmbedding(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  auto [status, res] = CreateResponse("embedding is not yet supported", 400);
-  callback(std::move(status), std::move(res));
+
+  if (!json_body->isMember("model")) {
+    auto [status, error] =
+        CreateResponse("Missing required fields: model", 400);
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  const std::string model = (*json_body)["model"].asString();
+  int port;
+  // check if model has started
+  {
+    std::shared_lock read_lock(mutex_);
+    if (model_process_map_.find(model) == model_process_map_.end()) {
+      const std::string msg = "Model " + model + " has not been loaded yet.";
+      auto [status, error] = CreateResponse(msg, 400);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+    port = model_process_map_[model].port;
+  }
+
+  const std::string url =
+      "http://127.0.0.1:" + std::to_string(port) + "/v1/embeddings";
+  const std::string json_str = json_body->toStyledString();
+
+  auto result = curl_utils::SimplePostJson(url, json_str);
+
+  if (result.has_error()) {
+    auto [status, res] = CreateResponse(result.error(), 400);
+    callback(std::move(status), std::move(res));
+  }
+
+  Json::Value status;
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = 200;
+  callback(std::move(status), std::move(result.value()));
 };
 
 void VllmEngine::LoadModel(
@@ -213,6 +258,10 @@ void VllmEngine::LoadModel(
     if (model_process_map_.find(model) != model_process_map_.end()) {
       auto proc = model_process_map_[model];
 
+      // NOTE: each vLLM instance can only serve 1 task. It means that the
+      // following logic will not allow serving the same model for 2 different
+      // tasks at the same time.
+      // To support it, we also need to know how vLLM decides the default task.
       if (proc.IsAlive()) {
         auto [status, error] = CreateResponse("Model already loaded!", 409);
         callback(std::move(status), std::move(error));
@@ -262,6 +311,16 @@ void VllmEngine::LoadModel(
     cmd.push_back(std::to_string(port));
     cmd.push_back("--served-model-name");
     cmd.push_back(model);
+
+    // NOTE: we might want to adjust max-model-len automatically, since vLLM
+    // may OOM for large models as it tries to allocate full context length.
+    const std::string EXTRA_ARGS[] = {"task", "max-model-len"};
+    for (const auto arg : EXTRA_ARGS) {
+      if (json_body->isMember(arg)) {
+        cmd.push_back("--" + arg);
+        cmd.push_back((*json_body)[arg].asString());
+      }
+    }
 
     const auto stdout_file = env_dir / "stdout.log";
     const auto stderr_file = env_dir / "stderr.log";

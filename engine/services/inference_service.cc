@@ -119,7 +119,9 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
     std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
   if (!HasFieldInReq(json_body, "engine")) {
-    engine_type = kLlamaRepo;
+    auto engine_type_maybe =
+        GetEngineByModelId((*json_body)["model"].asString());
+    engine_type = engine_type_maybe.empty() ? kLlamaRepo : engine_type_maybe;
   } else {
     engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
   }
