@@ -21,11 +21,11 @@ set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(MSVC)
-  add_compile_options(
-      $<$<CONFIG:>:/MT> #---------|
-      $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
-      $<$<CONFIG:Release>:/MT> #--|
-  )
+  # add_compile_options(
+  #     $<$<CONFIG:>:/MT> #---------|
+  #     $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+  #     $<$<CONFIG:Release>:/MT> #--|
+  # )
 
   add_compile_options(/utf-8)
   add_definitions(-DUNICODE -D_UNICODE)
