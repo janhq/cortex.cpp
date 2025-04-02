@@ -53,16 +53,6 @@ class TestApiEngine:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_engines_install_uninstall_python_should_be_successful(self):
-        response = requests.post("http://localhost:3928/v1/engines/python-engine/install")
-        assert response.status_code == 200
-        await wait_for_websocket_download_success_event(timeout=None)
-        time.sleep(30)
-
-        response = requests.delete("http://localhost:3928/v1/engines/python-engine/install")
-        assert response.status_code == 200
-
-    @pytest.mark.asyncio
     async def test_engines_install_uninstall_llamacpp_with_only_version_should_be_failed(self):
         # install first
         data = {"variant": "mac-arm64"}

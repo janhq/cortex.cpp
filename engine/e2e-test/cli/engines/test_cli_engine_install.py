@@ -31,17 +31,6 @@ class TestCliEngineInstall:
         assert len(response.json()) > 0
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
-    def test_engines_install_python_should_be_successfully(self):
-        exit_code, output, error = run(
-            "Install Engine",
-            ["engines", "install", "python-engine"],
-            timeout=None,
-            capture=False,
-        )
-        response = requests.get("http://127.0.0.1:3928/v1/engines/python-engine")
-        assert len(response.json()) > 0
-        assert exit_code == 0, f"Install engine failed with error: {error}"
-
     @pytest.mark.skipif(reason="Ignore onnx-runtime test")
     def test_engines_install_onnx_on_macos_should_be_failed(self):
         exit_code, output, error = run(

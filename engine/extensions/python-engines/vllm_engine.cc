@@ -81,6 +81,7 @@ std::vector<EngineVariantResponse> VllmEngine::GetVariants() {
   std::vector<EngineVariantResponse> variants;
   for (const auto& entry : fs::directory_iterator(vllm_path)) {
     const auto name = "linux-amd64-cuda";  // arbitrary
+    // TODO: after llama-server is merged, check if we need to add "v"
     const auto version_str = "v" + entry.path().filename().string();
     const EngineVariantResponse variant{name, version_str, kVllmEngine};
     variants.push_back(variant);
