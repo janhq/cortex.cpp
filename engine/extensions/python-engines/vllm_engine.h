@@ -1,0 +1,62 @@
+#include <functional>
+#include "common/engine_servicei.h"
+#include "cortex-common/EngineI.h"
+#include "python_utils.h"
+#include "trantor/utils/ConcurrentTaskQueue.h"
+
+class VllmEngine : public EngineI {
+ private:
+  std::string version_;
+  int cortex_port_;
+
+  // port_offsets_[i] == true means cortex_port + i is used
+  // otherwise, cortex_port + i is not used
+  std::vector<bool> port_offsets_;
+
+  mutable std::shared_mutex mutex_;
+  std::unordered_map<std::string, python_utils::PythonSubprocess>
+      model_process_map_;
+
+  // TODO: will use cortex's main TaskQueue once llama.cpp PR is merged
+  trantor::ConcurrentTaskQueue queue_;
+
+ public:
+  VllmEngine();
+  ~VllmEngine();
+
+  static std::vector<EngineVariantResponse> GetVariants();
+
+  void Load(EngineLoadOption opts) override;
+  void Unload(EngineUnloadOption opts) override;
+
+  // cortex.llamacpp interface
+  void HandleChatCompletion(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  void HandleEmbedding(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  void LoadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  void UnloadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  void GetModelStatus(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+
+  // For backward compatible checking
+  bool IsSupported(const std::string& f) override;
+
+  // Get list of running models
+  void GetModels(
+      std::shared_ptr<Json::Value> jsonBody,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+
+  bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
+  void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
+
+  // Stop inflight chat completion in stream mode
+  void StopInferencing(const std::string& model_id) override;
+};

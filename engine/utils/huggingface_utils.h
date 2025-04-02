@@ -170,6 +170,7 @@ struct HuggingFaceModelRepoInfo {
   int downloads;
 
   int likes;
+  std::optional<std::string> library_name;
   std::optional<HuggingFaceGgufInfo> gguf;
   std::vector<HuggingFaceFileSibling> siblings;
   std::vector<std::string> spaces;
@@ -178,6 +179,10 @@ struct HuggingFaceModelRepoInfo {
 
   static cpp::result<HuggingFaceModelRepoInfo, std::string> FromJson(
       const Json::Value& body) {
+    std::optional<std::string> library_name = std::nullopt;
+    if (body["library_name"])
+      library_name = body["library_name"].asString();
+
     std::optional<HuggingFaceGgufInfo> gguf = std::nullopt;
     auto gguf_result = HuggingFaceGgufInfo::FromJson(body["gguf"]);
     if (gguf_result.has_value()) {
@@ -208,6 +213,7 @@ struct HuggingFaceModelRepoInfo {
         /* .downloads = */ body["downloads"].asInt(),
 
         /* .likes = */ body["likes"].asInt(),
+        /* .library_name = */ library_name,
         /* .gguf = */ gguf,
         /* .siblings = */ siblings,
         /* .spaces = */

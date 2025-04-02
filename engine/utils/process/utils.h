@@ -12,7 +12,9 @@ using pid_t = DWORD;
 #include <unistd.h>
 #endif
 
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "utils/result.hpp"
 
@@ -36,7 +38,10 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args);
 
 cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command,
-    const std::string& stdout_file = "", const std::string& stderr_file = "");
+    const std::string& stdout_file = "", const std::string& stderr_file = "",
+    std::optional<std::reference_wrapper<
+        const std::unordered_map<std::string, std::string>>>
+        env_vars = {});
 bool IsProcessAlive(ProcessInfo& proc_info);
 bool WaitProcess(ProcessInfo& proc_info);
 bool KillProcess(ProcessInfo& proc_info);

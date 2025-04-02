@@ -208,6 +208,7 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
       /* .gitHubToken = */ "",
       /* .llamacppVariant = */ "",
       /* .llamacppVersion = */ "",
+      /* .vllmVersion = */ "",
       /* .enableCors = */ config_yaml_utils::kDefaultCorsEnabled,
       /* .allowedOrigins = */ config_yaml_utils::kDefaultEnabledOrigins,
       /* .proxyUrl = */ "",

@@ -39,12 +39,13 @@ class ModelService {
                         std::shared_ptr<EngineServiceI> engine_svc,
                         cortex::TaskQueue& task_queue);
 
+  cpp::result<DownloadTask, std::string> PullModel(
+      const std::string& model_handle,
+      const std::optional<std::string>& desired_model_id,
+      const std::optional<std::string>& desired_model_name);
+
   cpp::result<std::string, std::string> AbortDownloadModel(
       const std::string& task_id);
-
-  cpp::result<DownloadTask, std::string> DownloadModelFromCortexsoAsync(
-      const std::string& name, const std::string& branch = "main",
-      std::optional<std::string> temp_model_id = std::nullopt);
 
   std::optional<config::ModelConfig> GetDownloadedModel(
       const std::string& modelId) const;
@@ -67,10 +68,6 @@ class ModelService {
   cpp::result<ModelPullInfo, std::string> GetModelPullInfo(
       const std::string& model_handle);
 
-  cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
-      const std::string& url, std::optional<std::string> temp_model_id,
-      std::optional<std::string> temp_name);
-
   bool HasModel(const std::string& id) const;
 
   std::optional<hardware::Estimation> GetEstimation(
@@ -89,6 +86,17 @@ class ModelService {
   std::string GetEngineByModelId(const std::string& model_id) const;
 
  private:
+  cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
+      const std::string& url, std::optional<std::string> temp_model_id,
+      std::optional<std::string> temp_name);
+
+  cpp::result<DownloadTask, std::string> DownloadModelFromCortexsoAsync(
+      const std::string& name, const std::string& branch = "main",
+      std::optional<std::string> temp_model_id = std::nullopt);
+
+  cpp::result<DownloadTask, std::string> DownloadHfModelAsync(
+      const std::string& author_id, const std::string& model_id);
+
   cpp::result<std::optional<std::string>, std::string> MayFallbackToCpu(
       const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
       int n_ubatch = 2048, const std::string& kv_cache_type = "f16");

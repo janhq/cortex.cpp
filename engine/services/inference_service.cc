@@ -111,7 +111,9 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
     std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
   if (!HasFieldInReq(json_body, "engine")) {
-    engine_type = kLlamaRepo;
+    auto engine_type_maybe =
+        GetEngineByModelId((*json_body)["model"].asString());
+    engine_type = engine_type_maybe.empty() ? kLlamaRepo : engine_type_maybe;
   } else {
     engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
   }
@@ -161,18 +163,16 @@ InferResult InferenceService::LoadModel(
   }
 
   // might need mutex here
-  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
+  auto engine = engine_service_->GetLoadedEngine(engine_type).value();
 
   auto cb = [&stt, &r](Json::Value status, Json::Value res) {
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->LoadModel(json_body, std::move(cb));
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->LoadModel(json_body, std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->LoadModel(json_body, std::move(cb));
+    std::get<RemoteEngineI*>(engine)->LoadModel(json_body, std::move(cb));
   }
   // Save model config to reload if needed
   auto model_id = json_body->get("model", "").asString();
@@ -203,12 +203,13 @@ InferResult InferenceService::UnloadModel(const std::string& engine_name,
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
+  auto engine = engine_result.value();
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->UnloadModel(
+        std::make_shared<Json::Value>(json_body), std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
+    std::get<RemoteEngineI*>(engine)->UnloadModel(
+        std::make_shared<Json::Value>(json_body), std::move(cb));
   }
 
   return std::make_pair(stt, r);
@@ -241,12 +242,11 @@ InferResult InferenceService::GetModelStatus(
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
-        ->GetModelStatus(json_body, std::move(cb));
+  auto engine = engine_result.value();
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
-        ->GetModelStatus(json_body, std::move(cb));
+    std::get<RemoteEngineI*>(engine)->GetModelStatus(json_body, std::move(cb));
   }
 
   return std::make_pair(stt, r);

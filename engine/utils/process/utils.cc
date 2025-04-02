@@ -11,6 +11,44 @@ extern char** environ;  // environment variables
 #include <fcntl.h>
 #endif
 
+namespace {
+// retrieve current env vars, make a copy, then add new env vars from input
+std::vector<std::string> BuildEnvVars(
+    const std::unordered_map<std::string, std::string>& new_env_vars) {
+#if defined(_WIN32)
+  throw std::runtime_error("Not implemented");
+#endif
+
+  // parse current env var to an unordered map
+  std::unordered_map<std::string, std::string> env_vars_map;
+  for (int i = 0; environ[i] != nullptr; i++) {
+    std::string env_var{environ[i]};
+    auto split_idx = env_var.find("=");
+
+    if (split_idx == std::string::npos) {
+      throw std::runtime_error(
+          "Error while parsing current environment variables");
+    }
+
+    env_vars_map[env_var.substr(0, split_idx)] = env_var.substr(split_idx + 1);
+  }
+
+  // add new env vars. it will override existing env vars
+  for (const auto& [key, value] : new_env_vars) {
+    env_vars_map[key] = value;
+  }
+
+  // convert back to key=value format
+  std::vector<std::string> env_vars_vector;
+  for (const auto& [key, value] : env_vars_map) {
+    env_vars_vector.push_back(key + "=" + value);
+  }
+
+  return env_vars_vector;
+}
+
+}  // namespace
+
 namespace cortex::process {
 
 std::string ConstructWindowsCommandLine(const std::vector<std::string>& args) {
@@ -42,7 +80,10 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
 
 cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command, const std::string& stdout_file,
-    const std::string& stderr_file) {
+    const std::string& stderr_file,
+    std::optional<std::reference_wrapper<
+        const std::unordered_map<std::string, std::string>>>
+        env_vars) {
   std::stringstream ss;
   for (const auto& item : command) {
     ss << item << " ";
@@ -191,6 +232,8 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
             posix_spawn_file_actions_destroy(action_ptr);
             throw std::runtime_error("Unable to add stdout to file action");
           }
+        } else {
+          CTL_WRN(stdout_file + " does not exist");
         }
       }
 
@@ -203,18 +246,33 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
             posix_spawn_file_actions_destroy(action_ptr);
             throw std::runtime_error("Unable to add stderr to file action");
           }
+        } else {
+          CTL_WRN(stderr_file + " does not exist");
         }
       }
     }
 
+    char** envp;
+    // we put these 2 here so that its lifetime lasts entire function
+    std::vector<std::string> env_vars_vector;
+    std::vector<char*> env_vars_;
+    if (env_vars.has_value()) {
+      env_vars_vector = BuildEnvVars(env_vars.value());
+      env_vars_ = ConvertToArgv(env_vars_vector);
+      envp = env_vars_.data();
+    } else {
+      envp = environ;  // simply inherit current env
+    }
+
     // Use posix_spawn for cross-platform compatibility
+    // NOTE: posix_spawn() returns after fork() step. it means that we may
+    // need to keep argv and envp data alive until exec() step finishes.
     auto spawn_result = posix_spawn(&pid,                // pid output
                                     command[0].c_str(),  // executable path
                                     action_ptr,          // file actions
                                     NULL,                // spawn attributes
                                     argv.data(),         // argument vector
-                                    environ  // environment (inherit)
-    );
+                                    envp);               // environment
 
     // NOTE: it seems like it's ok to destroy this immediately before
     // subprocess terminates.

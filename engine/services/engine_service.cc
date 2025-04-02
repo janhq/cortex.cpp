@@ -9,6 +9,7 @@
 #include "config/model_config.h"
 #include "database/engines.h"
 #include "database/models.h"
+#include "extensions/python-engines/vllm_engine.h"
 #include "extensions/remote-engine/remote_engine.h"
 
 #include "utils/archive_utils.h"
@@ -184,19 +185,34 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   }
 
   std::optional<std::filesystem::path> path_to_remove = std::nullopt;
-  if (version == std::nullopt && variant == std::nullopt) {
-    // if no version and variant provided, remove all engines variant of that engine
-    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
-  } else if (version != std::nullopt && variant != std::nullopt) {
-    // if both version and variant are provided, we only remove that variant
-    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne /
-                     variant.value() / version.value();
-  } else if (version == std::nullopt) {
-    // if only have variant, we remove all of that variant
-    path_to_remove =
-        file_manager_utils::GetEnginesContainerPath() / ne / variant.value();
+
+  if (ne == kLlamaRepo) {
+    if (version == std::nullopt && variant == std::nullopt) {
+      // if no version and variant provided, remove all engines variant of that engine
+      path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
+    } else if (version != std::nullopt && variant != std::nullopt) {
+      // if both version and variant are provided, we only remove that variant
+      path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne /
+                       variant.value() / version.value();
+    } else if (version == std::nullopt) {
+      // if only have variant, we remove all of that variant
+      path_to_remove =
+          file_manager_utils::GetEnginesContainerPath() / ne / variant.value();
+    } else {
+      return cpp::fail("No variant provided");
+    }
+  } else if (ne == kVllmEngine) {
+    // variant is ignored for vLLM
+    if (version == std::nullopt) {
+      path_to_remove = python_utils::GetEnvsPath() / "vllm";
+
+      // we only clean uv cache when all vLLM versions are deleted
+      python_utils::UvCleanCache();
+    } else {
+      path_to_remove = python_utils::GetEnvsPath() / "vllm" / version.value();
+    }
   } else {
-    return cpp::fail("No variant provided");
+    return cpp::fail("Not implemented for engine " + ne);
   }
 
   if (path_to_remove == std::nullopt) {
@@ -220,6 +236,18 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
 
+  if (engine == kLlamaRepo)
+    return DownloadLlamaCpp(version, variant_name);
+  if (engine == kVllmEngine)
+    return DownloadVllm(version, variant_name);
+
+  return cpp::fail("Unknown engine " + engine);
+}
+
+cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
+    const std::string& version, const std::optional<std::string> variant_name) {
+
+  const std::string engine = kLlamaRepo;
   auto normalized_version = version == "latest"
                                 ? "latest"
                                 : string_utils::RemoveSubstring(version, "v");
@@ -360,10 +388,86 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
   return {};
 }
 
+cpp::result<void, std::string> EngineService::DownloadVllm(
+    const std::string& version, const std::optional<std::string> variant_name) {
+
+  auto system_info = system_info_utils::GetSystemInfo();
+  if (!(system_info->os == kLinuxOs && system_info->arch == "amd64" &&
+        system_info_utils::IsNvidiaSmiAvailable()))
+    return cpp::fail(
+        "vLLM engine is only supported on Linux x86_64 with Nvidia GPU.");
+
+  if (variant_name.has_value()) {
+    return cpp::fail("variant_name must be empty");
+  }
+
+  // NOTE: everything below is not async
+  // to make it async, we have to run everything in a thread (spawning and waiting
+  // for subprocesses)
+  if (!python_utils::UvIsInstalled()) {
+    auto result = python_utils::UvInstall();
+    if (result.has_error())
+      return result;
+  }
+
+  std::string concrete_version = version;
+  if (version == "latest") {
+    auto result = curl_utils::SimpleGetJson("https://pypi.org/pypi/vllm/json");
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    auto version_value = result.value()["info"]["version"];
+    if (version_value.isNull())
+      return cpp::fail("Can't find version in the response");
+    concrete_version = version_value.asString();
+  }
+  CTL_INF("Download vLLM " << concrete_version);
+  namespace fs = std::filesystem;
+
+  const auto vllm_path =
+      python_utils::GetEnvsPath() / "vllm" / concrete_version;
+  fs::create_directories(vllm_path);
+
+  // initialize venv
+  if (!fs::exists(vllm_path / ".venv")) {
+    std::vector<std::string> cmd =
+        python_utils::UvBuildCommand("venv", vllm_path.string());
+    cmd.push_back("--relocatable");
+    cmd.push_back("--seed");
+    auto result = cortex::process::SpawnProcess(cmd);
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    // TODO: check return code
+    cortex::process::WaitProcess(result.value());
+  }
+
+  // install vLLM
+  {
+    std::vector<std::string> cmd =
+        python_utils::UvBuildCommand("pip", vllm_path.string());
+    cmd.push_back("install");
+    cmd.push_back("vllm==" + concrete_version);
+    auto result = cortex::process::SpawnProcess(cmd);
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    // TODO: check return code
+    // one reason this may fail is that the requested version does not exist
+    cortex::process::WaitProcess(result.value());
+  }
+
+  auto result = SetDefaultEngineVariant(kVllmEngine, concrete_version, "");
+  if (result.has_error())
+    return cpp::fail(result.error());
+
+  return {};
+}
+
 cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine, bool async) {
-  if (hw_inf_.sys_inf->os == "mac") {
-    // mac does not require cuda toolkit
+  if (hw_inf_.sys_inf->os == "mac" || engine != kLlamaRepo) {
+    // mac and non-llama.cpp engine do not require cuda toolkit
     return true;
   }
 
@@ -550,8 +654,14 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
 
   auto config = file_manager_utils::GetCortexConfig();
-  config.llamacppVersion = "v" + normalized_version;
-  config.llamacppVariant = variant;
+  if (ne == kLlamaRepo) {
+    config.llamacppVersion = "v" + normalized_version;
+    config.llamacppVariant = variant;
+  } else if (ne == kVllmEngine) {
+    config.vllmVersion = "v" + normalized_version;
+  } else {
+    return cpp::fail("Unrecognized engine " + engine);
+  }
   auto result = file_manager_utils::UpdateCortexConfig(config);
   if (result.has_error()) {
     return cpp::fail(result.error());
@@ -591,18 +701,23 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
 cpp::result<DefaultEngineVariant, std::string>
 EngineService::GetDefaultEngineVariant(const std::string& engine) {
   auto ne = cortex::engine::NormalizeEngine(engine);
-  // current we don't support other engine
-  if (ne != kLlamaRepo) {
-    return cpp::fail("Engine " + engine + " is not supported yet!");
-  }
 
   auto config = file_manager_utils::GetCortexConfig();
-  auto variant = config.llamacppVariant;
-  auto version = config.llamacppVersion;
-
-  if (variant.empty() || version.empty()) {
-    return cpp::fail("Default engine variant for " + engine +
-                     " is not set yet!");
+  std::string variant, version;
+  if (engine == kLlamaRepo) {
+    variant = config.llamacppVariant;
+    version = config.llamacppVersion;
+    if (variant.empty() || version.empty())
+      return cpp::fail("Default engine version and variant for " + engine +
+                       " is not set yet!");
+  } else if (engine == kVllmEngine) {
+    variant = "";
+    version = config.vllmVersion;
+    if (version.empty())
+      return cpp::fail("Default engine version for " + engine +
+                       " is not set yet!");
+  } else {
+    return cpp::fail("Engine " + engine + " is not supported yet!");
   }
 
   return DefaultEngineVariant{
@@ -616,6 +731,9 @@ cpp::result<std::vector<EngineVariantResponse>, std::string>
 EngineService::GetInstalledEngineVariants(const std::string& engine) const {
   auto ne = cortex::engine::NormalizeEngine(engine);
   auto os = hw_inf_.sys_inf->os;
+
+  if (ne == kVllmEngine)
+    return VllmEngine::GetVariants();
 
   auto engines_variants_dir =
       file_manager_utils::GetEnginesContainerPath() / ne;
@@ -681,6 +799,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     CTL_INF("Engine " << ne << " is already loaded");
     return {};
   }
+  CTL_INF("Loading engine: " << ne);
 
   // Check for remote engine
   if (IsRemoteEngine(engine_name)) {
@@ -697,9 +816,24 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
+  // check for vLLM engine
+  if (engine_name == kVllmEngine) {
+    auto engine = new VllmEngine();
+    EngineI::EngineLoadOption load_opts;
+
+    auto result = GetDefaultEngineVariant(engine_name);
+    if (result.has_error())
+      return cpp::fail(result.error());
+
+    // we set version to engine_path
+    load_opts.engine_path = result.value().version;
+    engine->Load(load_opts);
+    engines_[engine_name].engine = engine;
+    return {};
+  }
+
   // End hard code
 
-  CTL_INF("Loading engine: " << ne);
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
 #endif
@@ -912,8 +1046,6 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     return true;
   }
 
-  auto os = hw_inf_.sys_inf->os;
-
   auto installed_variants = GetInstalledEngineVariants(engine);
   if (installed_variants.has_error()) {
     return cpp::fail(installed_variants.error());
@@ -1100,6 +1232,11 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
 
 bool EngineService::IsRemoteEngine(const std::string& engine_name) const {
   auto ne = Repo2Engine(engine_name);
+
+  if (ne == kLlamaEngine || ne == kVllmEngine)
+    return false;
+  return true;
+
   auto local_engines = file_manager_utils::GetCortexConfig().supportedEngines;
   for (auto const& le : local_engines) {
     if (le == ne)
@@ -1110,5 +1247,6 @@ bool EngineService::IsRemoteEngine(const std::string& engine_name) const {
 
 cpp::result<std::vector<std::string>, std::string>
 EngineService::GetSupportedEngineNames() {
+  return config_yaml_utils::kDefaultSupportedEngines;
   return file_manager_utils::GetCortexConfig().supportedEngines;
 }

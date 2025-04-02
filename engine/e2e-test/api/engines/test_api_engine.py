@@ -20,12 +20,12 @@ class TestApiEngine:
 
         # Teardown
         stop_server()
-    
+
     # engines get
     def test_engines_get_llamacpp_should_be_successful(self):
         response = requests.get("http://localhost:3928/engines/llama-cpp")
         assert response.status_code == 200
-        
+
     # engines install
     def test_engines_install_llamacpp_specific_version_and_variant(self):
         data = {"version": "v0.1.40-b4354", "variant": "linux-amd64-avx"}
@@ -40,7 +40,7 @@ class TestApiEngine:
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
         )
         assert response.status_code == 200
-    
+
     # engines uninstall
     @pytest.mark.asyncio
     async def test_engines_install_uninstall_llamacpp_should_be_successful(self):

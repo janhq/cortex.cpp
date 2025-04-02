@@ -67,8 +67,12 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
   auto download_url = res.value()["downloadUrl"].asString();
 
   if (downloaded.empty() && avails.empty()) {
-    model_id = id;
-    model = download_url;
+    if (res.value()["modelSource"].asString() == "huggingface") {
+      model = id;
+    } else {
+      model_id = id;
+      model = download_url;
+    }
   } else {
     if (is_cortexso) {
       auto selection = cli_selection_utils::PrintModelSelection(

@@ -101,12 +101,14 @@ void ParseGguf(DatabaseService& db_service,
   }
 }
 
-cpp::result<DownloadTask, std::string> GetDownloadTask(
-    const std::string& modelId, const std::string& branch = "main") {
+cpp::result<DownloadTask, std::string> GetCloneRepoDownloadTask(
+    const std::string& author_id, const std::string& modelId,
+    const std::string& branch, const std::vector<std::string>& save_dir,
+    const std::string& task_id) {
   url_parser::Url url = {/* .protocol = */ "https",
                          /* .host = */ kHuggingFaceHost,
                          /* .pathParams = */
-                         {"api", "models", "cortexso", modelId, "tree", branch},
+                         {"api", "models", author_id, modelId, "tree", branch},
                          {}};
 
   auto result = curl_utils::SimpleGetJsonRecursive(url.ToFullPath());
@@ -115,8 +117,9 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
   }
 
   std::vector<DownloadItem> download_items{};
-  auto model_container_path = file_manager_utils::GetModelsContainerPath() /
-                              "cortex.so" / modelId / branch;
+  auto model_container_path = file_manager_utils::GetModelsContainerPath();
+  for (auto subdir : save_dir)
+    model_container_path /= subdir;
   file_manager_utils::CreateDirectoryRecursively(model_container_path.string());
 
   for (const auto& value : result.value()) {
@@ -129,7 +132,7 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
     url_parser::Url download_url = {
         /* .protocol = */ "https",
         /* .host = */ kHuggingFaceHost,
-        /* .pathParams = */ {"cortexso", modelId, "resolve", branch, path},
+        /* .pathParams = */ {author_id, modelId, "resolve", branch, path},
         {}};
 
     auto local_path = model_container_path / path;
@@ -147,7 +150,7 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
   }
 
   return DownloadTask{
-      /* .id = */ branch == "main" ? modelId : modelId + "-" + branch,
+      /* .id = */ task_id,
       /* .status = */ DownloadTask::Status::Pending,
       /* .type = */ DownloadType::Model,
       /* .items = */ download_items};
@@ -188,7 +191,12 @@ void ModelService::ForceIndexingModelList() {
     if (model_entry.status != cortex::db::ModelStatus::Downloaded) {
       continue;
     }
+    if (model_entry.engine == kVllmEngine) {
+      // TODO: check if folder still exists?
+      continue;
+    }
     try {
+      // check if path_to_model_yaml still exists
       CTL_DBG(fmu::ToAbsoluteCortexDataPath(
                   fs::path(model_entry.path_to_model_yaml))
                   .string());
@@ -212,9 +220,17 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
     const std::string& modelId) const {
 
   config::YamlHandler yaml_handler;
-  auto model_entry = db_service_->GetModelInfo(modelId);
-  if (!model_entry.has_value()) {
+  auto result = db_service_->GetModelInfo(modelId);
+  if (result.has_error()) {
     return std::nullopt;
+  }
+  auto model_entry = result.value();
+
+  // ignore all other params
+  if (model_entry.engine == kVllmEngine) {
+    config::ModelConfig cfg;
+    cfg.engine = kVllmEngine;
+    return cfg;
   }
 
   try {
@@ -222,12 +238,11 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
     namespace fs = std::filesystem;
     namespace fmu = file_manager_utils;
     yaml_handler.ModelConfigFromFile(
-        fmu::ToAbsoluteCortexDataPath(
-            fs::path(model_entry.value().path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(fs::path(model_entry.path_to_model_yaml))
             .string());
     return yaml_handler.GetModelConfig();
   } catch (const std::exception& e) {
-    LOG_ERROR << "Error reading yaml file '" << model_entry->path_to_model_yaml
+    LOG_ERROR << "Error reading yaml file '" << model_entry.path_to_model_yaml
               << "': " << e.what();
     return std::nullopt;
   }
@@ -316,6 +331,56 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   return download_service_->AddTask(downloadTask, on_finished);
 }
 
+cpp::result<DownloadTask, std::string> ModelService::DownloadHfModelAsync(
+    const std::string& author_id, const std::string& model_id) {
+
+  const std::string unique_model_id = author_id + "/" + model_id;
+  auto model_entry = db_service_->GetModelInfo(unique_model_id);
+  if (model_entry.has_value() &&
+      model_entry->status == cortex::db::ModelStatus::Downloaded)
+    return cpp::fail("Please delete the model before downloading again");
+
+  auto download_task = GetCloneRepoDownloadTask(
+      author_id, model_id, "main", {kHuggingFaceHost, author_id, model_id},
+      unique_model_id);
+  if (download_task.has_error())
+    return download_task;
+
+  // TODO: validate that this is a vllm-compatible model
+  auto on_finished = [this, author_id,
+                      unique_model_id](const DownloadTask& finishedTask) {
+    if (!db_service_->HasModel(unique_model_id)) {
+      CTL_INF("Before creating model entry");
+      cortex::db::ModelEntry model_entry{
+          .model = unique_model_id,
+          .author_repo_id = author_id,
+          .branch_name = "main",
+          .path_to_model_yaml = "",
+          .model_alias = unique_model_id,
+          .status = cortex::db::ModelStatus::Downloaded,
+          .engine = kVllmEngine};
+
+      auto result = db_service_->AddModelEntry(model_entry);
+      if (result.has_error()) {
+        CTL_ERR("Error adding model to modellist: " + result.error());
+      }
+    } else {
+      if (auto m = db_service_->GetModelInfo(unique_model_id); m.has_value()) {
+        auto upd_m = m.value();
+        upd_m.status = cortex::db::ModelStatus::Downloaded;
+        if (auto r = db_service_->UpdateModelEntry(unique_model_id, upd_m);
+            r.has_error()) {
+          CTL_ERR(r.error());
+        }
+      } else {
+        CTL_WRN("Could not get model entry with model id: " << unique_model_id);
+      }
+    }
+  };
+
+  return download_service_->AddTask(download_task.value(), on_finished);
+}
+
 std::optional<hardware::Estimation> ModelService::GetEstimation(
     const std::string& model_handle) {
   std::lock_guard l(es_mtx_);
@@ -375,25 +440,22 @@ bool ModelService::HasModel(const std::string& id) const {
 
 cpp::result<DownloadTask, std::string>
 ModelService::DownloadModelFromCortexsoAsync(
-    const std::string& name, const std::string& branch,
+    const std::string& model_name, const std::string& branch,
     std::optional<std::string> temp_model_id) {
 
-  auto download_task = GetDownloadTask(name, branch);
-  if (download_task.has_error()) {
-    return cpp::fail(download_task.error());
-  }
-
-  std::string unique_model_id = "";
-  if (temp_model_id.has_value()) {
-    unique_model_id = temp_model_id.value();
-  } else {
-    unique_model_id = name + ":" + branch;
-  }
-
+  std::string unique_model_id =
+      temp_model_id.value_or(model_name + ":" + branch);
   auto model_entry = db_service_->GetModelInfo(unique_model_id);
   if (model_entry.has_value() &&
       model_entry->status == cortex::db::ModelStatus::Downloaded) {
     return cpp::fail("Please delete the model before downloading again");
+  }
+
+  auto download_task = GetCloneRepoDownloadTask(
+      "cortexso", model_name, branch, {"cortex.so", model_name, branch},
+      unique_model_id);
+  if (download_task.has_error()) {
+    return cpp::fail(download_task.error());
   }
 
   auto on_finished = [this, unique_model_id,
@@ -467,9 +529,7 @@ ModelService::DownloadModelFromCortexsoAsync(
     }
   };
 
-  auto task = download_task.value();
-  task.id = unique_model_id;
-  return download_service_->AddTask(task, on_finished);
+  return download_service_->AddTask(download_task.value(), on_finished);
 }
 
 cpp::result<void, std::string> ModelService::DeleteModel(
@@ -564,14 +624,35 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     Json::Value json_data;
     // Currently we don't support download vision models, so we need to bypass check
     if (!bypass_model_check) {
-      auto model_entry = db_service_->GetModelInfo(model_handle);
-      if (model_entry.has_error()) {
-        CTL_WRN("Error: " + model_entry.error());
-        return cpp::fail(model_entry.error());
+      auto result = db_service_->GetModelInfo(model_handle);
+      if (result.has_error()) {
+        CTL_WRN("Error: " + result.error());
+        return cpp::fail(result.error());
       }
+      auto model_entry = result.value();
+
+      if (model_entry.engine == kVllmEngine) {
+        Json::Value json_data;
+        json_data["model"] = model_handle;
+        json_data["engine"] = kVllmEngine;
+        auto [status, data] =
+            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+
+        auto status_code = status["status_code"].asInt();
+        if (status_code == drogon::k200OK) {
+          return StartModelResult{true, ""};
+        } else if (status_code == drogon::k409Conflict) {
+          CTL_INF("Model '" + model_handle + "' is already loaded");
+          return StartModelResult{true, ""};
+        } else {
+          return cpp::fail("Model failed to start: " +
+                           data["message"].asString());
+        }
+      }
+
       yaml_handler.ModelConfigFromFile(
           fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
+              fs::path(model_entry.path_to_model_yaml))
               .string());
       auto mc = yaml_handler.GetModelConfig();
 
@@ -579,17 +660,15 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
         (void)engine_svc_->LoadEngine(mc.engine);
         config::RemoteModelConfig remote_mc;
-        remote_mc.LoadFromYamlFile(
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string());
-        auto remote_engine_entry =
-            engine_svc_->GetEngineByNameAndVariant(mc.engine);
-        if (remote_engine_entry.has_error()) {
-          CTL_WRN("Remote engine error: " + model_entry.error());
-          return cpp::fail(remote_engine_entry.error());
+        remote_mc.LoadFromYamlFile(fmu::ToAbsoluteCortexDataPath(
+                                       fs::path(model_entry.path_to_model_yaml))
+                                       .string());
+        auto result = engine_svc_->GetEngineByNameAndVariant(mc.engine);
+        if (result.has_error()) {
+          CTL_WRN("Remote engine error: " + result.error());
+          return cpp::fail(result.error());
         }
-        auto remote_engine_json = remote_engine_entry.value().ToJson();
+        auto remote_engine_json = result.value().ToJson();
         json_data = remote_mc.ToJson();
 
         json_data["api_key"] = std::move(remote_engine_json["api_key"]);
@@ -597,10 +676,9 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
             !v.empty() && v != "latest") {
           json_data["version"] = v;
         }
-        json_data["model_path"] =
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string();
+        json_data["model_path"] = fmu::ToAbsoluteCortexDataPath(
+                                      fs::path(model_entry.path_to_model_yaml))
+                                      .string();
         json_data["metadata"] = std::move(remote_engine_json["metadata"]);
 
         auto ir =
@@ -735,17 +813,23 @@ cpp::result<bool, std::string> ModelService::StopModel(
                          bypass_stop_check_set_.end());
     std::string engine_name = "";
     if (!bypass_check) {
-      auto model_entry = db_service_->GetModelInfo(model_handle);
-      if (model_entry.has_error()) {
-        CTL_WRN("Error: " + model_entry.error());
-        return cpp::fail(model_entry.error());
+      auto result = db_service_->GetModelInfo(model_handle);
+      if (result.has_error()) {
+        CTL_WRN("Error: " + result.error());
+        return cpp::fail(result.error());
       }
-      yaml_handler.ModelConfigFromFile(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      auto mc = yaml_handler.GetModelConfig();
-      engine_name = mc.engine;
+
+      const auto model_entry = result.value();
+      if (model_entry.engine == kVllmEngine) {
+        engine_name = kVllmEngine;
+      } else {
+        yaml_handler.ModelConfigFromFile(
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.path_to_model_yaml))
+                .string());
+        auto mc = yaml_handler.GetModelConfig();
+        engine_name = mc.engine;
+      }
     }
     if (bypass_check) {
       engine_name = kLlamaEngine;
@@ -882,23 +966,19 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
           huggingface_utils::GetHuggingFaceModelRepoInfo(author, model_name);
 
       if (!repo_info.has_value()) {
-        return cpp::fail("Model not found");
+        return cpp::fail("Model not found on " + std::string{kHuggingFaceHost});
       }
 
-      if (!repo_info->gguf.has_value()) {
-        return cpp::fail(
-            "Not a GGUF model. Currently, only GGUF single file is "
-            "supported.");
-      }
-
-      std::vector<std::string> options{};
-      for (const auto& sibling : repo_info->siblings) {
-        if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
-          options.push_back(sibling.rfilename);
+      // repo containing GGUF files
+      if (repo_info->gguf.has_value()) {
+        std::vector<std::string> options{};
+        for (const auto& sibling : repo_info->siblings) {
+          if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
+            options.push_back(sibling.rfilename);
+          }
         }
-      }
 
-      return ModelPullInfo{
+        return ModelPullInfo{
           /* .id = */ author + ":" + model_name,
           /* .default_branch = */ "main",
           /* .downloaded_models = */ {},
@@ -906,6 +986,23 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
           /* .model_source = */ "",
           /* .download_url = */
           huggingface_utils::GetDownloadableUrl(author, model_name, "")};
+      }
+
+      // repo that is supported by HF transformers
+      // we will download the whole repo
+      if (repo_info->library_name.value_or("") == "transformers") {
+        return ModelPullInfo{
+          /* .id = */ author + "/" + model_name,
+          /* .default_branch = */ "main",
+          /* .downloaded_models = */ {},
+          /* .available_models = */ {},
+          /* .model_source = */ "huggingface",
+          /* .download_url = */ ""};
+      }
+
+      return cpp::fail(
+          "Unsupported model. Currently, only GGUF models and HF models are "
+          "supported.");
     }
   }
   auto branches =
@@ -951,6 +1048,54 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
       /* .available_models = */ avai_download_opts,
       /* .model_source = */ "cortexso",
       /* .download_url = */ ""};
+}
+
+cpp::result<DownloadTask, std::string> ModelService::PullModel(
+    const std::string& model_handle,
+    const std::optional<std::string>& desired_model_id,
+    const std::optional<std::string>& desired_model_name) {
+  CTL_INF("Handle model input, model handle: " + model_handle);
+
+  if (string_utils::StartsWith(model_handle, "https"))
+    return HandleDownloadUrlAsync(model_handle, desired_model_id,
+                                  desired_model_name);
+
+  // HF model handle
+  if (model_handle.find("/") != std::string::npos) {
+    const auto author_model = string_utils::SplitBy(model_handle, "/");
+    if (author_model.size() != 2)
+      return cpp::fail("Invalid model handle");
+
+    return DownloadHfModelAsync(author_model[0], author_model[1]);
+  }
+
+  if (model_handle.find(":") == std::string::npos)
+    return cpp::fail("Invalid model handle or not supported!");
+
+  auto model_and_branch = string_utils::SplitBy(model_handle, ":");
+
+  // cortexso format - model:branch
+  if (model_and_branch.size() == 2)
+    return DownloadModelFromCortexsoAsync(
+        model_and_branch[0], model_and_branch[1], desired_model_id);
+
+  if (model_and_branch.size() == 3) {
+    // single GGUF file
+    // author_id:model_name:filename
+    auto mh = url_parser::Url{
+        .protocol = "https",
+        .host = kHuggingFaceHost,
+        .pathParams = {
+            model_and_branch[0],
+            model_and_branch[1],
+            "resolve",
+            "main",
+            model_and_branch[2],
+        }}.ToFullPath();
+    return HandleDownloadUrlAsync(mh, desired_model_id, desired_model_name);
+  }
+
+  return cpp::fail("Invalid model handle or not supported!");
 }
 
 cpp::result<std::string, std::string> ModelService::AbortDownloadModel(
@@ -1107,6 +1252,10 @@ std::string ModelService::GetEngineByModelId(
     CTL_WRN("Error: " + model_entry.error());
     return "";
   }
+
+  if (model_entry.value().engine == kVllmEngine)
+    return kVllmEngine;
+
   config::YamlHandler yaml_handler;
   yaml_handler.ModelConfigFromFile(
       fmu::ToAbsoluteCortexDataPath(

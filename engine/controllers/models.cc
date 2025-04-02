@@ -28,7 +28,7 @@ void Models::PullModel(const HttpRequestPtr& req,
     return;
   }
 
-  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto model_handle = req->getJsonObject()->get("model", "").asString();
   if (model_handle.empty()) {
     Json::Value ret;
     ret["result"] = "Bad Request";
@@ -39,52 +39,19 @@ void Models::PullModel(const HttpRequestPtr& req,
   }
 
   std::optional<std::string> desired_model_id = std::nullopt;
-  auto id = (*(req->getJsonObject())).get("id", "").asString();
+  auto id = req->getJsonObject()->get("id", "").asString();
   if (!id.empty()) {
     desired_model_id = id;
   }
 
   std::optional<std::string> desired_model_name = std::nullopt;
-  auto name_value = (*(req->getJsonObject())).get("name", "").asString();
-
+  auto name_value = req->getJsonObject()->get("name", "").asString();
   if (!name_value.empty()) {
     desired_model_name = name_value;
   }
 
-  auto handle_model_input =
-      [&, model_handle]() -> cpp::result<DownloadTask, std::string> {
-    CTL_INF("Handle model input, model handle: " + model_handle);
-    if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_->HandleDownloadUrlAsync(
-          model_handle, desired_model_id, desired_model_name);
-    } else if (model_handle.find(":") != std::string::npos) {
-      auto model_and_branch = string_utils::SplitBy(model_handle, ":");
-      if (model_and_branch.size() == 3) {
-        auto mh = url_parser::Url{
-            /* .protocol = */ "https",
-            /* .host = */ kHuggingFaceHost,
-            /* .pathParams = */
-            {
-                model_and_branch[0],
-                model_and_branch[1],
-                "resolve",
-                "main",
-                model_and_branch[2],
-            },
-            /* queries= */ {},
-        }
-                      .ToFullPath();
-        return model_service_->HandleDownloadUrlAsync(mh, desired_model_id,
-                                                      desired_model_name);
-      }
-      return model_service_->DownloadModelFromCortexsoAsync(
-          model_and_branch[0], model_and_branch[1], desired_model_id);
-    }
-
-    return cpp::fail("Invalid model handle or not supported!");
-  };
-
-  auto result = handle_model_input();
+  auto result = model_service_->PullModel(model_handle, desired_model_id,
+                                          desired_model_name);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -213,6 +180,17 @@ void Models::ListModel(
           data.append(std::move(obj));
           continue;
         }
+
+        if (model_entry.engine == kVllmEngine) {
+          Json::Value obj;
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          obj["engine"] = model_entry.engine;
+          obj["status"] = "downloaded";
+          data.append(std::move(obj));
+          continue;
+        }
+
         yaml_handler.ModelConfigFromFile(
             fmu::ToAbsoluteCortexDataPath(
                 fs::path(model_entry.path_to_model_yaml))
