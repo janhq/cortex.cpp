@@ -106,7 +106,6 @@ void VllmEngine::HandleChatCompletion(
   const std::string model = (*json_body)["model"].asString();
   int port;
   // check if model has started
-  // TODO: use health check instead
   {
     std::shared_lock read_lock(mutex_);
     if (model_process_map_.find(model) == model_process_map_.end()) {
@@ -274,7 +273,6 @@ void VllmEngine::LoadModel(
     if (!std::filesystem::exists(stderr_file))
       std::ofstream(stderr_file).flush();
 
-    // TODO: may want to wait until model is ready i.e. health check endpoint
     auto result = cortex::process::SpawnProcess(cmd, stdout_file.string(),
                                                 stderr_file.string());
     if (result.has_error()) {
@@ -284,6 +282,7 @@ void VllmEngine::LoadModel(
     pid = proc_info.pid;
 
     // wait for server to be up
+    // NOTE: should we add a timeout to avoid endless loop?
     while (true) {
       CTL_INF("Wait for vLLM server to be up. Sleep for 5s");
       std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -343,7 +342,6 @@ void VllmEngine::UnloadModel(
     std::unique_lock write_lock(mutex_);
     auto proc = model_process_map_[model];
 
-    // TODO: we can use vLLM health check endpoint
     // check if subprocess is still alive
     // NOTE: is this step necessary? the subprocess could have terminated
     // after .IsAlive() and before .Kill() later.
@@ -396,27 +394,32 @@ void VllmEngine::GetModelStatus(
   }
 
   // we know that model has started
-  // TODO: just use health check endpoint
   {
     std::unique_lock write_lock(mutex_);
+    auto py_proc = model_process_map_[model];
 
-    // check if subprocess is still alive
-    if (!model_process_map_[model].IsAlive()) {
+    // health check endpoint
+    const auto url =
+        "http://127.0.0.1:" + std::to_string(py_proc.port) + "/health";
+    if (curl_utils::SimpleGet(url).has_value()) {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = false;
+      status["is_stream"] = false;
+      status["status_code"] = 200;
+      callback(std::move(status), Json::Value{});
+    } else {
+      // try to kill the subprocess to free resources, in case the server hangs
+      // instead of subprocess has died.
+      py_proc.Kill();
+
       CTL_WRN("Model " << model << " has exited unexpectedly.");
       model_process_map_.erase(model);
       const std::string msg = "Model " + model + " stopped running.";
       auto [status, error] = CreateResponse(msg, 400);
       callback(std::move(status), std::move(error));
-      return;
     }
   }
-
-  Json::Value res, status;
-  status["is_done"] = true;
-  status["has_error"] = false;
-  status["is_stream"] = false;
-  status["status_code"] = 200;
-  callback(std::move(status), std::move(res));
 };
 
 bool VllmEngine::IsSupported(const std::string& f) {
@@ -430,8 +433,13 @@ void VllmEngine::GetModels(
   {
     std::unique_lock write_lock(mutex_);
     for (auto& [model_name, py_proc] : model_process_map_) {
-      // TODO: check using health endpoint
-      if (!py_proc.IsAlive()) {
+      const auto url =
+          "http://127.0.0.1:" + std::to_string(py_proc.port) + "/health";
+      if (curl_utils::SimpleGet(url).has_error()) {
+        // try to kill the subprocess to free resources, in case the server hangs
+        // instead of subprocess has died.
+        py_proc.Kill();
+
         CTL_WRN("Model " << model_name << " has exited unexpectedly.");
         model_process_map_.erase(model_name);
         continue;
