@@ -4,14 +4,6 @@
 #include "utils/function_calling/common.h"
 #include "utils/jinja_utils.h"
 
-static InferResult GetUnsupportedResponse(const std::string& msg) {
-  Json::Value res, stt;
-  res["message"] = msg;
-  stt["status_code"] = drogon::k400BadRequest;
-  LOG_WARN << msg;
-  return std::make_pair(stt, res);
-}
-
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
