@@ -95,11 +95,11 @@ add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 option(CMAKE_BUILD_TEST "Enable testing" ON)
 option(CMAKE_BUILD_INJA_TEST "Enable inja example" OFF)
-# if(CMAKE_BUILD_TEST)
-  # add_subdirectory(test)
-# endif()
+if(CMAKE_BUILD_TEST)
+  add_subdirectory(test)
+endif()
 
-# add_subdirectory(cli)
+add_subdirectory(cli)
 
 if(CMAKE_BUILD_INJA_TEST)
   add_subdirectory(examples/inja)
