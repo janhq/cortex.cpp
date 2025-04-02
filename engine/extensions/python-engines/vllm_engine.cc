@@ -280,14 +280,26 @@ void VllmEngine::LoadModel(
     if (result.has_error()) {
       throw std::runtime_error(result.error());
     }
+    auto proc_info = result.value();
+    pid = proc_info.pid;
+
+    // wait for server to be up
+    while (true) {
+      CTL_INF("Wait for vLLM server to be up. Sleep for 5s");
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+      if (!cortex::process::IsProcessAlive(proc_info))
+        throw std::runtime_error("vLLM subprocess fails to start");
+
+      const auto url = "http://127.0.0.1:" + std::to_string(port) + "/health";
+      if (curl_utils::SimpleGet(url).has_value())
+        break;
+    }
 
     python_utils::PythonSubprocess py_proc;
-    py_proc.proc_info = result.value();
+    py_proc.proc_info = proc_info;
     py_proc.port = port;
     py_proc.start_time = std::chrono::system_clock::now().time_since_epoch() /
                          std::chrono::milliseconds(1);
-
-    pid = py_proc.proc_info.pid;
 
     std::unique_lock write_lock(mutex_);
     model_process_map_[model] = py_proc;
