@@ -2,6 +2,7 @@
 
 #include <SQLiteCpp/Database.h>
 #include <json/json.h>
+#include <json/value.h>
 #include <trantor/utils/Logger.h>
 #include <optional>
 #include <string>
@@ -45,7 +46,7 @@ struct EngineEntry {
       if (success) {
         root["metadata"] = metadataJson;
       } else {
-        root["metadata"] = Json::Value::null;
+        root["metadata"] = Json::Value(Json::nullValue);
       }
     } else {
       root["metadata"] = Json::Value(Json::objectValue);  // empty object

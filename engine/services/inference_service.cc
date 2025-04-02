@@ -13,7 +13,7 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
   }
   function_calling_utils::PreprocessRequest(json_body);
-  auto tool_choice = json_body->get("tool_choice", Json::Value::null);
+  auto tool_choice = json_body->get("tool_choice", Json::Value(Json::nullValue));
   auto model_id = json_body->get("model", "").asString();
   if (saved_models_.find(model_id) != saved_models_.end()) {
     // check if model is started, if not start it first

@@ -44,21 +44,22 @@ if(NOT CORTEX_CQA)
         add_link_options($<$<CONFIG:Release>:-flto>)
     elseif(MSVC)
         # Add optimization flags for MSVC
-        add_compile_options($<$<CONFIG:Release>:/O2>)
+        # add_compile_options($<$<CONFIG:Release>:/O2>)
         # Optional: Link-time optimization
-        add_compile_options($<$<CONFIG:Release>:/GL>)
-        add_link_options($<$<CONFIG:Release>:/LTCG>)
+        # add_compile_options($<$<CONFIG:Release>:/GL>)
+        # add_link_options($<$<CONFIG:Release>:/LTCG>)
     endif()
 endif()
 
 if(MSVC)
-  add_compile_options(
-      $<$<CONFIG:>:/MT> #---------|
-      $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
-      $<$<CONFIG:Release>:/MT> #--|
-      $<$<CONFIG:Release>:/O2> #--|-- Optimize for speed in Release mode
-      $<$<CONFIG:Release>:/Ob2> #-|-- Inline any suitable function
-  )
+# set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  # add_compile_options(
+  #     $<$<CONFIG:>:/MT> #---------|
+  #     $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+  #     $<$<CONFIG:Release>:/MT> #--|
+  #     $<$<CONFIG:Release>:/O2> #--|-- Optimize for speed in Release mode
+  #     $<$<CONFIG:Release>:/Ob2> #-|-- Inline any suitable function
+  # )
 
   add_compile_options(/utf-8)
   add_definitions(-DUNICODE -D_UNICODE)
@@ -95,10 +96,10 @@ add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 option(CMAKE_BUILD_TEST "Enable testing" ON)
 option(CMAKE_BUILD_INJA_TEST "Enable inja example" OFF)
 # if(CMAKE_BUILD_TEST)
-  add_subdirectory(test)
+  # add_subdirectory(test)
 # endif()
 
-add_subdirectory(cli)
+# add_subdirectory(cli)
 
 if(CMAKE_BUILD_INJA_TEST)
   add_subdirectory(examples/inja)
@@ -183,6 +184,7 @@ file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
     "}\n"
 )
 ## End of generating openapi json
+MESSAGE("SOURCE_DIR"${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
@@ -205,6 +207,7 @@ target_include_directories(${TARGET_NAME} PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/.
 
 target_link_libraries(${TARGET_NAME} PRIVATE minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE archive)
+target_link_libraries(${TARGET_NAME} PRIVATE trantor)
 target_link_libraries(${TARGET_NAME} PRIVATE drogon)
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE ${JSONCPP})

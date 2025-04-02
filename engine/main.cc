@@ -397,7 +397,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  SSL_library_init();
+  // SSL_library_init();
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
   // avoid printing logs to terminal

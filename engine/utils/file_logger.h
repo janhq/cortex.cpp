@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <deque>
 #include <mutex>
+#include <string>
+#include <optional>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -16,7 +18,7 @@
 
 namespace trantor {
 
-class TRANTOR_EXPORT FileLogger : public AsyncFileLogger {
+class FileLogger : public AsyncFileLogger {
  public:
   FileLogger();
   ~FileLogger();

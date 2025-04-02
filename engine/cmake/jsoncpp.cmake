@@ -23,7 +23,7 @@ include(ExternalProject)
 set(jsoncpp_install_prefix ${CMAKE_CURRENT_BINARY_DIR}/jsoncpp-lib)
 ExternalProject_Add(jsoncpp-project
   GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp.git
-  GIT_TAG 1.9.5
+  GIT_TAG 1.9.6
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/jsoncpp-src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/jsoncpp-build
   INSTALL_DIR ${jsoncpp_install_prefix}
