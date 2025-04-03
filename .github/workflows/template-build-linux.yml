@@ -127,16 +127,6 @@ jobs:
           sudo apt update && sudo apt install gettext-base -y
           python3 -m pip install awscli
 
-      - name: Configure vcpkg
-        run: |
-          cd engine
-          # Set env if arch is arm64
-          if [ "${{ inputs.arch }}" == "arm64" ]; then
-            sudo apt install ninja-build pkg-config -y
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
-          make configure-vcpkg
-
       - name: Build
         run: |
           cd engine

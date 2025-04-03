@@ -5,6 +5,7 @@
 #include <json/value.h>
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/node/parse.h>
+#include <yaml-cpp/yaml.h>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -37,8 +38,8 @@ cpp::result<YAML::Node, std::string> ReadRemoteYaml(const std::string& url);
  */
 cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
                                                     const int timeout = -1);
-cpp::result<Json::Value, std::string> SimpleGetJsonRecursive(const std::string& url,
-                                                    const int timeout = -1);
+cpp::result<Json::Value, std::string> SimpleGetJsonRecursive(
+    const std::string& url, const int timeout = -1);
 
 cpp::result<Json::Value, std::string> SimplePostJson(
     const std::string& url, const std::string& body = "");

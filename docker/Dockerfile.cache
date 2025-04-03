@@ -83,7 +83,7 @@ COPY ./docs/static/openapi/cortex.json /app/docs/static/openapi/cortex.json
 # Build project
 # Configure vcpkg binary sources
 RUN export VCPKG_BINARY_SOURCES="files,${LOCAL_CACHE_DIR},readwrite;default"; \
-    cd engine && make configure-vcpkg && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake ${CMAKE_EXTRA_FLAGS}"
+    cd engine && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake ${CMAKE_EXTRA_FLAGS}"
 
     # Upload updated cache to MinIO (if remote cache is provided)
 RUN if [ -n "${REMOTE_CACHE_URL}" ]; then \

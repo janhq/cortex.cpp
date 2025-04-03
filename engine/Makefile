@@ -30,28 +30,20 @@ ARCH ?= amd64
 all:
 	@echo "Specify a target to run"
 
-configure-vcpkg:
-ifeq ($(OS),Windows_NT)
-	@cd vcpkg && cmd /c bootstrap-vcpkg.bat;
-	@cd vcpkg && cmd /c vcpkg install
-else ifeq ($(shell uname -s),Linux) 
-	@cd vcpkg && ./bootstrap-vcpkg.sh;
-	@cd vcpkg && ./vcpkg install;
-else
-	@cd vcpkg && ./bootstrap-vcpkg.sh;
-	@cd vcpkg && ./vcpkg install;
-endif
-
 # Build the Cortex engine
 build:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p build; cd build; cmake .. $(CMAKE_EXTRA_FLAGS); cmake --build . --config Release -j4;"
 else ifeq ($(shell uname -s),Linux)
-	@mkdir -p build && cd build; \
+	@cmake -S ./third-party -B ./build_deps \
+	make -C build_deps/ -j4 \
+	mkdir -p build && cd build; \
 	cmake .. $(CMAKE_EXTRA_FLAGS); \
 	make -j4;
 else
-	@mkdir -p build && cd build; \
+	@cmake -S ./third-party -B ./build_deps \
+	make -C build_deps/ -j4 \
+	mkdir -p build && cd build; \
 	cmake .. $(CMAKE_EXTRA_FLAGS); \
 	make -j4;
 endif

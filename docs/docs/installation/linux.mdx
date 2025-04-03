@@ -91,7 +91,6 @@ sudo /usr/bin/cortex-uninstall.sh
 
     ```bash
     cd engine
-    make configure-vcpkg
     make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=$(git rev-parse HEAD) -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
     ```
 
