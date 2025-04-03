@@ -85,7 +85,7 @@ Follow the [linux installation steps](linux) to install Cortex.cpp on the WSL.
 
     ```cmd
     cd engine
-    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg\\scripts\\buildsystems\\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -GNinja"
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -GNinja"
     ```
 
 3. Verify that Cortex.cpp is builded correctly by getting help information.

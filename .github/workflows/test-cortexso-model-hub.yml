@@ -16,7 +16,7 @@ jobs:
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-e2e-cortexcpp-model-hub"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.head_ref}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.head_ref}} -DCMAKE_BUILD_TEST=ON"
             build-deps-cmake-flags: ""
             ccache-dir: ""
     steps:

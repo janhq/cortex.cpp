@@ -53,7 +53,7 @@ COPY ./docs/static/openapi/cortex.json /app/docs/static/openapi/cortex.json
 
 # Build project
 # Configure vcpkg binary sources
-RUN cd engine && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake ${CMAKE_EXTRA_FLAGS}"
+RUN cd engine && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF ${CMAKE_EXTRA_FLAGS}"
 
 # Stage 3: Runtime
 FROM common as runtime

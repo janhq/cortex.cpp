@@ -35,14 +35,14 @@ build:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p build; cd build; cmake .. $(CMAKE_EXTRA_FLAGS); cmake --build . --config Release -j4;"
 else ifeq ($(shell uname -s),Linux)
-	@cmake -S ./third-party -B ./build_deps \
-	make -C build_deps/ -j4 \
+	@cmake -S ./third-party -B ./build_deps; \
+	make -C build_deps/ -j4; \
 	mkdir -p build && cd build; \
 	cmake .. $(CMAKE_EXTRA_FLAGS); \
 	make -j4;
 else
-	@cmake -S ./third-party -B ./build_deps \
-	make -C build_deps/ -j4 \
+	@cmake -S ./third-party -B ./build_deps; \
+	make -C build_deps/ -j4; \
 	mkdir -p build && cd build; \
 	cmake .. $(CMAKE_EXTRA_FLAGS); \
 	make -j4;

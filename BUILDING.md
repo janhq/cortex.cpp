@@ -28,12 +28,12 @@ cd vcpkg
 ./vcpkg install
 ```
 
-3. Build the Cortex.cpp inside the `engine/build` folder (you can change `-DCMAKE_TOOLCHAIN_FILE` to use your own `vcpkg`):
+3. Build the Cortex.cpp inside the `engine/build` folder:
 
 ```bash
 mkdir build
 cd build
-cmake .. -DBUILD_SHARED_LIBS=OFF "-DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static
+cmake .. -DBUILD_SHARED_LIBS=OFF
 cmake --build . --config Release -j4
 ```
 
@@ -54,12 +54,12 @@ cd vcpkg
 ./vcpkg install
 ```
 
-3. Build the Cortex.cpp inside the `engine/build` folder (you can change `-DCMAKE_TOOLCHAIN_FILE` to use your own `vcpkg`):
+3. Build the Cortex.cpp inside the `engine/build` folder:
 
 ```bash
 mkdir build
 cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake ..
 make -j4
 ```
 
@@ -93,7 +93,7 @@ export VCPKG_FORCE_SYSTEM_BINARIES="$([[ $(uname -m) == 'arm64' ]] && echo '1' |
 cd engine
 mkdir -p build
 cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=$(realpath ..)/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake ..
 make -j$(grep -c ^processor /proc/cpuinfo)
 ```
 

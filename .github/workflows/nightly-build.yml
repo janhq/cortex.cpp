@@ -54,7 +54,7 @@ jobs:
       ref: ${{ needs.set-public-provider.outputs.ref }}
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}'"
       channel: nightly
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
@@ -67,7 +67,7 @@ jobs:
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: windows-cuda-11-7
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DBUILD_SHARED_LIBS=OFF -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
       build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
       ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
       channel: nightly
@@ -82,7 +82,7 @@ jobs:
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: ubuntu-20-04
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}'"
       channel: nightly
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
       arch: amd64
@@ -96,7 +96,7 @@ jobs:
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: ubuntu-2004-arm64
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}'"
       channel: nightly
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
       arch: arm64

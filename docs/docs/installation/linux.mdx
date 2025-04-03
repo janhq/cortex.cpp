@@ -91,7 +91,7 @@ sudo /usr/bin/cortex-uninstall.sh
 
     ```bash
     cd engine
-    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=$(git rev-parse HEAD) -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=$(git rev-parse HEAD) -DCMAKE_BUILD_TEST=OFF"
     ```
 
 3. Verify that Cortex.cpp is builded correctly by getting help information.

@@ -90,13 +90,13 @@ The script requires sudo permission.
     <TabItem value="Mac Silicon" label="Mac Silicon">
     ```sh
     cd engine
-    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DMAC_ARM64=ON"
     ```
     </TabItem>
     <TabItem value="Mac Intel" label="Mac Intel">
     ```sh
     cd engine
-    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF"
     ```
     </TabItem>
   </Tabs>
