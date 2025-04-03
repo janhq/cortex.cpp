@@ -2,6 +2,7 @@ include(FetchContent)
 
 set(USE_OSSP_UUID TRUE)
 
+
 set(ZLIB_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/zlib/install)
 set(ZLIB_INCLUDE_DIR ${ZLIB_INSTALL_DIR}/include)
 if(MSVC)
@@ -40,4 +41,8 @@ FetchContent_Declare(drogon
     GIT_TAG v1.9.10
 )
 
-FetchContent_MakeAvailableWithArgs(drogon BUILD_CTL=OFF)
+FetchContent_MakeAvailableWithArgs(drogon
+    BUILD_CTL=OFF
+    OPENSSL_ROOT_DIR=${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl/lib64
+    OPENSSL_INCLUDE_DIR=${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl/include/openssl
+)
