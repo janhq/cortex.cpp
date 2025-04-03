@@ -107,9 +107,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd engine
-          if [ "${{ matrix.name }}" == "arm64" ]; then
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
 
@@ -392,9 +389,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd engine
-          if [ "${{ matrix.name }}" == "arm64" ]; then
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
       - name: Run setup config

@@ -98,7 +98,9 @@ endif()
 
 add_subdirectory(cli)
 
-# set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
+set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
+set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
+set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
 
 if(CMAKE_BUILD_INJA_TEST)
   add_subdirectory(examples/inja)

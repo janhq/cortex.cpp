@@ -130,10 +130,6 @@ jobs:
       - name: Build
         run: |
           cd engine
-          # Set env if arch is arm64
-          if [ "${{ inputs.arch }}" == "arm64" ]; then
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
           make build CMAKE_EXTRA_FLAGS="${{ inputs.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ inputs.build-deps-cmake-flags }}"
           
       - name: Install Python
