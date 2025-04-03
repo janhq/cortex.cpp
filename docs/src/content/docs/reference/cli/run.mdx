@@ -1,0 +1,40 @@
+---
+title: Cortex Run
+description: Cortex run command
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components';
+
+The lazy dev's way to run models. Does three things:
+1. [`cortex pull`](/docs/cli/models/): Grabs the model if you don't have it
+2. [`cortex engines install`](/docs/cli/engines/): Sets up engines if missing
+3. [`cortex models start`](/docs/cli/models/): Fires up the model
+
+## Usage
+<Aside>
+Need the gory details? Use `--verbose` flag like this: `cortex --verbose [subcommand]`
+</Aside>
+
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex run [options] <model_id>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe run [options] <model_id>
+  ```
+  </TabItem>
+</Tabs>
+
+## Options
+
+| Option                      | Description                                                                 | Required | Default value                                | Example                |
+|-----------------------------|-----------------------------------------------------------------------------|----------|----------------------------------------------|------------------------|
+| `model_id`                  | The identifier of the model you want to chat with.                          | Yes      | - | `mistral`       |
+| `--gpus`                    | List of GPUs to use.                                                        | No       | -                                            | `[0,1]`           |
+| `--ctx_len`                 | Maximum context length for inference.                                       | No       | `min(8192, max_model_context_length)`        | `1024`                 |
+| `-h`, `--help`              | Display help information for the command.                                   | No       | -                                            | `-h`               |
+| `-d`, `--detached`          | Load the model without starting an interactive chat                         | No       | -                                            | `-d`               |
