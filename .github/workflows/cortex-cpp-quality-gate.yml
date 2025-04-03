@@ -8,6 +8,7 @@ on:
   schedule:
     - cron: '0 22 * * *'
 
+
 env:
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
   EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
