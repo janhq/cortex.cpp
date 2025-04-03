@@ -2,10 +2,6 @@ include(FetchContent)
 
 set(USE_OSSP_UUID TRUE)
 
-set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
-set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
-set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib)
-
 set(ZLIB_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/zlib/install)
 set(ZLIB_INCLUDE_DIR ${ZLIB_INSTALL_DIR}/include)
 if(MSVC)

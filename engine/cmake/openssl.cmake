@@ -23,7 +23,7 @@ set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
 
 set(OPENSSL_CONFIGURE_COMMAND ${OPENSSL_SOURCE_DIR}/config)
 if(MSVC)
-  Externoject_Add(
+  ExternalProject_Add(
     SOURCE_DIR ${OPENSSL_SOURCE_DIR}
     GIT_REPOSITORY https://github.com/openssl/openssl.git
     GIT_TAG openssl-3.4.1
