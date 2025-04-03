@@ -2,6 +2,11 @@ file(GLOB SRCS *.cc)
 project(test-components)
 
 enable_testing()
+
+set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
+set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
+set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
+find_package(OpenSSL REQUIRED)
  
 add_executable(${PROJECT_NAME} 
   ${SRCS} 

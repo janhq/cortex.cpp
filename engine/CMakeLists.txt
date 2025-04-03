@@ -92,15 +92,18 @@ add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 option(CMAKE_BUILD_TEST "Enable testing" ON)
 option(CMAKE_BUILD_INJA_TEST "Enable inja example" OFF)
+set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
+set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
+set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
+find_package(OpenSSL REQUIRED)
+
 if(CMAKE_BUILD_TEST)
   add_subdirectory(test)
 endif()
 
 add_subdirectory(cli)
 
-set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
-set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
-set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
+
 
 if(CMAKE_BUILD_INJA_TEST)
   add_subdirectory(examples/inja)
@@ -213,6 +216,7 @@ if(APPLE)
   target_link_libraries(${TARGET_NAME} PRIVATE ${COREFOUNDATION_LIB} ${FOUNDATION_LIB} ${CORESERVICES_LIB})
 endif()
 
+target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${TARGET_NAME} PRIVATE minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE archive)
 target_link_libraries(${TARGET_NAME} PRIVATE trantor)

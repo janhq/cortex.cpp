@@ -46,6 +46,11 @@ add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
+set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
+set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
+set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
+find_package(OpenSSL REQUIRED)
+
 # find_package(jsoncpp CONFIG REQUIRED)
 # find_package(yaml-cpp CONFIG REQUIRED)
 # find_package(CLI11 CONFIG REQUIRED)
@@ -85,7 +90,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/process/utils.cc
   )
 
-
+target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${TARGET_NAME} PRIVATE CLI11)
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE minizip)

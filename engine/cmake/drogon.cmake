@@ -39,6 +39,8 @@ else()
 endif()
 set(C-ARES_INCLUDE_DIRS ${C-ARES_INSTALL_DIR}/include)
 
+find_package(OpenSSL REQUIRED)
+
 FetchContent_Declare(drogon
     GIT_REPOSITORY https://github.com/drogonframework/drogon.git
     GIT_TAG v1.9.10
@@ -46,6 +48,4 @@ FetchContent_Declare(drogon
 
 FetchContent_MakeAvailableWithArgs(drogon
     BUILD_CTL=OFF
-    OPENSSL_ROOT_DIR=${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl/lib64
-    OPENSSL_INCLUDE_DIR=${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl/include
 )
