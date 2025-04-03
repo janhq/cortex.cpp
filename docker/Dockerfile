@@ -37,10 +37,20 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     ninja-build \
     pkg-config \
     python3-pip \
-    openssl && \
+    openssl \
+    libssl-dev && \
     pip3 install awscli && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Download and install CMake 3.22.6
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.22.6/cmake-3.22.6.tar.gz -q -O /tmp/cmake.tar.gz && \
+    tar -xzf /tmp/cmake.tar.gz -C /tmp && \
+    cd /tmp/cmake-3.22.6 && \
+    ./bootstrap && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /tmp/cmake.tar.gz /tmp/cmake-3.22.6
 
 ARG CORTEX_CPP_VERSION=latest
 ARG CMAKE_EXTRA_FLAGS=""
