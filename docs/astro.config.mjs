@@ -69,8 +69,8 @@ export default defineConfig({
             {
               label: "Engines",
               items: [
-                { label: "Overview", slug: "explanation/models" },
-                { label: "Model YAML", slug: "explanation/models/model-yaml" }
+                { label: "Overview", slug: "explanation/engines" },
+                { label: "Model YAML", slug: "explanation/engines/llamacpp" }
                 // { label: "Hardware", slug: "capabilities/hardware" },
               ],
             },
@@ -79,6 +79,9 @@ export default defineConfig({
         {
           label: "Tutorials",
           items: [
+            { label: "Text Generation", slug: "tutorials/text-generation" },
+            { label: "Embeddings", slug: "tutorials/embeddings" },
+            { label: "Assistants", slug: "tutorials/assistants" },
             { label: "Function Calling", slug: "tutorials/function-calling" },
             { label: "Structured Outputs", slug: "tutorials/structured-outputs" },
           ],

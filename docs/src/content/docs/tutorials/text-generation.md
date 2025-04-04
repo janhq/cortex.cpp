@@ -2,7 +2,6 @@
 title: Text Generation
 ---
 
-
 Cortex provides a text generation endpoint that is fully compatible with OpenAI's API.
 This section shows you how to generate text using Cortex with the OpenAI Python SDK.
 
