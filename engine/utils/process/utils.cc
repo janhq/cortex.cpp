@@ -347,7 +347,7 @@ bool KillProcess(ProcessInfo& proc_info) {
   bool success;
 
 #if defined(_WIN32)
-  success = TerminateJobObject(proc_info.hJob, 0) == 0;
+  success = TerminateJobObject(proc_info.hJob, 0);
 #elif defined(__APPLE__) || defined(__linux__)
   // we send SIGTERM to subprocess. we trust that this subprocess will
   // propagate SIGTERM correctly to its children processes.

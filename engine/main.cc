@@ -196,15 +196,16 @@ void RunServer(bool ignore_cout) {
   auto config_service = std::make_shared<ConfigService>();
   auto download_service =
       std::make_shared<DownloadService>(event_queue_ptr, config_service);
+  auto task_queue = std::make_shared<cortex::TaskQueue>(
+      std::min(2u, std::thread::hardware_concurrency()), "background_task");
   auto engine_service = std::make_shared<EngineService>(
-      download_service, dylib_path_manager, db_service);
+      download_service, dylib_path_manager, db_service, task_queue);
   auto inference_svc = std::make_shared<InferenceService>(engine_service);
   auto model_src_svc = std::make_shared<ModelSourceService>(db_service);
-  cortex::TaskQueue task_queue(
-      std::min(2u, std::thread::hardware_concurrency()), "background_task");
-  auto model_service =
-      std::make_shared<ModelService>(db_service, hw_service, download_service,
-                                     inference_svc, engine_service, task_queue);
+
+  auto model_service = std::make_shared<ModelService>(
+      db_service, hw_service, download_service, inference_svc, engine_service,
+      *task_queue);
   inference_svc->SetModelService(model_service);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(

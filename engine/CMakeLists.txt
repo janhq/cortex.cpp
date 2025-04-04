@@ -182,6 +182,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/process/utils.cc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/remote_engine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/local-engine/local_engine.cc
 
 )
 
@@ -227,3 +228,12 @@ set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}
                       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+if(MSVC)
+  add_custom_command(
+    TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/../.github/patches/windows
+    ${CMAKE_BINARY_DIR}/
+  )
+endif()

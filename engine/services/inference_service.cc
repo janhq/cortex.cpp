@@ -12,7 +12,9 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   } else {
     engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
   }
+  CTL_DBG("engine_type: " << engine_type);
   function_calling_utils::PreprocessRequest(json_body);
+  CTL_DBG("engine_type: " << engine_type);
   auto tool_choice = json_body->get("tool_choice", Json::Value::null);
   auto model_id = json_body->get("model", "").asString();
   if (saved_models_.find(model_id) != saved_models_.end()) {
@@ -32,6 +34,7 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
       }
     }
   }
+  CTL_DBG("engine_type: " << engine_type);
 
   auto engine_result = engine_service_->GetLoadedEngine(engine_type);
   if (engine_result.has_error()) {
@@ -275,9 +278,7 @@ InferResult InferenceService::GetModels(
   for (const auto& loaded_engine : loaded_engines) {
     if (std::holds_alternative<EngineI*>(loaded_engine)) {
       auto e = std::get<EngineI*>(loaded_engine);
-      if (e->IsSupported("GetModels")) {
-        e->GetModels(json_body, std::move(cb));
-      }
+      e->GetModels(json_body, std::move(cb));
     } else {
       std::get<RemoteEngineI*>(loaded_engine)
           ->GetModels(json_body, std::move(cb));
@@ -302,10 +303,8 @@ bool InferenceService::StopInferencing(const std::string& engine_name,
 
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     auto engine = std::get<EngineI*>(engine_result.value());
-    if (engine->IsSupported("StopInferencing")) {
-      engine->StopInferencing(model_id);
-      CTL_INF("Stopped inferencing");
-    }
+    engine->StopInferencing(model_id);
+    CTL_INF("Stopped inferencing");
   }
   return true;
 }
