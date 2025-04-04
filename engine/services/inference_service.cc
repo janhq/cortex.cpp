@@ -13,8 +13,6 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
   }
   CTL_DBG("engine_type: " << engine_type);
-  function_calling_utils::PreprocessRequest(json_body);
-  CTL_DBG("engine_type: " << engine_type);
   auto tool_choice = json_body->get("tool_choice", Json::Value::null);
   auto model_id = json_body->get("model", "").asString();
   if (saved_models_.find(model_id) != saved_models_.end()) {

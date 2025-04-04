@@ -63,8 +63,14 @@ tools = [
 
 completion_payload = {
     "messages": [
-        {"role": "system", "content": "You are a helpful customer support assistant. Use the supplied tools to assist the user."},
-        {"role": "user", "content": "Hi, can you tell me the delivery date for my order?"},
+        {
+            "role": "system",
+            "content": 'You have access to the following CUSTOM functions:\n\n<CUSTOM_FUNCTIONS>\n\nIf a you choose to call a function ONLY reply in the following format:\n<{start_tag}={function_name}>{parameters}{end_tag}\nwhere\n\nstart_tag => `<function`\nparameters => a JSON dict with the function argument name as key and function argument value as value.\nend_tag => `</function>`\n\nHere is an example,\n<function=example_function_name>{"example_name": "example_value"}</function>\n\nReminder:\n- Function calls MUST follow the specified format\n- Required parameters MUST be specified\n- You can call one or more functions at a time, but remember only chose correct function\n- Put the entire function call reply on one line\n- Always add your sources when using search results to answer the user query\n- If you can not find correct parameters or arguments corresponding to function in the user\'s message, ask user again to provide, do not make assumptions.\n- No explanation are needed when calling a function.\n\nYou are a helpful assistant.',
+        },
+        {
+            "role": "user", 
+            "content": "Hi, can you tell me the delivery date for my order?"
+        },
     ]
 }
 
@@ -126,10 +132,22 @@ Once the user provides their order ID:
 ```python
 completion_payload = {
     "messages": [
-        {"role": "system", "content": "You are a helpful customer support assistant. Use the supplied tools to assist the user."},
-        {"role": "user", "content": "Hi, can you tell me the delivery date for my order?"},
-        {"role": "assistant", "content": "Of course! Please provide your order ID so I can look it up."},
-        {"role": "user", "content": "i think it is order_70705"},
+        {
+            "role": "system",
+            "content": 'You have access to the following CUSTOM functions:\n\n<CUSTOM_FUNCTIONS>\n\nIf a you choose to call a function ONLY reply in the following format:\n<{start_tag}={function_name}>{parameters}{end_tag}\nwhere\n\nstart_tag => `<function`\nparameters => a JSON dict with the function argument name as key and function argument value as value.\nend_tag => `</function>`\n\nHere is an example,\n<function=example_function_name>{"example_name": "example_value"}</function>\n\nReminder:\n- Function calls MUST follow the specified format\n- Required parameters MUST be specified\n- You can call one or more functions at a time, but remember only chose correct function\n- Put the entire function call reply on one line\n- Always add your sources when using search results to answer the user query\n- If you can not find correct parameters or arguments corresponding to function in the user\'s message, ask user again to provide, do not make assumptions.\n- No explanation are needed when calling a function.\n\nYou are a helpful assistant.',
+        },
+        {
+            "role": "user", 
+            "content": "Hi, can you tell me the delivery date for my order?"
+        },
+        {
+            "role": "assistant", 
+            "content": "Of course! Please provide your order ID so I can look it up."
+        },
+        {
+            "role": "user", 
+            "content": "i think it is order_70705"
+        },
     ]
 }
 

@@ -531,6 +531,7 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
 
   params.push_back("--pooling");
   params.push_back("mean");
+  params.push_back("--jinja");
 
   std::vector<std::string> v;
   v.reserve(params.size() + 1);
