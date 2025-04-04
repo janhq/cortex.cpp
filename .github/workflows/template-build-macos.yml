@@ -139,11 +139,6 @@ jobs:
 
       - name: Install jq
         uses: dcarbone/install-jq-action@v2.0.1
-
-      - name: Configure vcpkg
-        run: |
-          cd engine
-          make configure-vcpkg
       
       - name: Build
         run: |

@@ -8,11 +8,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(MSVC)
-  add_compile_options(
-      $<$<CONFIG:>:/MT> #---------|
-      $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
-      $<$<CONFIG:Release>:/MT> #--|
-  )
+  # add_compile_options(
+  #     $<$<CONFIG:>:/MT> #---------|
+  #     $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+  #     $<$<CONFIG:Release>:/MT> #--|
+  # )
 
   add_compile_options(/utf-8)
   add_definitions(-DUNICODE -D_UNICODE)
@@ -46,17 +46,26 @@ add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
-find_package(jsoncpp CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
-find_package(CLI11 CONFIG REQUIRED)
-find_package(unofficial-minizip CONFIG REQUIRED)
-find_package(LibArchive REQUIRED)
-find_package(tabulate CONFIG REQUIRED)
-find_package(CURL REQUIRED)
-find_package(SQLiteCpp REQUIRED)
-find_package(Trantor CONFIG REQUIRED)
-find_package(indicators CONFIG REQUIRED)
-find_package(lfreist-hwinfo CONFIG REQUIRED)
+set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
+set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
+if(EXISTS ${OPENSSL_INSTALL_DIR}/lib64)
+  set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
+else()
+  set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib)
+endif()
+find_package(OpenSSL REQUIRED)
+
+# find_package(jsoncpp CONFIG REQUIRED)
+# find_package(yaml-cpp CONFIG REQUIRED)
+# find_package(CLI11 CONFIG REQUIRED)
+# find_package(unofficial-minizip CONFIG REQUIRED)
+# find_package(LibArchive REQUIRED)
+# find_package(tabulate CONFIG REQUIRED)
+# find_package(CURL REQUIRED)
+# find_package(SQLiteCpp REQUIRED)
+# find_package(Trantor CONFIG REQUIRED)
+# find_package(indicators CONFIG REQUIRED)
+# find_package(lfreist-hwinfo CONFIG REQUIRED)
 
 
 add_executable(${TARGET_NAME} main.cc
@@ -85,17 +94,19 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/process/utils.cc
   )
 
-target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
-target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
-target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
-target_link_libraries(${TARGET_NAME} PRIVATE tabulate::tabulate)
-target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
-target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
-  ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${TARGET_NAME} PRIVATE CLI11)
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
-target_link_libraries(${TARGET_NAME} PRIVATE Trantor::Trantor)
-target_link_libraries(${TARGET_NAME} PRIVATE indicators::indicators)
-target_link_libraries(${TARGET_NAME} PRIVATE lfreist-hwinfo::hwinfo)
+target_link_libraries(${TARGET_NAME} PRIVATE minizip)
+target_link_libraries(${TARGET_NAME} PRIVATE drogon)
+target_link_libraries(${TARGET_NAME} PRIVATE archive)
+target_link_libraries(${TARGET_NAME} PRIVATE tabulate)
+target_link_libraries(${TARGET_NAME} PRIVATE libcurl)
+target_link_libraries(${TARGET_NAME} PRIVATE eventpp)
+target_link_libraries(${TARGET_NAME} PRIVATE yaml-cpp)
+target_link_libraries(${TARGET_NAME} PRIVATE hwinfo)
+target_link_libraries(${TARGET_NAME} PRIVATE inja)
+target_link_libraries(${TARGET_NAME} PRIVATE indicators)
 
 # ##############################################################################
 
@@ -120,6 +131,8 @@ aux_source_directory(../extensions EX_SRC)
  
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/.. )
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/openssl/include)
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/jsoncpp-lib/include)
 
 target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${COMMON_SRC} ${DB_SRC} ${EX_SRC})
 

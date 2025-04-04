@@ -156,12 +156,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
-      - name: Configure vcpkg
-        shell: cmd
-        run: |
-          cd engine
-          make configure-vcpkg
-
       - name: Build
         run: |
           cd engine
