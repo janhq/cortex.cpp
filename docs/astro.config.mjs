@@ -20,13 +20,6 @@ export default defineConfig({
         youtube: "https://www.youtube.com/@menloresearch",
         linkedin: "https://www.linkedin.com/company/menloresearch/",
       },
-      i18n: {
-        defaultLocale: 'en',
-        locales: ['en'],
-        routing: {
-          prefixDefaultLocale: false
-        }
-      },
       sidebar: [
         {
           label: "Title Bar",
