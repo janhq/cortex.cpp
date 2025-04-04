@@ -121,3 +121,22 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-astro-pr-preview:
+    name: Deploy PR Preview
+    needs: build-astro
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          preview: true
+      - name: Add PR comment with preview URL
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            📝 Documentation Preview: ${{ steps.deployment.outputs.page_url }}
