@@ -5,7 +5,11 @@ enable_testing()
 
 set(OPENSSL_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/../build_deps/openssl)
 set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
-set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
+if(EXISTS ${OPENSSL_INSTALL_DIR}/lib64)
+  set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib64)
+else()
+  set(OPENSSL_ROOT_DIR ${OPENSSL_INSTALL_DIR}/lib)
+endif()
 find_package(OpenSSL REQUIRED)
 
 add_executable(${PROJECT_NAME}
