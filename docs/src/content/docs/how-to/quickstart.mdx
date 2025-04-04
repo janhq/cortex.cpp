@@ -1,0 +1,197 @@
+---
+title: Getting Started with Cortex
+description: Installation and Basic Usage of Cortex
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Installation
+
+Cortex has a **Local Installer** with all of the required dependencies, so that once you've downloaded it, no internet connection is required during the installation process.
+- [Windows](https://app.cortexcpp.com/download/latest/windows-amd64-local)
+- [Mac (Universal)](https://app.cortexcpp.com/download/latest/mac-universal-local)
+- [Linux](https://app.cortexcpp.com/download/latest/linux-amd64-local)
+
+## Starting the Server
+
+Cortex runs an [API server](https://cortex.so/api-reference) on `localhost:39281` by default. The port can be customized in [`.cortexrc`](/docs/architecture/cortexrc) with the `apiServerPort` parameter.
+
+<Tabs>
+  <TabItem label="Basic">
+  ```sh
+  cortex start
+  ```
+  </TabItem>
+  <TabItem label="Custom Port">
+  ```sh
+  cortex-p <port_number>
+  ```
+  </TabItem>
+  <TabItem label="Custom Data Folder">
+  ```sh
+  cortex --data_folder_path <your_directory>
+  ```
+  </TabItem>
+</Tabs>
+
+## Engine Management
+
+Cortex supports specialized engines for different multi-modal foundation models: llama.cpp and ONNXRuntime. By default, Cortex installs `llama.cpp` as its main engine.
+
+For more information, check out [Engine Management](/docs/engines).
+
+### List Available Engines
+```bash
+curl --request GET \
+  --url http://127.0.0.1:39281/v1/engines
+```
+
+### Install an Engine
+```bash
+curl http://127.0.0.1:39281/v1/engines/llama-cpp/install \
+  --request POST \
+  --header 'Content-Type: application/json'
+```
+
+## Model Management
+
+### Pull a Model
+
+You can download models from:
+- [Cortex Built-in Models](https://cortex.so/models)
+- [Hugging Face](https://huggingface.co) (GGUF): `cortex pull <author/ModelRepo>`
+
+<Tabs>
+  <TabItem label="Command Line">
+  ```sh
+  cortex pull llama3.3
+  ```
+  
+  # Or for specific models
+  ```sh
+  cortex pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+  ```
+  </TabItem>
+  <TabItem label="API">
+  ```sh
+  curl --request POST \
+    --url http://127.0.0.1:39281/v1/models/pull \
+    -H "Content-Type: application/json" \
+    --data '{"model": "tinyllama:1b-gguf-q3-km"}'
+  ```
+  </TabItem>
+</Tabs>
+
+:::info
+All model files are stored in the `~/cortex/models` folder.
+:::
+
+### Stop Model Download
+```sh
+curl --request DELETE \
+  --url http://127.0.0.1:39281/v1/models/pull \
+  --header 'Content-Type: application/json' \
+  --data '{"taskId": "tinyllama:tinyllama:1b-gguf-q3-km"}'
+```
+
+### List All Models
+```bash
+curl --request GET \
+  --url http://127.0.0.1:39281/v1/models
+```
+
+### Delete a Model
+```bash
+curl --request DELETE \
+  --url http://127.0.0.1:39281/v1/models/tinyllama:1b-gguf-q3-km
+```
+
+## Running Models
+
+### Start a Model
+
+<Tabs>
+  <TabItem label="Command Line">
+  ```sh
+  # This downloads (if needed) and starts the model in one command
+  cortex run llama3.3
+  ```
+  </TabItem>
+  <TabItem label="API">
+  ```bash
+  curl --request POST \
+    --url http://127.0.0.1:39281/v1/models/start \
+    --header 'Content-Type: application/json' \
+    --data '{"model": "llama3.1:8b-gguf-q4-km"}'
+  ```
+  </TabItem>
+</Tabs>
+
+### Create Chat Completion
+```bash
+curl --request POST \
+  --url http://localhost:39281/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  --data '{
+    "model": "llama3.1:8b-gguf",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a Haiku about cats and AI"
+      }
+    ],
+    "stream": false
+  }'
+```
+
+### System Status
+
+Check the running model and hardware system status (RAM, Engine, VRAM, Uptime).
+
+```sh
+cortex ps
+```
+
+### Stop a Model
+
+<Tabs>
+  <TabItem label="Command Line">
+  ```sh
+  cortex models stop llama3.3
+  ```
+  </TabItem>
+  <TabItem label="API">
+  ```bash
+  curl --request POST \
+    --url http://127.0.0.1:39281/v1/models/stop \
+    --header 'Content-Type: application/json' \
+    --data '{
+    "model": "tinyllama:1b-gguf"
+  }'
+  ```
+  </TabItem>
+</Tabs>
+
+## Stopping the Server
+
+<Tabs>
+  <TabItem label="Command Line">
+  ```sh
+  cortex stop
+  ```
+  </TabItem>
+  <TabItem label="API">
+  ```bash
+  curl --request DELETE \
+    --url http://127.0.0.1:39281/processManager/destroy
+  ```
+  </TabItem>
+</Tabs>
+
+## What's Next?
+
+Now that Cortex is set up, you can continue to:
+
+- Adjust the folder path and configuration using the [`.cortexrc`](/docs/architecture/cortexrc) file
+- Explore the Cortex's [data folder](/docs/architecture/data-folder) to understand how data gets stored
+- Learn about the structure of the [`model.yaml`](/docs/capabilities/models/model-yaml) file in Cortex
