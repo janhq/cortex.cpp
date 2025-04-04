@@ -2754,7 +2754,7 @@
                       },
                       "version": {
                         "type": "string",
-                        "example": "0.1.35-28.10.24"
+                        "example": "b4920"
                       }
                     }
                   }
@@ -2763,11 +2763,11 @@
                   {
                     "engine": "llama-cpp",
                     "name": "mac-arm64",
-                    "version": "0.1.35-28.10.24"
+                    "version": "b4920"
                   },
                   {
                     "engine": "llama-cpp",
-                    "name": "linux-amd64-avx",
+                    "name": "linux-avx-x64",
                     "version": "0.1.35-27.10.24"
                   }
                 ]
@@ -2901,7 +2901,7 @@
                       "name": {
                         "type": "string",
                         "description": "The name of the variant, including OS, architecture, and capabilities",
-                        "example": "linux-amd64-avx-cuda-11-7"
+                        "example": "linux-avx-x64-cuda-11-7"
                       },
                       "created_at": {
                         "type": "string",
@@ -2973,7 +2973,7 @@
                       },
                       "name": {
                         "type": "string",
-                        "example": "0.1.39-linux-amd64-avx-cuda-11-7"
+                        "example": "llama-b4920-bin-linux-avx-cuda-cu11.7"
                       },
                       "size": {
                         "type": "integer",
@@ -3250,7 +3250,7 @@
                     },
                     "version": {
                       "type": "string",
-                      "example": "0.1.35-28.10.24"
+                      "example": "b4920"
                     }
                   }
                 }

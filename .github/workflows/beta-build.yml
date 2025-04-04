@@ -9,7 +9,7 @@ jobs:
   get-update-version:
     uses: ./.github/workflows/template-get-update-version.yml
 
-  get-cortex-llamacpp-latest-version:
+  get-llamacpp-latest-version:
     uses: ./.github/workflows/template-cortex-llamacpp-latest-version.yml
 
   create-draft-release:
@@ -39,7 +39,7 @@ jobs:
 
   build-macos:
     uses: ./.github/workflows/template-build-macos.yml
-    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
+    needs: [get-update-version, create-draft-release, get-llamacpp-latest-version]
     secrets: inherit
     with:
       ref: ${{ github.ref }}
@@ -48,12 +48,12 @@ jobs:
       cmake-flags: "-DCORTEX_VARIANT=beta -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}'"
       channel: beta
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      llamacpp-version: ${{ needs.get-llamacpp-latest-version.outputs.llamacpp_latest_version }}
 
   build-windows-x64:
     uses: ./.github/workflows/template-build-windows-x64.yml
     secrets: inherit
-    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
+    needs: [get-update-version, create-draft-release, get-llamacpp-latest-version]
     with:
       ref: ${{ github.ref }}
       public_provider: github
@@ -64,12 +64,12 @@ jobs:
       ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
       channel: beta
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      llamacpp-version: ${{ needs.get-llamacpp-latest-version.outputs.llamacpp_latest_version }}
           
   build-linux-x64:
     uses: ./.github/workflows/template-build-linux.yml
     secrets: inherit
-    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
+    needs: [get-update-version, create-draft-release, get-llamacpp-latest-version]
     with:
       ref: ${{ github.ref }}
       public_provider: github
@@ -78,13 +78,13 @@ jobs:
       cmake-flags: "-DCORTEX_VARIANT=beta -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}'"
       channel: beta
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      llamacpp-version: ${{ needs.get-llamacpp-latest-version.outputs.llamacpp_latest_version }}
       arch: amd64
 
   build-linux-arm64:
     uses: ./.github/workflows/template-build-linux.yml
     secrets: inherit
-    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
+    needs: [get-update-version, create-draft-release, get-llamacpp-latest-version]
     with:
       ref: ${{ github.ref }}
       public_provider: github
@@ -93,13 +93,13 @@ jobs:
       cmake-flags: "-DCORTEX_VARIANT=beta -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}'"
       channel: beta
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      llamacpp-version: ${{ needs.get-llamacpp-latest-version.outputs.llamacpp_latest_version }}
       arch: arm64
 
   build-docker-x64:
     uses: ./.github/workflows/template-build-docker-x64.yml
     secrets: inherit
-    needs: [get-update-version, get-cortex-llamacpp-latest-version]
+    needs: [get-update-version, get-llamacpp-latest-version]
     with:
       ref: ${{ github.ref }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}

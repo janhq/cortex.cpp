@@ -288,6 +288,47 @@ TEST_F(StringUtilsTestSuite, LargeInputPerformance) {
   EXPECT_EQ(RemoveSubstring(large_input, to_remove), "");
 }
 
+TEST(LTrimTest, EmptyString) {
+  std::string s = "";
+  LTrim(s);
+  EXPECT_EQ(s, "");
+}
+
+TEST(LTrimTest, NoSpaces) {
+  std::string s = "HelloWorld";
+  LTrim(s);
+  EXPECT_EQ(s, "HelloWorld");
+}
+
+TEST(LTrimTest, LeadingSpaces) {
+  std::string s = "   HelloWorld";
+  LTrim(s);
+  EXPECT_EQ(s, "HelloWorld");
+}
+
+TEST(LTrimTest, LeadingTabs) {
+  std::string s = "\t\tHelloWorld";
+  LTrim(s);
+  EXPECT_EQ(s, "HelloWorld");
+}
+
+TEST(LTrimTest, LeadingNewlines) {
+  std::string s = "\n\nHelloWorld";
+  LTrim(s);
+  EXPECT_EQ(s, "HelloWorld");
+}
+
+TEST(LTrimTest, OnlySpaces) {
+  std::string s = "   ";
+  LTrim(s);
+  EXPECT_EQ(s, "");
+}
+
+TEST(LTrimTest, MixedSpaces) {
+  std::string s = "   \t\nHelloWorld   ";
+  LTrim(s);
+  EXPECT_EQ(s, "HelloWorld   ");
+}
 
 TEST_F(StringUtilsTestSuite, UrlPaths_SimilarStrings) {
   std::string str1 = "/v1/threads/{1}/messages/{2}";

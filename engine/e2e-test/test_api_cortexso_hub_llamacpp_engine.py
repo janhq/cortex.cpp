@@ -125,7 +125,7 @@ class TestCortexsoModels:
             "Install Engine", ["engines", "install", "llama-cpp"], timeout=None, capture = False
         )
         root = Path.home()
-        assert os.path.exists(root / "cortexcpp" / "engines" / "cortex.llamacpp" / "version.txt")
+        assert os.path.exists(root / "cortexcpp" / "engines" / "llama.cpp" / "version.txt")
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
         # Start the model

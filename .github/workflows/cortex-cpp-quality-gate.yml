@@ -124,6 +124,7 @@ jobs:
         run: |
           cd engine
           mkdir -p ~/.config/cortexcpp/
+          mkdir -p ~/.local/share/cortexcpp/
           echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.config/cortexcpp/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.config/cortexcpp/.cortexrc
           # ./build/cortex
@@ -151,6 +152,7 @@ jobs:
         run: |
           cd engine
           mkdir -p ~/.config/cortexcpp/
+          mkdir -p ~/.local/share/cortexcpp/
           echo "apiServerPort: 3928" > ~/.config/cortexcpp/.cortexrc
           echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" >> ~/.config/cortexcpp/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.config/cortexcpp/.cortexrc
@@ -404,6 +406,7 @@ jobs:
         run: |
           cd engine
           mkdir -p ~/.config/cortexcpp/
+          mkdir -p ~/.local/share/cortexcpp/
           echo "gitHubToken: ${{ secrets.GITHUB_TOKEN }}" > ~/.config/cortexcpp/.cortexrc
           # ./build/cortex
           cat ~/.config/cortexcpp/.cortexrc
@@ -429,6 +432,7 @@ jobs:
         run: |
           cd engine
           mkdir -p ~/.config/cortexcpp/
+          mkdir -p ~/.local/share/cortexcpp/
           echo "apiServerPort: 3928" > ~/.config/cortexcpp/.cortexrc
           echo "gitHubToken: ${{ secrets.GITHUB_TOKEN }}" > ~/.config/cortexcpp/.cortexrc
           # ./build/cortex
