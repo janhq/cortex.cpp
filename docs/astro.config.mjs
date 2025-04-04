@@ -7,7 +7,10 @@ import starlightVideos from 'starlight-videos'
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://cortex.so',
+  site: process.env.GITHUB_ACTIONS 
+    ? 'https://menloresearch.github.io/cortex.cpp'
+    : 'https://cortex.so',
+  base: process.env.GITHUB_ACTIONS ? '/cortex.cpp' : '',
   integrations: [
     starlight({
       title: "Cortex",

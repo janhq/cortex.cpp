@@ -4,13 +4,14 @@ export interface Props {
 }
 
 const { activeTab = "home" } = Astro.props;
+const basePath = import.meta.env.BASE_URL || '';
 ---
 
 <nav class="floating-nav">
-    <a href="/" class={activeTab === "home" ? "active" : ""}>Home</a>
-    <a href="/overview" class={activeTab === "docs" ? "active" : ""}>Docs</a>
-    <a href="/model-hub" class={activeTab === "model-hub" ? "active" : ""}>Model Hub</a>
-    <!-- <a href="/blog" class={activeTab === "blog" ? "active" : ""}>Blog</a> -->
+    <a href={`${basePath}/`} class={activeTab === "home" ? "active" : ""}>Home</a>
+    <a href={`${basePath}/overview`} class={activeTab === "docs" ? "active" : ""}>Docs</a>
+    <a href={`${basePath}/model-hub`} class={activeTab === "model-hub" ? "active" : ""}>Model Hub</a>
+    <!-- <a href={`${basePath}/blog`} class={activeTab === "blog" ? "active" : ""}>Blog</a> -->
     <button class="mobile-menu-toggle" aria-label="Toggle menu">
         <span></span>
         <span></span>
