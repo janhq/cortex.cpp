@@ -2,6 +2,8 @@
 import "@fontsource/press-start-2p";
 import "@fontsource/vt323";
 import Navigation from "./Navigation.astro";
+import { Image } from 'astro:assets';
+import menloLogo from '../assets/menlo.png';
 ---
 
 <div class="container">
@@ -54,7 +56,9 @@ import Navigation from "./Navigation.astro";
                 </a>
                 <a href="https://menlo.ai" class="card">
                     <div class="card-content">
-                        <div class="pixel-icon"><img src="/menlo.png" alt="Menlo" width="23%" height="23%" /></div>
+                        <div class="pixel-icon">
+                            <Image src={menloLogo} alt="Menlo" width={50} height={50} />
+                        </div>
                         <h3>Menlo Labs</h3>
                         <p>Our Parent</p>
                     </div>

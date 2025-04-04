@@ -4,14 +4,18 @@ export interface Props {
 }
 
 const { activeTab = "home" } = Astro.props;
-const basePath = import.meta.env.BASE_URL || '';
+const basePath = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' 
+  ? import.meta.env.BASE_URL 
+  : '';
 ---
 
 <nav class="floating-nav">
-    <a href={`${basePath}/`} class={activeTab === "home" ? "active" : ""}>Home</a>
-    <a href={`${basePath}/overview`} class={activeTab === "docs" ? "active" : ""}>Docs</a>
-    <a href={`${basePath}/model-hub`} class={activeTab === "model-hub" ? "active" : ""}>Model Hub</a>
-    <!-- <a href={`${basePath}/blog`} class={activeTab === "blog" ? "active" : ""}>Blog</a> -->
+    <div class="nav-container">
+        <a href={basePath === '' ? '/' : basePath} class={activeTab === "home" ? "active" : ""}>Home</a>
+        <a href={`${basePath}/overview`} class={activeTab === "docs" ? "active" : ""}>Docs</a>
+        <a href={`${basePath}/model-hub`} class={activeTab === "model-hub" ? "active" : ""}>Model Hub</a>
+        <!-- <a href={`${basePath}/blog`} class={activeTab === "blog" ? "active" : ""}>Blog</a> -->
+    </div>
     <button class="mobile-menu-toggle" aria-label="Toggle menu">
         <span></span>
         <span></span>
@@ -25,16 +29,25 @@ const basePath = import.meta.env.BASE_URL || '';
         top: 20px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        background: rgba(0, 0, 0, 0.8) !important;
-        padding: 1rem 2rem !important;
+        background: rgba(0, 0, 0, 0.85) !important;
+        padding: 0.8rem 1.5rem !important;
         border-radius: 50px !important;
         display: flex !important;
-        gap: 2rem !important;
+        justify-content: space-between;
+        align-items: center;
         backdrop-filter: blur(10px) !important;
-        border: 1px solid #98cbf9 !important;
+        border: 2px solid #98cbf9 !important;
+        box-shadow: 0 0 15px rgba(152, 203, 249, 0.5) !important;
         z-index: 1000 !important;
         width: auto !important;
         max-width: 90% !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .nav-container {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
     }
 
     .floating-nav a {
@@ -43,12 +56,68 @@ const basePath = import.meta.env.BASE_URL || '';
         font-family: "Press Start 2P", cursive;
         font-size: 0.8rem;
         transition: all 0.3s ease;
+        position: relative;
+        padding: 0.3rem 0;
+    }
+
+    /* Pixel animation on hover */
+    .floating-nav a:hover:before,
+    .floating-nav a.active:before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        bottom: -4px;
+        left: 0;
+        background: transparent;
+        box-shadow: 
+            0px 0px 0 #98cbf9,
+            2px 0px 0 #98cbf9,
+            4px 0px 0 #98cbf9,
+            6px 0px 0 #98cbf9,
+            8px 0px 0 #98cbf9,
+            10px 0px 0 #98cbf9;
+        animation: pixelate 0.8s steps(6) infinite;
+    }
+
+    @keyframes pixelate {
+        0% {
+            background: transparent;
+            box-shadow: 
+                0px 0px 0 #98cbf9,
+                2px 0px 0 #98cbf9,
+                4px 0px 0 #98cbf9,
+                6px 0px 0 #98cbf9,
+                8px 0px 0 #98cbf9,
+                10px 0px 0 #98cbf9;
+        }
+        50% {
+            background: transparent;
+            box-shadow: 
+                2px 0px 0 #98cbf9,
+                4px 0px 0 #98cbf9,
+                6px 0px 0 #98cbf9,
+                8px 0px 0 #98cbf9,
+                10px 0px 0 #98cbf9,
+                0px 0px 0 #98cbf9;
+        }
+        100% {
+            background: transparent;
+            box-shadow: 
+                4px 0px 0 #98cbf9,
+                6px 0px 0 #98cbf9,
+                8px 0px 0 #98cbf9,
+                10px 0px 0 #98cbf9,
+                0px 0px 0 #98cbf9,
+                2px 0px 0 #98cbf9;
+        }
     }
 
     .floating-nav a:hover,
     .floating-nav a.active {
         color: #ffffff;
         text-shadow: 0 0 10px #98cbf9;
+        transform: translateY(-2px);
     }
 
     .mobile-menu-toggle {
@@ -58,8 +127,10 @@ const basePath = import.meta.env.BASE_URL || '';
         cursor: pointer;
         flex-direction: column;
         justify-content: space-between;
-        height: 24px;
+        height: 20px;
+        width: 25px;
         padding: 0;
+        transition: all 0.3s ease;
     }
 
     .mobile-menu-toggle span {
@@ -67,24 +138,39 @@ const basePath = import.meta.env.BASE_URL || '';
         height: 3px;
         width: 25px;
         background-color: #98cbf9;
-        border-radius: 3px;
+        border-radius: 1px;
+        transition: all 0.3s ease;
     }
 
+    /* Medium screen adjustments */
     @media (max-width: 768px) {
         .floating-nav {
-            padding: 0.8rem 1.5rem;
-            justify-content: space-between;
-            width: 90%;
+            padding: 0.7rem 1.2rem !important;
+        }
+
+        .nav-container {
+            gap: 1.2rem;
         }
 
         .floating-nav a {
-            font-size: 0.6rem;
+            font-size: 0.7rem;
         }
     }
 
+    /* Mobile view */
     @media (max-width: 580px) {
-        .floating-nav a:not(.active) {
+        .floating-nav {
+            border-radius: 30px !important;
+            width: auto !important;
+            padding: 0.8rem 1.2rem !important;
+        }
+        
+        .nav-container {
             display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            width: 100%;
         }
 
         .mobile-menu-toggle {
@@ -95,11 +181,50 @@ const basePath = import.meta.env.BASE_URL || '';
             flex-direction: column;
             align-items: center;
             gap: 1rem;
-            border-radius: 15px;
+            border-radius: 20px !important;
+            padding: 1rem !important;
+            background: rgba(0, 0, 0, 0.95) !important;
         }
 
+        .floating-nav.open .nav-container {
+            display: flex;
+            margin-top: 0.8rem;
+        }
+
+        .floating-nav.open .mobile-menu-toggle span:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+
+        .floating-nav.open .mobile-menu-toggle span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .floating-nav.open .mobile-menu-toggle span:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+        
+        /* Pixel animation for active links */
         .floating-nav.open a {
-            display: block;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: pixelFadeIn 0.3s forwards;
+            animation-delay: calc(var(--index) * 0.1s);
+        }
+        
+        .floating-nav.open a:nth-child(1) { --index: 1; }
+        .floating-nav.open a:nth-child(2) { --index: 2; }
+        .floating-nav.open a:nth-child(3) { --index: 3; }
+        .floating-nav.open a:nth-child(4) { --index: 4; }
+        
+        @keyframes pixelFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     }
 </style>
@@ -112,6 +237,21 @@ const basePath = import.meta.env.BASE_URL || '';
         if (menuToggle && nav) {
             menuToggle.addEventListener('click', () => {
                 nav.classList.toggle('open');
+                if (nav.classList.contains('open')) {
+                    (nav as HTMLElement).style.boxShadow = '0 0 20px rgba(152, 203, 249, 0.8)';
+                    setTimeout(() => {
+                        (nav as HTMLElement).style.boxShadow = '0 0 15px rgba(152, 203, 249, 0.5)';
+                    }, 300);
+                }
+            });
+            
+            document.addEventListener('click', (event) => {
+                const target = event.target as Node;
+                if (nav.classList.contains('open') && 
+                    !nav.contains(target) && 
+                    target !== menuToggle) {
+                    nav.classList.remove('open');
+                }
             });
         }
     });
