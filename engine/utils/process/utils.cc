@@ -44,7 +44,7 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command, const std::string& stdout_file,
     const std::string& stderr_file) {
   std::stringstream ss;
-  for (const auto item : command) {
+  for (const auto& item : command) {
     ss << item << " ";
   }
   CTL_INF("Spawning process with command: " << ss.str());
@@ -347,7 +347,7 @@ bool KillProcess(ProcessInfo& proc_info) {
   bool success;
 
 #if defined(_WIN32)
-  success = TerminateJobObject(proc_info.hJob, 0) == 0;
+  success = TerminateJobObject(proc_info.hJob, 0);
 #elif defined(__APPLE__) || defined(__linux__)
   // we send SIGTERM to subprocess. we trust that this subprocess will
   // propagate SIGTERM correctly to its children processes.

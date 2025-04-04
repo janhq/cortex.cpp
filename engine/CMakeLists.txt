@@ -4,22 +4,9 @@ project(cortex-server C CXX)
 
 include(CheckIncludeFileCXX)
 
-check_include_file_cxx(any HAS_ANY)
-check_include_file_cxx(string_view HAS_STRING_VIEW)
-check_include_file_cxx(coroutine HAS_COROUTINE)
-if(HAS_ANY
-   AND HAS_STRING_VIEW
-   AND HAS_COROUTINE)
-  set(CMAKE_CXX_STANDARD 20)
-elseif(HAS_ANY AND HAS_STRING_VIEW)
-  set(CMAKE_CXX_STANDARD 17)
-else()
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Add CORTEX_CQA option
@@ -45,11 +32,29 @@ else()
     message(STATUS "CORTEX_CQA is OFF.")
 endif()
 
+if(NOT CORTEX_CQA)
+    message(STATUS "Setting up optimization flags for Release builds")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        # Add optimization flags for GCC/Clang
+        add_compile_options($<$<CONFIG:Release>:-O3>)
+        add_compile_options($<$<CONFIG:Release>:-flto>)
+        add_link_options($<$<CONFIG:Release>:-flto>)
+    elseif(MSVC)
+        # Add optimization flags for MSVC
+        add_compile_options($<$<CONFIG:Release>:/O2>)
+        # Optional: Link-time optimization
+        add_compile_options($<$<CONFIG:Release>:/GL>)
+        add_link_options($<$<CONFIG:Release>:/LTCG>)
+    endif()
+endif()
+
 if(MSVC)
   add_compile_options(
       $<$<CONFIG:>:/MT> #---------|
       $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
       $<$<CONFIG:Release>:/MT> #--|
+      $<$<CONFIG:Release>:/O2> #--|-- Optimize for speed in Release mode
+      $<$<CONFIG:Release>:/Ob2> #-|-- Inline any suitable function
   )
 
   add_compile_options(/utf-8)
@@ -177,6 +182,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/process/utils.cc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/remote_engine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/local-engine/local_engine.cc
 
 )
 
@@ -198,10 +204,8 @@ if(CMAKE_CXX_STANDARD LESS 17)
   message(STATUS "use c++14")
   find_package(Boost 1.61.0 REQUIRED)
   target_include_directories(${TARGET_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-elseif(CMAKE_CXX_STANDARD LESS 20)
-  message(STATUS "use c++17")
 else()
-  message(STATUS "use c++20")
+  message(STATUS "use c++17")
 endif()
 
 aux_source_directory(controllers CTL_SRC)
@@ -224,3 +228,12 @@ set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}
                       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+if(MSVC)
+  add_custom_command(
+    TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/../.github/patches/windows
+    ${CMAKE_BINARY_DIR}/
+  )
+endif()

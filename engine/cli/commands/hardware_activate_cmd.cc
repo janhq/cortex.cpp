@@ -51,9 +51,10 @@ bool HardwareActivateCmd::Exec(
   auto data_str = body.toStyledString();
 
   auto url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "hardware", "activate"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "hardware", "activate"},
+      /* .queries = */ {},
   };
 
   auto res = curl_utils::SimplePostJson(url.ToFullPath(), data_str);

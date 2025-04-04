@@ -1,13 +1,13 @@
-name: get-cortex-llamacpp-latest-version
+name: get-llamacpp-latest-version
 on:
   workflow_call:
     outputs:
-      cortex_llamacpp_latest_version:
+      llamacpp_latest_version:
         description: 'The latest version of cortex.llamacpp engines'
-        value: ${{ jobs.get-cortex-llamacpp-latest-version.outputs.new_version }}
+        value: ${{ jobs.get-llamacpp-latest-version.outputs.new_version }}
 
 jobs:
-  get-cortex-llamacpp-latest-version:
+  get-llamacpp-latest-version:
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.version_update.outputs.new_version }}
@@ -24,7 +24,7 @@ jobs:
           local max_retries=3
           local tag
           while [ $retries -lt $max_retries ]; do
-            tag=$(curl -s https://api.github.com/repos/menloresearch/cortex.llamacpp/releases/latest | jq -r .tag_name)
+            tag=$(curl -s https://api.github.com/repos/menloresearch/llama.cpp/releases/latest | jq -r .tag_name)
             if [ -n "$tag" ] && [ "$tag" != "null" ]; then
               echo $tag
               return

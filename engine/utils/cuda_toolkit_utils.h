@@ -7,32 +7,7 @@ inline std::string GetCompatibleCudaToolkitVersion(
     const std::string& driver_semantic_version, const std::string& os,
     const std::string& engine) {
 
-  if (engine == "cortex.tensorrt-llm") {
-    // if the engine is cortex.tensorrt-llm, the minimum required CUDA version is 12.4
-    if (os == "windows") {
-      if (semantic_version_utils::CompareSemanticVersion(
-              driver_semantic_version, "527.41") >= 0) {
-        return "12.4";
-      } else {
-        throw std::runtime_error(
-            "GPU driver version not supported. Minimum "
-            "required driver version is 527.41");
-      }
-    } else if (os == "linux") {
-      if (semantic_version_utils::CompareSemanticVersion(
-              driver_semantic_version, "525.60.13") >= 0) {
-        return "12.4";
-      } else {
-        throw std::runtime_error(
-            "GPU driver version not supported. Minimum required driver version "
-            "is 525.60.13");
-      }
-    } else {
-      throw std::runtime_error("Unsupported OS");
-    }
-  }
-
-  if (os == "windows") {
+  if (os == "windows" || os == "win") {
     if (semantic_version_utils::CompareSemanticVersion(driver_semantic_version,
                                                        "527.41") >= 0) {
       return "12.4";
@@ -44,7 +19,7 @@ inline std::string GetCompatibleCudaToolkitVersion(
           "GPU driver version not supported. Minimum "
           "required driver version is 452.39");
     }
-  } else if (os == "linux") {
+  } else if (os == "linux" || os == "ubuntu") {
     if (semantic_version_utils::CompareSemanticVersion(driver_semantic_version,
                                                        "525.60.13") >= 0) {
       return "12.4";

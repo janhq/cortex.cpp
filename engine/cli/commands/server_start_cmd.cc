@@ -106,10 +106,8 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
 #else
   std::vector<std::string> commands;
   // Some engines requires to add lib search path before process being created
-  auto download_srv = std::make_shared<DownloadService>();
-  auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
-  auto db_srv = std::make_shared<DatabaseService>();
-  EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
+  EngineService(std::make_shared<cortex::DylibPathManager>())
+      .RegisterEngineLibPath();
 
   std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
   commands.push_back(p);
@@ -189,6 +187,7 @@ void ServerStartCmd::UpdateConfig(CortexConfig& data, const std::string& key,
           {"port",
            [](CortexConfig& data, const std::string& k, const std::string& v) {
              data.apiServerPort = v;
+             (void)k;
            }},
           {"hf-token",
            [](CortexConfig& data, const std::string&, const std::string& v) {
@@ -283,6 +282,7 @@ void ServerStartCmd::UpdateVectorField(
     tokens.push_back(token);
   }
   setter(tokens);
+  (void)key;
 }
 
 void ServerStartCmd::UpdateNumericField(const std::string& key,
@@ -301,6 +301,7 @@ void ServerStartCmd::UpdateBooleanField(const std::string& key,
                                         std::function<void(bool)> setter) {
   bool bool_value = (value == "true" || value == "1");
   setter(bool_value);
+  (void)key;
 }
 
 };  // namespace commands

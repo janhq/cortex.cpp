@@ -44,7 +44,8 @@ class ModelsTestSuite : public ::testing::Test {
       "main",          "/path/to/model.yaml",
       "test_alias",    "test_format",
       "test_source",   cortex::db::ModelStatus::Downloaded,
-      "test_engine"};
+      "test_engine",   "",
+  };
 };
 
 TEST_F(ModelsTestSuite, TestAddModelEntry) {

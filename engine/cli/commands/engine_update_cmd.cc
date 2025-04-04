@@ -35,16 +35,17 @@ bool EngineUpdateCmd::Exec(const std::string& host, int port,
   });
 
   auto update_url = url_parser::Url{
-      .protocol = "http",
-      .host = host + ":" + std::to_string(port),
-      .pathParams = {"v1", "engines", engine, "update"},
+      /* .protocol = */ "http",
+      /* .host = */ host + ":" + std::to_string(port),
+      /* .pathParams = */ {"v1", "engines", engine, "update"},
+      /* .queries = */ {},
   };
   auto update_result = curl_utils::SimplePostJson(update_url.ToFullPath());
   if (update_result.has_error()) {
     try {
       Json::Value json = json_helper::ParseJsonString(update_result.error());
       std::cout << json["message"].asString() << std::endl;
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       CTL_ERR(update_result.error());
     }
 

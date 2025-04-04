@@ -44,7 +44,7 @@ on:
         type: string
         default: 'nightly'
         description: 'The channel to use for this job'
-      cortex-llamacpp-version:
+      llamacpp-version:
         required: true
         type: string
         default: '0.0.0'
@@ -169,23 +169,23 @@ jobs:
           mkdir -p engine/templates/linux/dependencies
           cd engine/templates/linux/dependencies
           if [ "${{ inputs.arch }}" == "amd64" ]; then
-            # wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-11-7.tar.gz
-            # wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-12-0.tar.gz
-            # wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-11-7.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-12-0.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2.tar.gz
-            # wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-11-7.tar.gz
-            # wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-12-0.tar.gz
-            # wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-11-7.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-12-0.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-vulkan.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-11-7-linux-amd64.tar.gz
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-12-0-linux-amd64.tar.gz
+            # wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx-cuda-cu11.7-x64.tar.gz
+            # wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx-cuda-cu12.0-x64.tar.gz
+            # wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx-x64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx2-cuda-cu11.7-x64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx2-cuda-cu12.0-x64.tar.gz
+            wget https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-ubuntu-x64.zip
+            # wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx512-cuda-cu11.7-x64.tar.gz
+            # wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx512-cuda-cu12.0-x64.tar.gz
+            # wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-avx512-x64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-noavx-cuda-cu11.7-x64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-noavx-cuda-cu12.0-x64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-linux-noavx-x64.tar.gz
+            wget https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-ubuntu-vulkan-x64.zip
+            wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/cudart-llama-bin-linux-cu11.7-x64.tar.gz
+            wget https://github.com/menloresearch/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/cudart-llama-bin-win-cu12.0-x64.tar.gz
           else
-            wget https://github.com/menloresearch/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-arm64.tar.gz
+            wget https://github.com/ggml-org/llama.cpp/releases/download/${{ inputs.llamacpp-version }}/llama-${{ inputs.llamacpp-version }}-bin-ubuntu-arm64.zip
           fi
           cd ..
 

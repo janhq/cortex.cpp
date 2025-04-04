@@ -83,8 +83,8 @@ bool DownloadProgress::Handle(
                          size_t max_length = 20) -> std::string {
       // Check the length of the input string
       if (str.length() >= max_length) {
-        return str.substr(
-            0, max_length);  // Return truncated string if it's too long
+        return str.substr(0, max_length - 3) +
+               ".. ";  // Return truncated string if it's too long
       }
 
       // Calculate the number of spaces needed
@@ -121,7 +121,7 @@ bool DownloadProgress::Handle(
         bars->push_back(*(items.at(i.id).second));
       }
     }
-    for (int i = 0; i < ev.download_task_.items.size(); i++) {
+    for (int i = 0; i < (int) ev.download_task_.items.size(); i++) {
       auto& it = ev.download_task_.items[i];
       if (ev.type_ == DownloadStatus::DownloadUpdated) {
         uint64_t downloaded = it.downloadedBytes.value_or(0u);

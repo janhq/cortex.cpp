@@ -47,9 +47,10 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     });
 
     auto releases_url = url_parser::Url{
-        .protocol = "http",
-        .host = host_ + ":" + std::to_string(port_),
-        .pathParams = {"v1", "engines", engine, "releases"},
+        /* .protocol = */ "http",
+        /* .host = */ host_ + ":" + std::to_string(port_),
+        /* .pathParams = */ {"v1", "engines", engine, "releases"},
+        /* .queries = */ {},
     };
     auto releases_result = curl_utils::SimpleGetJson(releases_url.ToFullPath());
     if (releases_result.has_error()) {
@@ -70,16 +71,17 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     std::cout << "Selected version: " << selected_release.value() << std::endl;
 
     auto variant_url = url_parser::Url{
-        .protocol = "http",
-        .host = host_ + ":" + std::to_string(port_),
-        .pathParams =
-            {
-                "v1",
-                "engines",
-                engine,
-                "releases",
-                selected_release.value(),
-            },
+        /* .protocol = */ "http",
+        /* .host = */ host_ + ":" + std::to_string(port_),
+        /* .pathParams = */
+        {
+            "v1",
+            "engines",
+            engine,
+            "releases",
+            selected_release.value(),
+        },
+        /* queries = */ {},
     };
     auto variant_result = curl_utils::SimpleGetJson(variant_url.ToFullPath());
     if (variant_result.has_error()) {
@@ -90,7 +92,10 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     std::vector<std::string> variant_selections;
     for (const auto& variant : variant_result.value()) {
       auto v_name = variant["name"].asString();
-      if (string_utils::StringContainsIgnoreCase(v_name, hw_inf_.sys_inf->os) &&
+      if ((string_utils::StringContainsIgnoreCase(v_name,
+                                                  hw_inf_.sys_inf->os) ||
+           (hw_inf_.sys_inf->os == kLinuxOs &&
+            string_utils::StringContainsIgnoreCase(v_name, kUbuntuOs))) &&
           string_utils::StringContainsIgnoreCase(v_name,
                                                  hw_inf_.sys_inf->arch)) {
         variant_selections.push_back(variant["name"].asString());
@@ -117,15 +122,16 @@ bool EngineInstallCmd::Exec(const std::string& engine,
               << selected_release.value() << std::endl;
 
     auto install_url = url_parser::Url{
-        .protocol = "http",
-        .host = host_ + ":" + std::to_string(port_),
-        .pathParams =
-            {
-                "v1",
-                "engines",
-                engine,
-                "install",
-            },
+        /* .protocol = */ "http",
+        /* .host = */ host_ + ":" + std::to_string(port_),
+        /* .pathParams = */
+        {
+            "v1",
+            "engines",
+            engine,
+            "install",
+        },
+        /* queries = */ {},
     };
     Json::Value body;
     body["version"] = selected_release.value();
@@ -160,15 +166,16 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   });
 
   auto install_url = url_parser::Url{
-      .protocol = "http",
-      .host = host_ + ":" + std::to_string(port_),
-      .pathParams =
-          {
-              "v1",
-              "engines",
-              engine,
-              "install",
-          },
+      /* .protocol = */ "http",
+      /* .host = */ host_ + ":" + std::to_string(port_),
+      /* .pathParams = */
+      {
+          "v1",
+          "engines",
+          engine,
+          "install",
+      },
+      /* .queries = */ {},
   };
 
   Json::Value body;

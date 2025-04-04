@@ -40,7 +40,7 @@ struct HuggingFaceSiblingsFileSize {
       for (auto const& j : json) {
         if (j["type"].asString() == "file") {
           res.file_sizes[j["path"].asString()] =
-              HuggingFaceFileSize{.size_in_bytes = j["size"].asUInt64()};
+              HuggingFaceFileSize{/* .size_in_bytes = */ j["size"].asUInt64()};
         }
       }
       return res;
@@ -69,10 +69,12 @@ GetSiblingsFileSize(const std::string& author, const std::string& model_name,
   if (author.empty() || model_name.empty()) {
     return cpp::fail("Author and model name cannot be empty");
   }
-  auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = kHuggingFaceHost,
-      .pathParams = {"api", "models", author, model_name, "tree", branch}};
+  auto url_obj =
+      url_parser::Url{/* .protocol = */ "https",
+                      /* .host = */ kHuggingFaceHost,
+                      /* .pathParams = */
+                      {"api", "models", author, model_name, "tree", branch},
+                      /* .queries = */ {}};
 
   auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
   if (result.has_error()) {
@@ -82,11 +84,12 @@ GetSiblingsFileSize(const std::string& author, const std::string& model_name,
   auto r = result.value();
   for (auto const& j : result.value()) {
     if (j["type"].asString() == "directory") {
-      auto url_obj =
-          url_parser::Url{.protocol = "https",
-                          .host = kHuggingFaceHost,
-                          .pathParams = {"api", "models", author, model_name,
-                                         "tree", branch, j["path"].asString()}};
+      auto url_obj = url_parser::Url{/* .protocol = */ "https",
+                                     /* .host = */ kHuggingFaceHost,
+                                     /* .pathParams = */
+                                     {"api", "models", author, model_name,
+                                      "tree", branch, j["path"].asString()},
+                                     /* .queries = */ {}};
 
       auto rd = curl_utils::SimpleGetJson(url_obj.ToFullPath());
       if (rd.has_value()) {
@@ -105,15 +108,17 @@ inline cpp::result<std::string, std::string> GetReadMe(
   if (author.empty() || model_name.empty()) {
     return cpp::fail("Author and model name cannot be empty");
   }
-  auto url_obj = url_parser::Url{.protocol = "https",
-                                 .host = kHuggingFaceHost,
-                                 .pathParams = {
+  auto url_obj = url_parser::Url{/* .protocol = */ "https",
+                                 /* .host = */ kHuggingFaceHost,
+                                 /* .pathParams = */
+                                 {
                                      author,
                                      model_name,
                                      "raw",
                                      "main",
                                      "README.md",
-                                 }};
+                                 },
+                                 /* .queries = */ {}};
 
   auto result = curl_utils::SimpleGet(url_obj.ToFullPath());
   if (result.has_error()) {
@@ -135,8 +140,8 @@ struct HuggingFaceGgufInfo {
     }
     try {
       return HuggingFaceGgufInfo{
-          .total = json["total"].asUInt64(),
-          .architecture = json["architecture"].asString(),
+          /*  .total = */ json["total"].asUInt64(),
+          /* .architecture = */ json["architecture"].asString(),
       };
     } catch (const std::exception& e) {
       return cpp::fail("Failed to parse gguf info: " + std::string(e.what()));
@@ -183,31 +188,32 @@ struct HuggingFaceModelRepoInfo {
     auto siblings_info = body["siblings"];
     for (const auto& sibling : siblings_info) {
       auto sibling_info = HuggingFaceFileSibling{
-          .rfilename = sibling["rfilename"].asString(),
+          /* .rfilename = */ sibling["rfilename"].asString(),
       };
       siblings.push_back(sibling_info);
     }
 
     return HuggingFaceModelRepoInfo{
-        .id = body["id"].asString(),
-        .modelId = body["modelId"].asString(),
-        .author = body["author"].asString(),
-        .sha = body["sha"].asString(),
-        .lastModified = body["lastModified"].asString(),
+        /* .id = */ body["id"].asString(),
+        /* .modelId = */ body["modelId"].asString(),
+        /* .author = */ body["author"].asString(),
+        /* .sha = */ body["sha"].asString(),
+        /* .lastModified = */ body["lastModified"].asString(),
 
-        .isPrivate = body["private"].asBool(),
-        .disabled = body["disabled"].asBool(),
-        .gated = body["gated"].asBool(),
-        .tags = json_parser_utils::ParseJsonArray<std::string>(body["tags"]),
-        .downloads = body["downloads"].asInt(),
+        /* .isPrivate = */ body["private"].asBool(),
+        /* .disabled = */ body["disabled"].asBool(),
+        /* .gated = */ body["gated"].asBool(),
+        /* .tags = */
+        json_parser_utils::ParseJsonArray<std::string>(body["tags"]),
+        /* .downloads = */ body["downloads"].asInt(),
 
-        .likes = body["likes"].asInt(),
-        .gguf = gguf,
-        .siblings = siblings,
-        .spaces =
-            json_parser_utils::ParseJsonArray<std::string>(body["spaces"]),
-        .createdAt = body["createdAt"].asString(),
-        .metadata = body.toStyledString(),
+        /* .likes = */ body["likes"].asInt(),
+        /* .gguf = */ gguf,
+        /* .siblings = */ siblings,
+        /* .spaces = */
+        json_parser_utils::ParseJsonArray<std::string>(body["spaces"]),
+        /* .createdAt = */ body["createdAt"].asString(),
+        /* .metadata = */ body.toStyledString(),
     };
   }
 
@@ -226,9 +232,10 @@ GetModelRepositoryBranches(const std::string& author,
     return cpp::fail("Author and model name cannot be empty");
   }
   auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = kHuggingFaceHost,
-      .pathParams = {"api", "models", author, modelName, "refs"}};
+      /* .protocol = */ "https",
+      /* .host = */ kHuggingFaceHost,
+      /* .pathParams = */ {"api", "models", author, modelName, "refs"},
+      /* .queries = */ {}};
 
   auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
   if (result.has_error()) {
@@ -241,9 +248,9 @@ GetModelRepositoryBranches(const std::string& author,
 
   for (const auto& branch : branches_json) {
     branches[branch["name"].asString()] = HuggingFaceBranch{
-        .name = branch["name"].asString(),
-        .ref = branch["ref"].asString(),
-        .targetCommit = branch["targetCommit"].asString(),
+        /* .name = */ branch["name"].asString(),
+        /* .ref = */ branch["ref"].asString(),
+        /* .targetCommit = */ branch["targetCommit"].asString(),
     };
   }
 
@@ -257,10 +264,11 @@ GetHuggingFaceModelRepoInfo(const std::string& author,
   if (author.empty() || modelName.empty()) {
     return cpp::fail("Author and model name cannot be empty");
   }
-  auto url_obj =
-      url_parser::Url{.protocol = "https",
-                      .host = kHuggingFaceHost,
-                      .pathParams = {"api", "models", author, modelName}};
+  auto url_obj = url_parser::Url{/* .protocol = */ "https",
+                                 /* .host = */ kHuggingFaceHost,
+                                 /* .pathParams = */
+                                 {"api", "models", author, modelName},
+                                 /* .queries = */ {}};
 
   auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
   if (result.has_error()) {
@@ -272,10 +280,12 @@ GetHuggingFaceModelRepoInfo(const std::string& author,
 }
 
 inline std::string GetMetadataUrl(const std::string& model_id) {
-  auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = kHuggingFaceHost,
-      .pathParams = {"cortexso", model_id, "resolve", "main", "metadata.yml"}};
+  auto url_obj =
+      url_parser::Url{/* .protocol = */ "https",
+                      /* .host = */ kHuggingFaceHost,
+                      /* .pathParams = */
+                      {"cortexso", model_id, "resolve", "main", "metadata.yml"},
+                      /* .queries = */ {}};
 
   return url_obj.ToFullPath();
 }
@@ -285,9 +295,10 @@ inline std::string GetDownloadableUrl(const std::string& author,
                                       const std::string& fileName,
                                       const std::string& branch = "main") {
   auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = kHuggingFaceHost,
-      .pathParams = {author, modelName, "resolve", branch, fileName},
+      /* .protocol = */ "https",
+      /* .host = */ kHuggingFaceHost,
+      /* .pathParams = */ {author, modelName, "resolve", branch, fileName},
+      /* .queries = */ {},
   };
   return url_parser::FromUrl(url_obj);
 }
@@ -328,7 +339,7 @@ inline cpp::result<std::string, std::string> GetModelAuthorCortexsoHub(
       return author.as<std::string>();
     }
     return "";
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return "";
   }
 }

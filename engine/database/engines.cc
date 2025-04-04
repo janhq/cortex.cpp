@@ -4,7 +4,9 @@
 
 namespace cortex::db {
 
-void CreateTable(SQLite::Database& db) {}
+void CreateTable(SQLite::Database& db) {
+  (void)db;
+}
 
 Engines::Engines() : db_(cortex::db::Database::GetInstance().db()) {
   CreateTable(db_);
@@ -58,7 +60,7 @@ std::optional<EngineEntry> Engines::UpsertEngine(
     } else {
       return std::nullopt;
     }
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return std::nullopt;
   }
 }
@@ -85,7 +87,7 @@ std::optional<std::vector<EngineEntry>> Engines::GetEngines() const {
     }
 
     return engines;
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return std::nullopt;
   }
 }
@@ -113,7 +115,7 @@ std::optional<EngineEntry> Engines::GetEngineById(int id) const {
     } else {
       return std::nullopt;
     }
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return std::nullopt;
   }
 }
@@ -153,7 +155,7 @@ std::optional<EngineEntry> Engines::GetEngineByNameAndVariant(
     } else {
       return std::nullopt;
     }
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     return std::nullopt;
   }
 }

@@ -29,7 +29,7 @@ class EventProcessor {
     running_ = false;
     // to prevent blocking thread on wait
     event_queue_->enqueue(EventType::ExitEvent,
-                          ExitEvent{.message = "Event queue exitting.."});
+                          ExitEvent{{}, "Event queue exitting.."});
     if (thread_.joinable()) {
       thread_.join();
     }
