@@ -9,8 +9,8 @@ const { activeTab = "home" } = Astro.props;
 <nav class="floating-nav">
     <a href="/" class={activeTab === "home" ? "active" : ""}>Home</a>
     <a href="/overview" class={activeTab === "docs" ? "active" : ""}>Docs</a>
-    <!-- <a href="/model-hub" class={activeTab === "model-hub" ? "active" : ""}>Model Hub</a> -->
-    <a href="/blog" class={activeTab === "blog" ? "active" : ""}>Blog</a>
+    <a href="/model-hub" class={activeTab === "model-hub" ? "active" : ""}>Model Hub</a>
+    <!-- <a href="/blog" class={activeTab === "blog" ? "active" : ""}>Blog</a> -->
     <button class="mobile-menu-toggle" aria-label="Toggle menu">
         <span></span>
         <span></span>
@@ -20,18 +20,20 @@ const { activeTab = "home" } = Astro.props;
 
 <style>
     .floating-nav {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.8);
-        padding: 1rem 2rem;
-        border-radius: 50px;
-        display: flex;
-        gap: 2rem;
-        backdrop-filter: blur(10px);
-        border: 1px solid #98cbf9;
-        z-index: 1000;
+        position: fixed !important;
+        top: 20px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        background: rgba(0, 0, 0, 0.8) !important;
+        padding: 1rem 2rem !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        gap: 2rem !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid #98cbf9 !important;
+        z-index: 1000 !important;
+        width: auto !important;
+        max-width: 90% !important;
     }
 
     .floating-nav a {
