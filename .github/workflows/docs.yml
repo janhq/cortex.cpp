@@ -7,12 +7,10 @@ on:
       - main
     paths:
       - 'docs/**'
-      - 'docs-astro/**'
       - '.github/workflows/docs.yml'
   pull_request:
     paths:
       - 'docs/**'
-      - 'docs-astro/**'
       - '.github/workflows/docs.yml'
   schedule:
     - cron: "0 22 * * 1,2,3,4,5,6"
@@ -31,6 +29,7 @@ jobs:
     env:
       CLOUDFLARE_PROJECT_NAME: cortex-docs
     runs-on: ubuntu-latest
+    if: false  # Disable this job if you've fully migrated to Astro
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -106,9 +105,9 @@ jobs:
       - name: Install, build, and upload Astro site
         uses: withastro/action@v3
         with:
-          path: ./docs-astro
-          # node-version: 20 # Uncomment to specify Node version
-          # package-manager: pnpm@latest # Uncomment to specify package manager
+          path: ./docs
+          # If you're using Bun, specify it
+          package-manager: bun@latest
 
   deploy-astro:
     name: Deploy Astro to GitHub Pages
