@@ -33,7 +33,7 @@ all:
 # Build the Cortex engine
 build:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "cmake -S ./third-party -B ./build_deps; cmake --build ./build_deps --config Release -j4; mkdir -p build; cd build; cmake .. $(CMAKE_EXTRA_FLAGS); cmake --build . --config Release -j4;"
+	@powershell -Command "mkdir -p build; cd build; cmake .. $(CMAKE_EXTRA_FLAGS); cmake --build . --config Release -j4;"
 else ifeq ($(shell uname -s),Linux)
 	@cmake -S ./third-party -B ./build_deps; \
 	make -C build_deps/ -j4; \

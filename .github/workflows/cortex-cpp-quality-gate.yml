@@ -21,37 +21,59 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: "linux"
-            name: "arm64"
-            runs-on: "ubuntu-2004-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
-          - os: "linux"
-            name: "amd64"
-            runs-on: "ubuntu-20-04-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
-          - os: "mac"
-            name: "amd64"
-            runs-on: "macos-selfhosted-12"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
-          - os: "mac"
-            name: "arm64"
-            runs-on: "macos-selfhosted-12-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
+          # - os: "linux"
+          #   name: "arm64"
+          #   runs-on: "ubuntu-2004-arm64"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
+          # - os: "linux"
+          #   name: "amd64"
+          #   runs-on: "ubuntu-20-04-cuda-12-0"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
+          # - os: "mac"
+          #   name: "amd64"
+          #   runs-on: "macos-selfhosted-12"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
+          # - os: "mac"
+          #   name: "arm64"
+          #   runs-on: "macos-selfhosted-12-arm64"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
           - os: "windows"
             name: "amd64"
-            runs-on: "windows-cuda-12-0"
+            runs-on: "windows-2019"
             cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+            ccache-dir: ""
     steps:
+      # - name: Set Perl environment variables
+      #   if: runner.os == 'Windows'
+      #   run: |
+      #     echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #     echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #     perl -MCPAN -e "install Locale::Maketext::Simple"
+      - name: Setup Perl
+        if: runner.os == 'Windows'
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.38"
+          distribution: strawberry
+      # - name: perl -V
+      #   run: perl -V
+      # - name: Ensure we have a working toolchain
+      #   run: cpanm ExtUtils::Manifest App::cpanminus
+      # - name: Install Dependencies
+      #   run: cpanm -n --installdeps .
+      # - name: Run Tests
+      #   run: cpanm --test-only -v .
+
+
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
@@ -74,18 +96,18 @@ jobs:
         run: |
           choco install make pkgconfiglite ccache awscli 7zip ninja -y
 
-      - name: Download ccache from s3
-        if: runner.os == 'Windows'
-        continue-on-error: true
-        run: |
-          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-          refreshenv
-          aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }}  --endpoint ${{ secrets.MINIO_ENDPOINT }}
-          aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-vcpkg-windows C:\Users\ContainerAdministrator\AppData\Local\vcpkg  --endpoint ${{ secrets.MINIO_ENDPOINT }}
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
-          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+      # - name: Download ccache from s3
+      #   if: runner.os == 'Windows'
+      #   continue-on-error: true
+      #   run: |
+      #     Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+      #     refreshenv
+      #     aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }}  --endpoint ${{ secrets.MINIO_ENDPOINT }}
+      #     aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-vcpkg-windows C:\Users\ContainerAdministrator\AppData\Local\vcpkg  --endpoint ${{ secrets.MINIO_ENDPOINT }}
+      #   env:
+      #     AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+      #     AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+      #     AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
       - name: Download vcpkg cache from s3
         if: runner.os == 'Linux'
@@ -100,7 +122,11 @@ jobs:
       - name: Build
         if: runner.os != 'Linux'
         run: |
+          echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           cd engine
+          cmake -S ./third-party -B ./build_deps 
+          cmake --build ./build_deps --config Release -j4
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
       - name: Build
