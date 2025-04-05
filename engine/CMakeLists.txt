@@ -174,6 +174,7 @@ file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
 
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/hardware/gguf/ggml.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/template_renderer.cc
@@ -205,7 +206,7 @@ if(CMAKE_CXX_STANDARD LESS 17)
   find_package(Boost 1.61.0 REQUIRED)
   target_include_directories(${TARGET_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 else()
-  message(STATUS "use c++17")
+  message(STATUS "use c++${CMAKE_CXX_STANDARD}")
 endif()
 
 aux_source_directory(controllers CTL_SRC)
