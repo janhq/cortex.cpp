@@ -47,10 +47,13 @@ jobs:
           #   ccache-dir: ""
           - os: "windows"
             name: "amd64"
-            runs-on: "windows-2019"
+            runs-on: "windows-cuda-12-0"
+            # runs-on: "windows-2019"
             cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            ccache-dir: ""
+            # ccache-dir: ""
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
     steps:
       # - name: Set Perl environment variables
       #   if: runner.os == 'Windows'
@@ -96,18 +99,18 @@ jobs:
         run: |
           choco install make pkgconfiglite ccache awscli 7zip ninja -y
 
-      # - name: Download ccache from s3
-      #   if: runner.os == 'Windows'
-      #   continue-on-error: true
-      #   run: |
-      #     Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-      #     refreshenv
-      #     aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }}  --endpoint ${{ secrets.MINIO_ENDPOINT }}
-      #     aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-vcpkg-windows C:\Users\ContainerAdministrator\AppData\Local\vcpkg  --endpoint ${{ secrets.MINIO_ENDPOINT }}
-      #   env:
-      #     AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
-      #     AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
-      #     AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+      - name: Download ccache from s3
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
+          aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }}  --endpoint ${{ secrets.MINIO_ENDPOINT }}
+          aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-vcpkg-windows C:\Users\ContainerAdministrator\AppData\Local\vcpkg  --endpoint ${{ secrets.MINIO_ENDPOINT }}
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
       - name: Download vcpkg cache from s3
         if: runner.os == 'Linux'
@@ -127,7 +130,11 @@ jobs:
           cd engine
           cmake -S ./third-party -B ./build_deps 
           cmake --build ./build_deps --config Release -j4
-          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+          # make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+          mkdir -p build 
+          cd build 
+          cmake .. ${{ matrix.cmake-flags }} 
+          cmake --build . --config Release -j4
 
       - name: Build
         if: runner.os == 'Linux'
