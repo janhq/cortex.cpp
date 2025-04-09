@@ -14,8 +14,8 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   }
   CTL_DBG("engine_type: " << engine_type);
   function_calling_utils::PreprocessRequest(json_body);
-  CTL_DBG("engine_type: " << engine_type);
-  auto tool_choice = json_body->get("tool_choice", Json::Value::null);
+  auto tool_choice =
+      json_body->get("tool_choice", Json::Value(Json::nullValue));
   auto model_id = json_body->get("model", "").asString();
   if (saved_models_.find(model_id) != saved_models_.end()) {
     // check if model is started, if not start it first
@@ -273,7 +273,7 @@ InferResult InferenceService::GetModels(
     for (auto r : res["data"]) {
       resp_data.append(r);
     }
-    (void) status;
+    (void)status;
   };
   for (const auto& loaded_engine : loaded_engines) {
     if (std::holds_alternative<EngineI*>(loaded_engine)) {

@@ -4,6 +4,7 @@
 #include <fstream>
 #include "gtest/gtest.h"
 #include "utils/config_yaml_utils.h"
+#include <yaml-cpp/yaml.h>
 
 namespace config_yaml_utils {
 namespace cyu = config_yaml_utils;

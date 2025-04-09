@@ -14,6 +14,7 @@ prism.log
 api.json
 openai-python/*
 build
+build_deps
 platform/cortex.exe
 platform/package-lock.json
 .vscode

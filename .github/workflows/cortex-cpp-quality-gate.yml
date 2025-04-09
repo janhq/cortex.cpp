@@ -21,42 +21,71 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: "linux"
-            name: "arm64"
-            runs-on: "ubuntu-2004-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
-          - os: "linux"
-            name: "amd64"
-            runs-on: "ubuntu-20-04-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
-          - os: "mac"
-            name: "amd64"
-            runs-on: "macos-selfhosted-12"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
-          - os: "mac"
-            name: "arm64"
-            runs-on: "macos-selfhosted-12-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
+          # - os: "linux"
+          #   name: "arm64"
+          #   runs-on: "ubuntu-2004-arm64"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
+          # - os: "linux"
+          #   name: "amd64"
+          #   runs-on: "ubuntu-20-04-cuda-12-0"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
+          # - os: "mac"
+          #   name: "amd64"
+          #   runs-on: "macos-selfhosted-12"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
+          # - os: "mac"
+          #   name: "arm64"
+          #   runs-on: "macos-selfhosted-12-arm64"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            # runs-on: "windows-2019"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            # ccache-dir: ""
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
     steps:
+      # - name: perl -V
+      #   run: perl -V
+      # - name: Ensure we have a working toolchain
+      #   run: cpanm ExtUtils::Manifest App::cpanminus
+      # - name: Install Dependencies
+      #   run: cpanm -n --installdeps .
+      # - name: Run Tests
+      #   run: cpanm --test-only -v .
+
+
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - name: Setup Perl
+        if: runner.os == 'Windows'
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.38"
+          distribution: strawberry
+      
+      # - name: Set Perl environment variables
+      #   if: runner.os == 'Windows'
+      #   run: |
+      #     echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #     # echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #     cd engine
+      #     cmake -S ./third-party -B ./build_deps 
+      #     cmake --build ./build_deps --config Release -j4
 
       - name: use python
         continue-on-error: true
@@ -97,42 +126,42 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
-      - name: Configure vcpkg
+      - name: Build 0
         if: runner.os != 'Linux'
         run: |
+          echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          # echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           cd engine
-          make configure-vcpkg
-
-      - name: Configure vcpkg linux amd64
+          cmake -S ./third-party -B ./build_deps 
+          cmake --build ./build_deps --config Release -j4
+          # make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+          # mkdir -p build 
+          # cd build 
+          # cmake .. ${{ matrix.cmake-flags }} 
+          # cmake --build . --config Release -j4
+          set PATH=%PATH:C:\hostedtoolcache\windows\strawberry-perl\5.38.2\x64\perl\site\bin;=%
+          set PATH=%PATH:C:\hostedtoolcache\windows\strawberry-perl\5.38.2\x64\perl\bin;=%    
+          set PATH=%PATH:C:\hostedtoolcache\windows\strawberry-perl\5.38.2\x64\c\bin;=%   
+      
+      - name: Build 1
         if: runner.os != 'Linux'
         run: |
+          # echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          # echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8       
           cd engine
-          make configure-vcpkg
+          # cmake -S ./third-party -B ./build_deps 
+          # cmake --build ./build_deps --config Release -j4
+          make build
+          # make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+          # mkdir -p build 
+          # cd build 
+          # cmake .. ${{ matrix.cmake-flags }} 
+          # cmake --build . --config Release -j4
 
-      - name: Configure vcpkg linux arm64
+      - name: Build
         if: runner.os == 'Linux'
         run: |
           cd engine
-          # Set env if arch is arm64
-          if [ "${{ matrix.name }}" == "arm64" ]; then
-            sudo apt install ninja-build pkg-config -y
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
-          make configure-vcpkg
-
-      - name: Build
-        if: runner.os != 'Linux'
-        run: |
-          cd engine
-          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
-
-      - name: Build
-        if: runner.os == 'Linux'
-        run: |
-          cd engine
-          if [ "${{ matrix.name }}" == "arm64" ]; then
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
 
@@ -357,31 +386,31 @@ jobs:
           - os: "linux"
             name: "arm64"
             runs-on: "ubuntu-2004-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
             build-deps-cmake-flags: ""
             ccache-dir: ""
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
             build-deps-cmake-flags: ""
             ccache-dir: ""
           - os: "mac"
             name: "amd64"
             runs-on: "macos-selfhosted-12"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON"
             build-deps-cmake-flags: ""
             ccache-dir: ""
           - os: "mac"
             name: "arm64"
             runs-on: "macos-selfhosted-12-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON"
             build-deps-cmake-flags: ""
             ccache-dir: ""
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
     steps:
@@ -407,29 +436,6 @@ jobs:
         run: |
           choco install make pkgconfiglite ccache awscli 7zip ninja -y
 
-      - name: Configure vcpkg
-        if: runner.os != 'Linux'
-        run: |
-          cd engine
-          make configure-vcpkg
-
-      - name: Configure vcpkg linux amd64
-        if: runner.os != 'Linux'
-        run: |
-          cd engine
-          make configure-vcpkg
-
-      - name: Configure vcpkg linux arm64
-        if: runner.os == 'Linux'
-        run: |
-          cd engine
-          # Set env if arch is arm64
-          if [ "${{ matrix.name }}" == "arm64" ]; then
-            sudo apt install ninja-build pkg-config -y
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
-          make configure-vcpkg
-
       - name: Build
         if: runner.os != 'Linux'
         run: |
@@ -440,9 +446,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd engine
-          if [ "${{ matrix.name }}" == "arm64" ]; then
-            export VCPKG_FORCE_SYSTEM_BINARIES=1
-          fi
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
       - name: Run setup config
