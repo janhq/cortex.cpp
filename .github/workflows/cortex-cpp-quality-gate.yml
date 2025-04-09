@@ -55,18 +55,6 @@ jobs:
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
     steps:
-      # - name: Set Perl environment variables
-      #   if: runner.os == 'Windows'
-      #   run: |
-      #     echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      #     echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      #     perl -MCPAN -e "install Locale::Maketext::Simple"
-      - name: Setup Perl
-        if: runner.os == 'Windows'
-        uses: shogo82148/actions-setup-perl@v1
-        with:
-          perl-version: "5.38"
-          distribution: strawberry
       # - name: perl -V
       #   run: perl -V
       # - name: Ensure we have a working toolchain
@@ -82,6 +70,22 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - name: Setup Perl
+        if: runner.os == 'Windows'
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.38"
+          distribution: strawberry
+      
+      # - name: Set Perl environment variables
+      #   if: runner.os == 'Windows'
+      #   run: |
+      #     echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #     # echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #     cd engine
+      #     cmake -S ./third-party -B ./build_deps 
+      #     cmake --build ./build_deps --config Release -j4
 
       - name: use python
         continue-on-error: true
@@ -122,19 +126,37 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
-      - name: Build
+      - name: Build 0
         if: runner.os != 'Linux'
         run: |
           echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          # echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           cd engine
           cmake -S ./third-party -B ./build_deps 
           cmake --build ./build_deps --config Release -j4
           # make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
-          mkdir -p build 
-          cd build 
-          cmake .. ${{ matrix.cmake-flags }} 
-          cmake --build . --config Release -j4
+          # mkdir -p build 
+          # cd build 
+          # cmake .. ${{ matrix.cmake-flags }} 
+          # cmake --build . --config Release -j4
+          set PATH=%PATH:C:\hostedtoolcache\windows\strawberry-perl\5.38.2\x64\perl\site\bin;=%
+          set PATH=%PATH:C:\hostedtoolcache\windows\strawberry-perl\5.38.2\x64\perl\bin;=%    
+          set PATH=%PATH:C:\hostedtoolcache\windows\strawberry-perl\5.38.2\x64\c\bin;=%   
+      
+      - name: Build 1
+        if: runner.os != 'Linux'
+        run: |
+          # echo "PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          # echo "OPENSSL_SRC_PERL=$((where.exe perl)[0])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8       
+          cd engine
+          # cmake -S ./third-party -B ./build_deps 
+          # cmake --build ./build_deps --config Release -j4
+          make build
+          # make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+          # mkdir -p build 
+          # cd build 
+          # cmake .. ${{ matrix.cmake-flags }} 
+          # cmake --build . --config Release -j4
 
       - name: Build
         if: runner.os == 'Linux'
