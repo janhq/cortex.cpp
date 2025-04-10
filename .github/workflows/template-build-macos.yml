@@ -253,6 +253,14 @@ jobs:
           cd engine
           make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}"
 
+      - name: Code Signing binaries for separate binary
+        run: |
+          codesign --force -s "${{ secrets.DEVELOPER_ID }}" --options=runtime --entitlements="./engine/templates/macos/entitlements.plist" ./cortex-${{ inputs.new_version }}-mac-arm64/${{ steps.set-output-params.outputs.destination_binary_name }}
+          codesign --force -s "${{ secrets.DEVELOPER_ID }}" --options=runtime --entitlements="./engine/templates/macos/entitlements.plist" ./cortex-${{ inputs.new_version }}-mac-arm64/${{ steps.set-output-params.outputs.destination_binary_server_name }}
+
+          codesign --force -s "${{ secrets.DEVELOPER_ID }}" --options=runtime --entitlements="./engine/templates/macos/entitlements.plist" ./cortex-${{ inputs.new_version }}-mac-amd64/${{ steps.set-output-params.outputs.destination_binary_name }}
+          codesign --force -s "${{ secrets.DEVELOPER_ID }}" --options=runtime --entitlements="./engine/templates/macos/entitlements.plist" ./cortex-${{ inputs.new_version }}-mac-amd64/${{ steps.set-output-params.outputs.destination_binary_server_name }}
+
       - name: Notary macOS Binary
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
@@ -260,6 +268,18 @@ jobs:
           # Notarize the binary
           quill notarize ./${{ steps.set-output-params.outputs.destination_binary_name }}
           quill notarize ./${{ steps.set-output-params.outputs.destination_binary_server_name }}
+        env:
+          QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
+
+      - name: Notary macOS Binary for separate binary
+        run: |
+          # Notarize the binary
+          quill notarize ./cortex-${{ inputs.new_version }}-mac-arm64/${{ steps.set-output-params.outputs.destination_binary_name }}
+          quill notarize ./cortex-${{ inputs.new_version }}-mac-arm64/${{ steps.set-output-params.outputs.destination_binary_server_name }}
+          quill notarize ./cortex-${{ inputs.new_version }}-mac-amd64/${{ steps.set-output-params.outputs.destination_binary_name }}
+          quill notarize ./cortex-${{ inputs.new_version }}-mac-amd64/${{ steps.set-output-params.outputs.destination_binary_server_name }}
         env:
           QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
@@ -311,6 +331,24 @@ jobs:
 
       - name: Package
         run: |
+          mkdir temp
+          # Mac arm64
+          mv cortex-${{ inputs.new_version }}-mac-arm64 temp/cortex
+          cd temp
+          tar -czvf cortex-arm64.tar.gz cortex
+          mv cortex-arm64.tar.gz ../cortex-arm64.tar.gz
+          cd ..
+          rm -rf temp/cortex
+
+          # Mac amd64
+          mv cortex-${{ inputs.new_version }}-mac-amd64 temp/cortex
+          cd temp
+          tar -czvf cortex-amd64.tar.gz cortex
+          mv cortex-amd64.tar.gz ../cortex-amd64.tar.gz
+          cd ..
+
+      - name: Package for separate binary
+        run: |
           cd engine
           make package
 
@@ -320,6 +358,18 @@ jobs:
           name: cortex-${{ inputs.new_version }}-mac-universal
           path: ./engine/cortex
   
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-${{ inputs.new_version }}-mac-arm64-signed
+          path: ./cortex-${{ inputs.new_version }}-mac-arm64
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-${{ inputs.new_version }}-mac-amd64-signed
+          path: ./cortex-${{ inputs.new_version }}-mac-amd64
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -356,6 +406,28 @@ jobs:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/cortex.tar.gz
           asset_name: cortex-${{ inputs.new_version }}-mac-universal.tar.gz
+          asset_content_type: application/zip
+
+      - name: Upload release assert if public provider is github
+        if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./cortex-arm64.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-mac-arm64.tar.gz
+          asset_content_type: application/zip
+
+      - name: Upload release assert if public provider is github
+        if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./cortex-amd64.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-mac-amd64.tar.gz
           asset_content_type: application/zip
 
       - name: Upload release assert if public provider is github
