@@ -871,7 +871,9 @@ void EngineService::RegisterEngineLibPath() {
 
       // register deps
       std::vector<std::filesystem::path> paths{};
-      paths.push_back(cuda_path);
+      if (std::filesystem::exists(cuda_path)) {
+        paths.push_back(cuda_path);
+      }
       paths.push_back(engine_dir_path);
 
       CTL_DBG("Registering dylib for "
