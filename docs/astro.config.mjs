@@ -27,7 +27,7 @@ export default defineConfig({
         {
           label: "Title Bar",
           items: [
-            { label: "Docs", link: "overview" },
+            { label: "Docs", link: "/" },
             { label: "Model Hub", link: "/model-hub" },
           ],
         },
@@ -103,7 +103,6 @@ export default defineConfig({
               { label: "cortex pull", slug: "reference/cli/pull" },
               { label: "cortex stop", slug: "reference/cli/stop" },
               { label: "cortex ps", slug: "reference/cli/ps" },
-              { label: "cortex serve", slug: "reference/cli/serve" },
               { label: "cortex update", slug: "reference/cli/update" },
               { label: "cortex hardware", slug: "reference/cli/hardware" },
             ]
@@ -115,11 +114,10 @@ export default defineConfig({
               { label: "Overview", slug: "reference/cli/models" },
               { label: "cortex models list", slug: "reference/cli/models/list" },
               { label: "cortex models get", slug: "reference/cli/models/get" },
-              { label: "cortex models pull", slug: "reference/cli/models/pull" },
               { label: "cortex models start", slug: "reference/cli/models/start" },
               { label: "cortex models stop", slug: "reference/cli/models/stop" },
               { label: "cortex models update", slug: "reference/cli/models/update" },
-              { label: "Remove", slug: "reference/cli/models/remove" },
+              { label: "cortex models remove", slug: "reference/cli/models/remove" },
             ],
           },
             {
@@ -139,7 +137,6 @@ export default defineConfig({
                 { label: "Overview", slug: "reference/cli/engines" },
                 { label: "List", slug: "reference/cli/engines/list" },
                 { label: "Get", slug: "reference/cli/engines/get" },
-                { label: "Init", slug: "reference/cli/engines/init" },
               ],
             },
           ],

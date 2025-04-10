@@ -14,7 +14,7 @@ const basePath = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/'
         <a href={basePath === '' ? '/' : basePath} class={activeTab === "home" ? "active" : ""}>Home</a>
         <a href={`${basePath}/overview`} class={activeTab === "docs" ? "active" : ""}>Docs</a>
         <a href={`${basePath}/model-hub`} class={activeTab === "model-hub" ? "active" : ""}>Model Hub</a>
-        <!-- <a href={`${basePath}/blog`} class={activeTab === "blog" ? "active" : ""}>Blog</a> -->
+        <a href={`${basePath}/blog`} class={activeTab === "blog" ? "active" : ""}>Blog</a>
     </div>
     <button class="mobile-menu-toggle" aria-label="Toggle menu">
         <span></span>
