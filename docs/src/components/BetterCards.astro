@@ -1,0 +1,85 @@
+---
+/**
+ * Props TypeScript interface (optional, but helpful)
+ * You can remove or tweak this as needed.
+ */
+interface CardData {
+    title: string;
+    description: string;
+    link: string;
+    icon?: string;
+    newTab?: boolean;
+}
+
+const { cards } = Astro.props as { cards: CardData[] };
+---
+
+<style>
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+        padding: 0 1rem;
+    }
+
+    .card {
+        display: block;
+        background: #1f1f1f;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+        border: 1px solid #333;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .card-icon {
+        font-size: 2rem;
+        opacity: 0.8;
+    }
+
+    .card-title {
+        margin: 0;
+        font-size: 1.25rem;
+        line-height: 1.2;
+    }
+
+    .card-description {
+        margin: 0;
+        color: #ccc;
+        line-height: 1.4;
+    }
+</style>
+
+<div class="card-grid">
+    {
+        cards.map((card) => (
+            <a
+                href={card.link}
+                class="card"
+                target={card.newTab ? "_blank" : "_self"}
+                rel={card.newTab ? "noopener noreferrer" : undefined}
+            >
+                <div class="card-content">
+                    {card.icon && <div class="card-icon">{card.icon}</div>}
+                    <h3 class="card-title">{card.title}</h3>
+                    <p class="card-description">{card.description}</p>
+                </div>
+            </a>
+        ))
+    }
+</div>

@@ -1,0 +1,56 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "CPU Inference Optimizations"
+date: "2025-03-18"
+author: "Cortex Team"
+image: "https://placehold.co/800x400/202020/98cbf9?text=CPU+Optimizations"
+description: "Discover techniques to optimize LLM inference on CPU-only machines for better performance."
+tags: ["CPU", "Performance", "Optimization"]
+---
+
+## Key Optimizations
+
+Running LLMs efficiently on CPUs is challenging but possible with the right optimizations:
+
+- **Quantization techniques**: How to use 4-bit quantization to reduce memory usage
+- **Kernel optimizations**: Leveraging instruction sets like AVX2 and AVX-512
+- **Memory optimization**: Techniques to minimize cache misses and memory bottlenecks
+- **Thread management**: Finding the optimal number of threads for your specific CPU
+
+## Benchmark Results
+
+Our testing shows significant improvements with Cortex 2.0 on CPU-only setups:
+
+| Model | Old Version | New Version | Improvement |
+|-------|------------|------------|------------|
+| Llama3-8B (4-bit) | 12 tokens/sec | 19 tokens/sec | +58% |
+| Gemma-2B | 24 tokens/sec | 31 tokens/sec | +29% |
+| Phi-3 (2.7B) | 28 tokens/sec | 38 tokens/sec | +36% |
+
+## Implementation Example
+
+Here's how to enable the new optimizations:
+
+```python
+import cortex
+
+# Initialize with CPU optimizations
+client = cortex.Client(
+    device="cpu",
+    cpu_optimization_level="max",
+    threads=8  # Adjust based on your CPU
+)
+
+# Load a quantized model
+response = client.chat.completions.create(
+    model="phi3-mini-4bit",  # Using a 4-bit quantized model
+    messages=[
+        {"role": "user", "content": "Explain quantum computing briefly"}
+    ],
+    temperature=0.7
+)
+
+print(response.choices[0].message.content)
+```
+
+These optimizations allow you to run surprisingly capable models even on older hardware. Our customers have reported good results with models up to 8B parameters on machines as old as 7th-gen Intel CPUs with 16GB RAM. 

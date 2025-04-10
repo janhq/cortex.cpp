@@ -1,0 +1,251 @@
+cortex_hub:
+  - name: Olmo-2
+    updated: 12-Dec-2024
+    command: cortex run olmo-2
+
+  - name: WhisperVQ
+    updated: 12-Dec-2024
+    command: cortex run whispervq
+
+  - name: Deepscaler
+    updated: 12-Dec-2024
+    command: cortex run deepscaler
+
+  - name: Granite-3.2-IT
+    updated: 12-Dec-2024
+    command: cortex run granite-3.2-it
+
+  - name: Llama3
+    updated: 12-Dec-2024
+    command: cortex run llama3
+
+  - name: Mistral
+    updated: 12-Dec-2024
+    command: cortex run mistral
+
+  - name: Gemma
+    updated: 12-Dec-2024
+    command: cortex run gemma
+
+  - name: Phi3
+    updated: 12-Dec-2024
+    command: cortex run phi3
+
+  - name: OpenHermes-2.5
+    updated: 12-Dec-2024
+    command: cortex run openhermes-2.5
+
+  - name: Codestral
+    updated: 12-Dec-2024
+    command: cortex run codestral
+
+  - name: Command-R
+    updated: 12-Dec-2024
+    command: cortex run command-r
+
+  - name: Yi-1.5
+    updated: 12-Dec-2024
+    command: cortex run yi-1.5
+
+  - name: Qwen2
+    updated: 12-Dec-2024
+    command: cortex run qwen2
+
+  - name: TinyLlama
+    updated: 12-Dec-2024
+    command: cortex run tinyllama
+
+  - name: Mixtral
+    updated: 12-Dec-2024
+    command: cortex run mixtral
+
+  - name: Llama3.1
+    updated: 12-Dec-2024
+    command: cortex run llama3.1
+
+  - name: Gemma2
+    updated: 12-Dec-2024
+    command: cortex run gemma2
+
+  - name: Mistral-Nemo
+    updated: 12-Dec-2024
+    command: cortex run mistral-nemo
+
+  - name: Llama3.2
+    updated: 12-Dec-2024
+    command: cortex run llama3.2
+
+  - name: Granite-3.0
+    updated: 12-Dec-2024
+    command: cortex run granite-3.0
+
+  - name: Ichigo-0.4
+    updated: 12-Dec-2024
+    command: cortex run ichigo-0.4
+
+  - name: Aya-Expanse
+    updated: 12-Dec-2024
+    command: cortex run aya-expanse
+
+  - name: Qwen2.5
+    updated: 12-Dec-2024
+    command: cortex run qwen2.5
+
+  - name: Phi-3.5
+    updated: 12-Dec-2024
+    command: cortex run phi-3.5
+
+  - name: SmolLM2
+    updated: 12-Dec-2024
+    command: cortex run smollm2
+
+  - name: Aya
+    updated: 12-Dec-2024
+    command: cortex run aya
+
+  - name: OpenCoder
+    updated: 12-Dec-2024
+    command: cortex run opencoder
+
+  - name: Qwen2.5-Coder
+    updated: 12-Dec-2024
+    command: cortex run qwen2.5-coder
+
+  - name: Athene
+    updated: 12-Dec-2024
+    command: cortex run athene
+
+  - name: Marco-O1
+    updated: 12-Dec-2024
+    command: cortex run marco-o1
+
+  - name: Tulu3
+    updated: 12-Dec-2024
+    command: cortex run tulu3
+
+  - name: QWQ
+    updated: 12-Dec-2024
+    command: cortex run qwq
+
+  - name: Intellect-1
+    updated: 12-Dec-2024
+    command: cortex run intellect-1
+
+  - name: Sailor-2
+    updated: 12-Dec-2024
+    command: cortex run sailor-2
+
+  - name: Llama3.3
+    updated: 12-Dec-2024
+    command: cortex run llama3.3
+
+  - name: Hermes3
+    updated: 12-Dec-2024
+    command: cortex run hermes3
+
+  - name: Llama-T2S
+    updated: 12-Dec-2024
+    command: cortex run llama-t2s
+
+  - name: Falcon3
+    updated: 12-Dec-2024
+    command: cortex run falcon3
+
+  - name: Fish-Speech
+    updated: 12-Dec-2024
+    command: cortex run fish-speech
+
+  - name: Ichigo-0.5
+    updated: 12-Dec-2024
+    command: cortex run ichigo-0.5
+
+  - name: Small-Thinker
+    updated: 12-Dec-2024
+    command: cortex run small-thinker
+
+  - name: Phi-4
+    updated: 12-Dec-2024
+    command: cortex run phi-4
+
+  - name: Sky-T1
+    updated: 12-Dec-2024
+    command: cortex run sky-t1
+
+  - name: InternLM3-8B-IT
+    updated: 12-Dec-2024
+    command: cortex run internlm3-8b-it
+
+  - name: Deepseek-R1-Distill-Qwen-1.5B
+    updated: 12-Dec-2024
+    command: cortex run deepseek-r1-distill-qwen-1.5b
+
+  - name: Deepseek-R1-Distill-Llama-8B
+    updated: 12-Dec-2024
+    command: cortex run deepseek-r1-distill-llama-8b
+
+  - name: Deepseek-R1-Distill-Qwen-14B
+    updated: 12-Dec-2024
+    command: cortex run deepseek-r1-distill-qwen-14b
+
+  - name: Deepseek-R1-Distill-Qwen-32B
+    updated: 12-Dec-2024
+    command: cortex run deepseek-r1-distill-qwen-32b
+
+  - name: Deepseek-R1-Distill-Llama-70B
+    updated: 12-Dec-2024
+    command: cortex run deepseek-r1-distill-llama-70b
+
+  - name: Deepseek-R1-Distill-Qwen-7B
+    updated: 12-Dec-2024
+    command: cortex run deepseek-r1-distill-qwen-7b
+
+  - name: Mistral-Small-24B
+    updated: 12-Dec-2024
+    command: cortex run mistral-small-24b
+
+  - name: Deepseek-R1
+    updated: 12-Dec-2024
+    command: cortex run deepseek-r1
+
+  - name: SimpleScaling-S1
+    updated: 12-Dec-2024
+    command: cortex run simplescaling-s1
+
+  - name: Deepseek-Qwen2.5-7B-Redistil-GRPO
+    updated: 12-Dec-2024
+    command: cortex run deepseek-qwen2.5-7b-redistil-grpo
+
+  - name: Alphamaze-v0.2
+    updated: 12-Dec-2024
+    command: cortex run alphamaze-v0.2
+
+  - name: LLaVA
+    updated: 12-Dec-2024
+    command: cortex run llava
+
+  - name: LLaVA-v1.6
+    updated: 12-Dec-2024
+    command: cortex run llava-v1.6
+
+  - name: Qwen-QWQ
+    updated: 12-Dec-2024
+    command: cortex run qwen-qwq
+
+  - name: Gemma3
+    updated: 12-Dec-2024
+    command: cortex run gemma3
+
+huggingface_hub:
+  - name: DeepSeek-R1-Distill-Qwen-32B
+    updated: 12-Dec-2024
+    command: cortex pull bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF
+
+  - name: Qwen_QwQ-32B
+    updated: 12-Dec-2024
+    command: cortex pull bartowski/Qwen_QwQ-32B-GGUF
+
+  - name: Gemma-3-4b-it
+    updated: 12-Dec-2024
+    command: cortex pull unsloth/gemma-3-4b-it-GGUF
+
+  # Add other HF models... 

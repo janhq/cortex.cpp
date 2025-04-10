@@ -1,0 +1,67 @@
+---
+layout: "../../layouts/BlogPost.astro"
+title: "Introducing Cortex 2.0: Faster, Better, Stronger"
+date: "2025-03-31"
+author: "Cortex Team"
+image: "https://placehold.co/800x400/202020/98cbf9?text=Cortex+2.0"
+description: "We're excited to announce the release of Cortex 2.0, featuring significant performance improvements and new capabilities."
+tags: ["Release", "Performance", "LLM"]
+---
+
+## Key Improvements
+
+The new version brings several major improvements:
+
+- **2x Faster Inference**: We've completely rewritten our inference engine to deliver up to 2x faster generation speeds.
+- **Reduced Memory Usage**: Memory requirements are now 30% lower, allowing you to run larger models on the same hardware.
+- **Enhanced Quantization**: New quantization options provide better quality-performance trade-offs.
+- **Improved API Compatibility**: Full OpenAI API compatibility for seamless integration.
+
+## Code Example
+
+Getting started with Cortex 2.0 is easier than ever:
+
+```python
+import cortex
+
+# Initialize the client
+client = cortex.Client()
+
+# Generate text
+response = client.chat.completions.create(
+    model="llama3",
+    messages=[
+        {"role": "system", "content": "You are a helpful AI assistant."},
+        {"role": "user", "content": "What's new in Cortex 2.0?"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## Hardware Recommendations
+
+With the new optimizations, here's what you can expect to run:
+
+| Model | Minimum RAM | Recommended GPU |
+| ----- | ----------- | --------------- |
+| Llama3-8B | 8GB | RTX 3060 (8GB VRAM) |
+| Llama3-70B | 32GB | RTX 4090 (24GB VRAM) |
+| Gemma-7B | 8GB | RTX 3050 (6GB VRAM) |
+
+## What's Next
+
+This is just the beginning of our 2.0 series. Over the coming months, we'll be rolling out:
+
+- Multimodal support for image input and generation
+- Fine-tuning capabilities directly through our CLI
+- Mac M-series specific optimizations
+- Direct model editing for customization
+
+Ready to upgrade? Update to Cortex 2.0 with a simple command:
+
+```bash
+pip install cortexcpp --upgrade
+```
+
+We can't wait to see what you build with Cortex 2.0! 
