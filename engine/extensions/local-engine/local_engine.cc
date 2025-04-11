@@ -20,7 +20,7 @@ const std::unordered_set<std::string> kIgnoredParams = {
     "user_prompt",  "min_keep",        "mirostat",   "mirostat_eta",
     "mirostat_tau", "text_model",      "version",    "n_probs",
     "object",       "penalize_nl",     "precision",  "size",
-    "stop",         "tfs_z",           "typ_p"};
+    "stop",         "tfs_z",           "typ_p",      "caching_enabled"};
 
 const std::unordered_map<std::string, std::string> kParamsMap = {
     {"cpu_threads", "--threads"},
@@ -65,6 +65,19 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
     } else if (member == "model_type") {
       if (root[member].asString() == "embedding") {
         res.push_back("--embedding");
+      }
+      continue;
+    } else if (member == "cache_type") {
+      if (!root[member].isNull()) {
+        res.push_back("-ctk");
+        res.push_back(root[member].asString());
+        res.push_back("-ctv");
+        res.push_back(root[member].asString());
+      }
+      continue;
+    } else if (member == "use_mmap") {
+      if (!root[member].asBool()) {
+        res.push_back("--no-mmap");
       }
       continue;
     }
