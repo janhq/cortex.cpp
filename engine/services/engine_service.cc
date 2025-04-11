@@ -772,7 +772,13 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
         // try to find version.txt
         auto version_txt_path = version_entry.path() / "version.txt";
         if (!std::filesystem::exists(version_txt_path)) {
-          continue;
+          // create new one
+          std::ofstream meta(version_txt_path, std::ios::out);
+          meta << "name: " << entry.path().filename() << std::endl;
+          meta << "version: " << version_entry.path().filename() << std::endl;
+          meta.close();
+          CTL_INF("name: " << entry.path().filename().string() << ", version: "
+                           << version_entry.path().filename().string());
         }
 
         try {
@@ -865,7 +871,9 @@ void EngineService::RegisterEngineLibPath() {
 
       // register deps
       std::vector<std::filesystem::path> paths{};
-      paths.push_back(cuda_path);
+      if (std::filesystem::exists(cuda_path)) {
+        paths.push_back(cuda_path);
+      }
       paths.push_back(engine_dir_path);
 
       CTL_DBG("Registering dylib for "
