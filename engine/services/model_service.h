@@ -83,9 +83,6 @@ class ModelService {
   cpp::result<std::shared_ptr<ModelMetadata>, std::string> GetModelMetadata(
       const std::string& model_id) const;
 
-  std::shared_ptr<ModelMetadata> GetCachedModelMetadata(
-      const std::string& model_id) const;
-
   std::string GetEngineByModelId(const std::string& model_id) const;
 
  private:
@@ -103,12 +100,6 @@ class ModelService {
   std::shared_ptr<InferenceService> inference_svc_;
   std::unordered_set<std::string> bypass_stop_check_set_;
   std::shared_ptr<EngineServiceI> engine_svc_ = nullptr;
-
-  /**
-   * Store the chat template of loaded model.
-   */
-  std::unordered_map<std::string, std::shared_ptr<ModelMetadata>>
-      loaded_model_metadata_map_;
 
   std::mutex es_mtx_;
   std::unordered_map<std::string, std::optional<hardware::Estimation>> es_;

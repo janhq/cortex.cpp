@@ -27,13 +27,13 @@ inline void PrintMenu(
 
 inline std::optional<int> GetNumericValue(const std::string& sval) {
   try {
-      return std::stoi(sval);
+    return std::stoi(sval);
   } catch (const std::invalid_argument&) {
-      // Not a valid number
-      return std::nullopt; 
+    // Not a valid number
+    return std::nullopt;
   } catch (const std::out_of_range&) {
-      // Number out of range
-      return std::nullopt;
+    // Number out of range
+    return std::nullopt;
   }
 }
 
@@ -73,14 +73,16 @@ inline std::optional<std::string> PrintModelSelection(
   }
 
   // Validate if the selection consists solely of numeric characters
-  if(!std::all_of(selection.begin(), selection.end(), ::isdigit)){
+  if (!std::all_of(selection.begin(), selection.end(), ::isdigit)) {
     return std::nullopt;
   }
 
   // deal with out of range numeric values
   std::optional<int> numeric_value = GetNumericValue(selection);
-  
-  if (!numeric_value.has_value() || (unsigned) numeric_value.value() > availables.size() || numeric_value.value() < 1) {
+
+  if (!numeric_value.has_value() ||
+      (unsigned)numeric_value.value() > availables.size() ||
+      numeric_value.value() < 1) {
     return std::nullopt;
   }
 
@@ -101,13 +103,15 @@ inline std::optional<std::string> PrintSelection(
   }
 
   // Validate if the selection consists solely of numeric characters
-  if(!std::all_of(selection.begin(), selection.end(), ::isdigit)){
+  if (!std::all_of(selection.begin(), selection.end(), ::isdigit)) {
     return std::nullopt;
   }
-  
+
   // deal with out of range numeric values
   std::optional<int> numeric_value = GetNumericValue(selection);
-  if (!numeric_value.has_value() ||(unsigned) numeric_value.value() > options.size() || numeric_value.value() < 1) {
+  if (!numeric_value.has_value() ||
+      (unsigned)numeric_value.value() > options.size() ||
+      numeric_value.value() < 1) {
     return std::nullopt;
   }
 
