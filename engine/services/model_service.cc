@@ -691,21 +691,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
 
-    if (status == drogon::k200OK) {
-      // start model successfully, in case not vision model, we store the metadata so we can use
-      // for each inference
-      if (!json_data.isMember("mmproj") || json_data["mmproj"].isNull()) {
-        auto metadata_res = GetModelMetadata(model_handle);
-        if (metadata_res.has_value()) {
-          loaded_model_metadata_map_.emplace(model_handle,
-                                             std::move(metadata_res.value()));
-          CTL_INF("Successfully stored metadata for model " << model_handle);
-        } else {
-          CTL_WRN("Failed to get metadata for model " << model_handle << ": "
-                                                      << metadata_res.error());
-        }
-      }
-
+    if (status == drogon::k200OK) {      
       return StartModelResult{/* .success = */ true,
                               /* .warning = */ may_fallback_res.value()};
     } else if (status == drogon::k409Conflict) {
@@ -760,8 +746,6 @@ cpp::result<bool, std::string> ModelService::StopModel(
       if (bypass_check) {
         bypass_stop_check_set_.erase(model_handle);
       }
-      loaded_model_metadata_map_.erase(model_handle);
-      CTL_INF("Removed metadata for model " << model_handle);
       return true;
     } else {
       CTL_ERR("Model failed to stop with status code: " << status);
@@ -1088,14 +1072,6 @@ ModelService::GetModelMetadata(const std::string& model_id) const {
     return cpp::fail("Failed to read metadata: " + model_metadata_res.error());
   }
   return std::move(*model_metadata_res);
-}
-
-std::shared_ptr<ModelMetadata> ModelService::GetCachedModelMetadata(
-    const std::string& model_id) const {
-  if (loaded_model_metadata_map_.find(model_id) ==
-      loaded_model_metadata_map_.end())
-    return nullptr;
-  return loaded_model_metadata_map_.at(model_id);
 }
 
 std::string ModelService::GetEngineByModelId(
