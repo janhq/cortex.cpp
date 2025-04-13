@@ -1,0 +1,74 @@
+---
+title: Overview
+description: Cortex Overview.
+# slug: /overview
+---
+
+![Cortex Cover Image](../../assets/social-card.jpg)
+
+Cortex is the open-source brain for robots: vision, speech, language, tabular, and action -- the cloud is optional.
+
+Key Features:
+- Straightforward CLI (inspired by Ollama)
+- Full C++ implementation, packageable into Desktop and Mobile apps
+- Pull from Huggingface, or Cortex Built-in Model Library
+- Models stored in universal file formats (vs blobs)
+- Swappable Inference Backends (default: [`llamacpp`](https://github.com/menloresearch/cortex.llamacpp) and [`ONNXRuntime`](https://github.com/menloresearch/cortex.onnx))
+- Cortex can be deployed as a standalone API server, or integrated into apps like [Jan.ai](https://jan.ai/)
+- Automatic API docs for your server
+
+Cortex's roadmap includes implementing full compatibility with OpenAI API's and that includes Tools, Runs, Multi-modal and Realtime APIs.
+
+
+## Inference Backends
+- Default: [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
+- Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs and traditional machine learning models
+
+If GPU hardware is available, Cortex is GPU accelerated by default.
+
+## Models
+Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access.
+- [Hugging Face](https://huggingface.co)
+- [Cortex Built-in Models](https://cortex.so/models)
+
+> **Note**:
+> As a very general guide: You should have >8 GB of RAM available to run the 3B models, 16 GB to run the 7B models, and 32 GB to run the 14B models.
+
+### Cortex Built-in Models & Quantizations
+| Model /Engine  | llama.cpp             | Command                       |
+| -------------- | --------------------- | ----------------------------- |
+| phi-4        | ✅                    | `cortex run phi-4`             |
+| llama3.2       | ✅                    | `cortex run llama3.2`           |
+| llama3.1       | ✅                    | `cortex run llama3.1`           |
+| codestral      | ✅                    | `cortex run codestral`          |
+| gemma2         | ✅                    | `cortex run gemma2`             |
+| mistral        | ✅                    | `cortex run mistral`            |
+| ministral      | ✅                    | `cortex run ministral`          |
+| qwen2          | ✅                    | `cortex run qwen2.5`            |
+| openhermes-2.5 | ✅                    | `cortex run openhermes-2.5`     |
+| tinyllama      | ✅                    | `cortex run tinyllama`          |
+
+View all [Cortex Built-in Models](https://cortex.so/models).
+
+Cortex supports multiple quantizations for each model.
+```sh
+cortex pull phi-4
+```
+```
+Downloaded models:
+    bartowski:phi-4-GGUF:phi-4-Q3_K_S.gguf
+
+Available to download:
+    1. phi-4:14.7b-gguf-q2-k
+    2. phi-4:14.7b-gguf-q3-kl
+    3. phi-4:14.7b-gguf-q3-km
+    4. phi-4:14.7b-gguf-q3-ks
+    5. phi-4:14.7b-gguf-q4-km (default)
+    6. phi-4:14.7b-gguf-q4-ks
+    7. phi-4:14.7b-gguf-q5-km
+    8. phi-4:14.7b-gguf-q5-ks
+    9. phi-4:14.7b-gguf-q6-k
+    10. phi-4:14.7b-gguf-q8-0
+
+Select a model (1-10):
+```

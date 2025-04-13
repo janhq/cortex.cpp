@@ -1,84 +1,24 @@
 {
-  "name": "cortex-web",
-  "version": "0.0.0",
-  "private": true,
+  "name": "new-docs",
+  "type": "module",
+  "version": "0.0.1",
   "scripts": {
-    "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "dev": "docusaurus start",
-    "build": "docusaurus build",
-    "swizzle": "docusaurus swizzle",
-    "deploy": "docusaurus deploy",
-    "clear": "docusaurus clear",
-    "serve": "docusaurus serve",
-    "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids",
-    "create:changelog": "plop create-changelog",
-    "typecheck": "tsc"
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
-    "@calcom/embed-react": "^1.5.1",
-    "@code-hike/mdx": "^0.9.0",
-    "@docsearch/js": "^3.6.0",
-    "@docsearch/react": "^3.6.0",
-    "@docusaurus/core": "^3.5.2",
-    "@docusaurus/preset-classic": "^3.5.2",
-    "@docusaurus/theme-live-codeblock": "^3.5.2",
-    "@docusaurus/theme-mermaid": "^3.5.2",
-    "@excalidraw/excalidraw": "^0.17.6",
-    "@fillout/react": "^1.1.2",
-    "@huggingface/hub": "^0.15.1",
-    "@mdx-js/react": "3.0.1",
-    "@radix-ui/react-select": "^2.1.1",
-    "@radix-ui/react-tooltip": "^1.0.7",
-    "@scalar/docusaurus": "^0.3.5",
-    "autoprefixer": "^10.4.19",
-    "chalk": "^5.3.0",
-    "chokidar": "^3.6.0",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "date-fns": "^3.6.0",
-    "docusaurus-plugin-dotenv": "^1.0.1",
-    "docusaurus-plugin-sass": "^0.2.5",
-    "framer-motion": "^11.2.12",
-    "highlight.js": "^11.9.0",
-    "lucide-react": "^0.395.0",
-    "markdown-it": "^14.1.0",
-    "markdown-it-link-attributes": "^4.0.1",
-    "plop": "^4.0.1",
-    "plop-helper-date": "^1.0.0",
-    "postcss": "^8.4.38",
-    "prism-react-renderer": "^2.3.0",
-    "react": "^18.0.0",
-    "react-device-detect": "^2.2.3",
-    "react-dom": "^18.0.0",
-    "react-hook-form": "^7.52.0",
-    "react-icons": "^5.2.1",
-    "sass": "^1.77.4",
-    "tailwind-merge": "^2.3.0",
-    "tailwindcss": "^3.4.3"
-  },
-  "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.4.0",
-    "@docusaurus/tsconfig": "3.4.0",
-    "@docusaurus/types": "3.4.0",
-    "dotenv": "^16.4.5",
-    "typescript": "~5.4.5"
-  },
-  "browserslist": {
-    "production": [
-      ">0.5%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 3 chrome version",
-      "last 3 firefox version",
-      "last 5 safari version"
-    ]
-  },
-  "engines": {
-    "node": ">=18.0"
-  },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+    "@astrojs/starlight": "^0.32.5",
+    "@fontsource/press-start-2p": "^5.2.5",
+    "@fontsource/vt323": "^5.2.5",
+    "@lorenzo_lewis/starlight-utils": "^0.3.2",
+    "astro": "5.5.6",
+    "fontsource": "^0.0.1-security",
+    "sharp": "^0.32.5",
+    "starlight-blog": "^0.18.0",
+    "starlight-versions": "^0.5.2",
+    "starlight-videos": "^0.2.0"
+  }
 }

@@ -1,0 +1,35 @@
+---
+title: Cortex Configs Get
+description: Cortex configs subcommands.
+---
+
+
+
+This command returns a config detail defined by a config `name`.
+
+
+
+## Usage
+
+```bash
+cortex configs get <name>
+```
+For example, it returns the following:
+```bash
+┌─────────┬────────┐
+│ (index) │ Values │
+├─────────┼────────┤
+│ apiKey  │ ''     │
+└─────────┴────────┘
+
+```
+:::info
+To get a config name, run the [`configs list`](/docs/cli/configs/list) command first.
+:::
+## Options
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `name`        | The name of the config that you want to retrieve.     | Yes      | -             | `openai`|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+

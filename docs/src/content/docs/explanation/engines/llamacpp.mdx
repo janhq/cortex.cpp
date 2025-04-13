@@ -1,0 +1,113 @@
+---
+title: Llama.cpp
+description: GGUF Model Format.
+---
+
+Cortex leverages `llama.cpp` as its default engine for GGUF models. The example model configuration shown
+below illustrates how to configure a GGUF model (in this case DeepSeek's 8B model) with both required and
+optional parameters. The configuration includes metadata, inference parameters, and model loading settings
+that control everything from basic model identification to advanced generation behavior. Cortex can automatically
+generate GGUF models from HuggingFace repositories when a model.yaml file isn't available.
+
+```yaml
+# BEGIN GENERAL GGUF METADATA
+id: deepseek-r1-distill-llama-8b # Model ID unique between models (author / quantization)
+model: deepseek-r1-distill-llama-8b:8b-gguf-q2-k # Model ID which is used for request construct - should be unique between models (author / quantization)
+name: deepseek-r1-distill-llama-8b # metadata.general.name
+version: 1
+files:             # Can be relative OR absolute local file path
+  - models/cortex.so/deepseek-r1-distill-llama-8b/8b-gguf-q2-k/model.gguf
+# END GENERAL GGUF METADATA
+
+# BEGIN INFERENCE PARAMETERS
+# BEGIN REQUIRED
+stop:                # tokenizer.ggml.eos_token_id
+  - <|im_end|>
+  - <｜end▁of▁sentence｜>
+# END REQUIRED
+
+# BEGIN OPTIONAL
+size: 3179134413
+stream: true # Default true?
+top_p: 0.9 # Ranges: 0 to 1
+temperature: 0.7 # Ranges: 0 to 1
+frequency_penalty: 0 # Ranges: 0 to 1
+presence_penalty: 0 # Ranges: 0 to 1
+max_tokens: 4096 # Should be default to context length
+seed: -1
+dynatemp_range: 0
+dynatemp_exponent: 1
+top_k: 40
+min_p: 0.05
+tfs_z: 1
+typ_p: 1
+repeat_last_n: 64
+repeat_penalty: 1
+mirostat: false
+mirostat_tau: 5
+mirostat_eta: 0.1
+penalize_nl: false
+ignore_eos: false
+n_probs: 0
+min_keep: 0
+# END OPTIONAL
+# END INFERENCE PARAMETERS
+
+# BEGIN MODEL LOAD PARAMETERS
+# BEGIN REQUIRED
+engine: llama-cpp # engine to run model
+prompt_template: <|start_of_text|>{system_message}<｜User｜>{prompt}<｜Assistant｜>
+# END REQUIRED
+
+# BEGIN OPTIONAL
+ctx_len: 4096 # llama.context_length | 0 or undefined = loaded from model
+n_parallel: 1
+ngl: 34 # Undefined = loaded from model
+# END OPTIONAL
+# END MODEL LOAD PARAMETERS
+```
+
+## Model Parameters
+
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `id`                  | Unique model identifier including author and quantization                             | Yes          |
+| `model`               | Model ID used for request construction                                                | Yes          |
+| `name`                | General name metadata for the model                                                   | Yes          |
+| `version`             | Model version number                                                                  | Yes          |
+| `files`               | Path to model GGUF file (relative or absolute)                                       | Yes          |
+| `stop`                | Array of stopping sequences for generation                                            | Yes          |
+| `engine`              | Model execution engine (llama-cpp)                                                    | Yes          |
+| `prompt_template`     | Template for formatting the prompt with system message and user input                | Yes          |
+| `size`                | Model file size in bytes                                                             | No           |
+| `stream`              | Enable streaming output (default: true)                                               | No           |
+| `top_p`               | Nucleus sampling probability threshold (0-1)                                          | No           |
+| `temperature`         | Output randomness control (0-1)                                                       | No           |
+| `frequency_penalty`   | Penalty for frequent token usage (0-1)                                                | No           |
+| `presence_penalty`    | Penalty for token presence (0-1)                                                      | No           |
+| `max_tokens`          | Maximum output length                                                                 | No           |
+| `seed`                | Random seed for reproducibility                                                       | No           |
+| `dynatemp_range`      | Dynamic temperature range                                                             | No           |
+| `dynatemp_exponent`   | Dynamic temperature exponent                                                          | No           |
+| `top_k`               | Top-k sampling parameter                                                              | No           |
+| `min_p`               | Minimum probability threshold                                                          | No           |
+| `tfs_z`               | Tail-free sampling parameter                                                          | No           |
+| `typ_p`               | Typical sampling parameter                                                            | No           |
+| `repeat_last_n`       | Repetition penalty window                                                            | No           |
+| `repeat_penalty`      | Penalty for repeated tokens                                                          | No           |
+| `mirostat`            | Enable Mirostat sampling                                                             | No           |
+| `mirostat_tau`        | Mirostat target entropy                                                              | No           |
+| `mirostat_eta`        | Mirostat learning rate                                                               | No           |
+| `penalize_nl`         | Apply penalty to newlines                                                            | No           |
+| `ignore_eos`          | Ignore end-of-sequence token                                                         | No           |
+| `n_probs`             | Number of probability outputs                                                         | No           |
+| `min_keep`            | Minimum tokens to retain                                                              | No           |
+| `ctx_len`             | Context window size                                                                   | No           |
+| `n_parallel`          | Number of parallel instances                                                          | No           |
+| `ngl`                 | Number of GPU layers                                                                  | No           |
+
+
+You can download a `GGUF` model from the following:
+- [Cortex Model Repos](/docs/capabilities/models/sources/cortex-hub)
+- [HuggingFace Model Repos](/docs/capabilities/models/sources/hugging-face)
+

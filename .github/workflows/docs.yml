@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - main
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
@@ -11,21 +12,24 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
-    # Review gh actions docs if you want to further define triggers, paths, etc
-    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
   schedule:
     - cron: "0 22 * * 1,2,3,4,5,6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  deployments: write
+  pull-requests: write
+  pages: write
+  id-token: write
 
 jobs:
-  deploy:
-    name: Deploy to Cloudflare Pages
+  deploy-docusaurus:
+    name: Deploy Docusaurus to Cloudflare Pages
     env:
       CLOUDFLARE_PROJECT_NAME: cortex-docs
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      deployments: write
-      pull-requests: write
+    if: false  # Disable this job if you've fully migrated to Astro
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -72,7 +76,6 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
           directory: ./docs/build
-          # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
         id: deployCloudflarePages
 
@@ -80,7 +83,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           message: |
-            Preview URL: ${{ steps.deployCloudflarePages.outputs.url }}
+            Docusaurus Preview URL: ${{ steps.deployCloudflarePages.outputs.url }}
 
       - name: Publish to Cloudflare Pages Production
         if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/dev' && github.event.pull_request.head.repo.full_name != github.repository
@@ -91,5 +94,51 @@ jobs:
           projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
           directory: ./docs/build
           branch: main
-          # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  build-astro:
+    name: Build Astro Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install, build, and upload Astro site
+        uses: withastro/action@v3
+        with:
+          path: ./docs
+          # If you're using Bun, specify it
+          package-manager: bun@latest
+
+  deploy-astro:
+    name: Deploy Astro to GitHub Pages
+    needs: build-astro
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-astro-pr-preview:
+    name: Deploy PR Preview
+    needs: build-astro
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          preview: true
+      - name: Add PR comment with preview URL
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            📝 Documentation Preview: ${{ steps.deployment.outputs.page_url }}
