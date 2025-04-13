@@ -35,7 +35,7 @@ Cortex is the open-source brain for robots: vision, speech, language, tabular, a
 
 All other Linux distributions:
 ```bash
-curl -s https://raw.githubusercontent.com/menloresearch/cortex/main/engine/templates/linux/install.sh | sudo bash
+curl -s https://raw.githubusercontent.com/menloresearch/cortex.cpp/main/engine/templates/linux/install.sh | sudo bash
 ```
 
 ### Start the Server
