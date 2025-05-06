@@ -179,7 +179,6 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
 void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                                  SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
-  function_calling_utils::PostProcessResponse(res);
   LOG_DEBUG << "response: " << res.toStyledString();
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
   resp->setStatusCode(
