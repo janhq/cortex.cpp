@@ -82,7 +82,7 @@ jobs:
       matrix:
         include:
           - arch: 'arm64'
-            runs-on: 'macos-selfhosted-12-arm64'
+            runs-on: 'macos-latest'
             extra-cmake-flags: "-DMAC_ARM64=ON"
 
           - arch: 'amd64'

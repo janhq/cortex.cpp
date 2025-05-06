@@ -21,12 +21,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: "linux"
-            name: "arm64"
-            runs-on: "ubuntu-2004-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
+          # - os: "linux"
+          #   name: "arm64"
+          #   runs-on: "ubuntu-2004-arm64"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-cuda-12-0"
@@ -354,12 +354,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: "linux"
-            name: "arm64"
-            runs-on: "ubuntu-2004-arm64"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ""
+          # - os: "linux"
+          #   name: "arm64"
+          #   runs-on: "ubuntu-2004-arm64"
+          #   cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+          #   build-deps-cmake-flags: ""
+          #   ccache-dir: ""
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-cuda-12-0"
