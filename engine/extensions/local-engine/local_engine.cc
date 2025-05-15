@@ -80,6 +80,11 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         res.push_back("--no-mmap");
       }
       continue;
+    } else if (member == "ignore_eos") {
+      if (root[member].asBool()) {
+        res.push_back("--ignore_eos");
+      }
+      continue;
     }
 
     res.push_back("--" + member);
@@ -502,6 +507,23 @@ void LocalEngine::HandleEmbedding(std::shared_ptr<Json::Value> json_body,
 
 void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
                             http_callback&& callback) {
+  auto model_id = json_body->get("model", "").asString();
+  if (model_id.empty()) {
+    CTL_WRN("Model is empty");
+  }
+  if (server_map_.find(model_id) != server_map_.end()) {
+    CTL_INF("Model " << model_id << " is already loaded");
+    Json::Value error;
+    error["error"] = "Model " + model_id + " is already loaded";
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = 409;
+    callback(std::move(status), std::move(error));
+    return;
+  }
+  
   CTL_INF("Start loading model");
   auto wait_for_server_up = [this](const std::string& model,
                                    const std::string& host, int port) {
@@ -524,10 +546,7 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   };
 
   LOG_DEBUG << "Start to spawn llama-server";
-  auto model_id = json_body->get("model", "").asString();
-  if (model_id.empty()) {
-    CTL_WRN("Model is empty");
-  }
+
   server_map_[model_id].host = "127.0.0.1";
   server_map_[model_id].port = GenerateRandomInteger(39400, 39999);
   auto& s = server_map_[model_id];
@@ -544,6 +563,8 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
 
   params.push_back("--pooling");
   params.push_back("mean");
+
+  params.push_back("--jinja");
 
   std::vector<std::string> v;
   v.reserve(params.size() + 1);
