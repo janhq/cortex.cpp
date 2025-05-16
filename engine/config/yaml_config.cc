@@ -48,7 +48,7 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
     if (!yaml_node_["mmproj"]) {
       auto s = nomalize_path(file_path);
       auto abs_path = s.substr(0, s.find_last_of('/')) + "/mmproj.gguf";
-      CTL_DBG("mmproj: " << abs_path);
+      CTL_TRC("mmproj: " << abs_path);
       auto rel_path = fmu::ToRelativeCortexDataPath(fs::path(abs_path));
       if (std::filesystem::exists(abs_path)) {
         yaml_node_["mmproj"] = rel_path.string();

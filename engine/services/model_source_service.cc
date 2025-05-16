@@ -433,8 +433,7 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
 
   auto author = hub_author;
   auto model_author = hu::GetModelAuthorCortexsoHub(model_name);
-  if (auto model_author = hu::GetModelAuthorCortexsoHub(model_name);
-      model_author.has_value() && !model_author.value().empty()) {
+  if (model_author.has_value() && !model_author.value().empty()) {
     author = model_author.value();
   }
 

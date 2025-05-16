@@ -36,6 +36,7 @@ class TestCliModel:
         run("Delete model", ["models", "delete", "tinyllama:1b"])
         stop_server()
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Skip test for Windows")
     def test_model_pull_with_direct_url_should_be_success(self):
         exit_code, output, error = run(
             "Pull model",
