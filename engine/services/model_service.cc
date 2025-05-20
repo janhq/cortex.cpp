@@ -500,13 +500,10 @@ cpp::result<void, std::string> ModelService::DeleteModel(
       std::filesystem::remove(yaml_fp);
       CTL_INF("Removed: " << yaml_fp.string());
     } else {
-      // Remove yaml files
-      for (const auto& entry :
-           std::filesystem::directory_iterator(yaml_fp.parent_path())) {
-        if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
-          std::filesystem::remove(entry);
-          CTL_INF("Removed: " << entry.path().string());
-        }
+      // Is a local model - Remove only this model's yaml file
+      if (std::filesystem::exists(yaml_fp)) {
+        std::filesystem::remove(yaml_fp);
+        CTL_INF("Removed: " << yaml_fp.string());
       }
     }
 
