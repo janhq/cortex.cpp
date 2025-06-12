@@ -1,6 +1,7 @@
 #include "local_engine.h"
 #include <algorithm>
 #include <random>
+#include <string>
 #include <thread>
 #include <string.h>
 #include <unordered_set>
@@ -63,7 +64,7 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
           return std::tolower(c);
         });
-        if (lowered.find("jan") != std::string::npos && lowered.find("nano") != std::string::npos) {
+        if ((lowered.find("jan") != std::string::npos && lowered.find("nano") != std::string::npos) || lowered.find("qwen") != std::string::npos) {
           res.push_back("--temp");
           res.push_back("0.7");
           res.push_back("--top-p");
