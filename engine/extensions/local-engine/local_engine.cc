@@ -34,7 +34,7 @@ int GenerateRandomInteger(int min, int max) {
   std::uniform_int_distribution<> dis(
       min, max);  // Distribution for the desired range
 
-  return dis(gen);  // Generate and return a random integer within the range
+  return dis(gen);
 }
 
 std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
