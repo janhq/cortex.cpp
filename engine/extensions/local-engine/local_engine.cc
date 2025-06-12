@@ -22,9 +22,20 @@ const std::unordered_set<std::string> kIgnoredParams = {
     "user_prompt",  "min_keep",        "mirostat",   "mirostat_eta",
     "mirostat_tau", "text_model",      "version",    "n_probs",
     "object",       "penalize_nl",     "precision",  "size",
+    "flash_attn",
     "stop",         "tfs_z",           "typ_p",      "caching_enabled"};
 
 const std::unordered_map<std::string, std::string> kParamsMap = {
+    {"cpu_threads", "--threads"},
+    {"n_ubatch", "--ubatch-size"},
+    {"n_batch", "--batch-size"},
+    {"n_parallel", "--parallel"},
+    {"temperature", "--temp"},
+    {"top_k", "--top-k"},
+    {"top_p", "--top-p"},
+    {"min_p", "--min-p"},
+    {"dynatemp_exponent", "--dynatemp-exp"},
+    {"ctx_len", "--ctx-size"},
     {"ngl", "-ngl"},
 };
 
