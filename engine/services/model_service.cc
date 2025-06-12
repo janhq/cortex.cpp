@@ -662,7 +662,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
     json_data["model"] = model_handle;
     model_load_params["model"] = model_handle;
-    // params_override["model"] = model_handle;
     if (auto& cpt = custom_prompt_template; !cpt.value_or("").empty()) {
       auto parse_prompt_result = string_utils::ParsePrompt(cpt.value());
       json_data["system_prompt"] = parse_prompt_result.system_prompt;
