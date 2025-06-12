@@ -23,7 +23,8 @@ const std::unordered_set<std::string> kIgnoredParams = {
     "user_prompt",  "min_keep",        "mirostat",   "mirostat_eta",
     "mirostat_tau", "text_model",      "version",    "n_probs",
     "object",       "penalize_nl",     "precision",  "size",
-    "flash_attn",   "stop",         "tfs_z",           "typ_p",      "caching_enabled"};
+    "flash_attn",
+    "stop",         "tfs_z",           "typ_p",      "caching_enabled"};
 
 const std::unordered_map<std::string, std::string> kParamsMap = {
     {"cpu_threads", "--threads"},
@@ -34,6 +35,7 @@ const std::unordered_map<std::string, std::string> kParamsMap = {
     {"top_k", "--top-k"},
     {"top_p", "--top-p"},
     {"min_p", "--min-p"},
+    {"dynatemp_exponent", "--dynatemp-exp"},
     {"ctx_len", "--ctx-size"},
     {"ngl", "-ngl"},
 };
@@ -62,6 +64,16 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
           return std::tolower(c);
         });
+        if ((lowered.find("jan") != std::string::npos && lowered.find("nano") != std::string::npos) || lowered.find("qwen") != std::string::npos) {
+          res.push_back("--temp");
+          res.push_back("0.7");
+          res.push_back("--top-p");
+          res.push_back("0.8");
+          res.push_back("--top-k");
+          res.push_back("20");
+          res.push_back("--min-p");
+          res.push_back("0");
+        }
       }
       continue;
     } else if (kIgnoredParams.find(member) != kIgnoredParams.end()) {
@@ -93,7 +105,14 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         res.push_back("--ignore_eos");
       }
       continue;
+    } else if (member == "ctx_len") {
+      if (!root[member].isNull()) {
+        res.push_back("--ctx-size");
+        res.push_back(root[member].asString());
+      }
+      continue;
     }
+
     // Generic handling for other members
     res.push_back("--" + member);
     if (root[member].isString()) {
