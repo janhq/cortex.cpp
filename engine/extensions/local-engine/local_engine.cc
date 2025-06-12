@@ -23,7 +23,6 @@ const std::unordered_set<std::string> kIgnoredParams = {
     "user_prompt",  "min_keep",        "mirostat",   "mirostat_eta",
     "mirostat_tau", "text_model",      "version",    "n_probs",
     "object",       "penalize_nl",     "precision",  "size",
-    "flash_attn",
     "stop",         "tfs_z",           "typ_p",      "caching_enabled"};
 
 const std::unordered_map<std::string, std::string> kParamsMap = {
