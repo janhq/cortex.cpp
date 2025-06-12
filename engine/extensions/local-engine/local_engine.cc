@@ -23,16 +23,6 @@ const std::unordered_set<std::string> kIgnoredParams = {
     "stop",         "tfs_z",           "typ_p",      "caching_enabled"};
 
 const std::unordered_map<std::string, std::string> kParamsMap = {
-    {"cpu_threads", "--threads"},
-    {"n_ubatch", "--ubatch-size"},
-    {"n_batch", "--batch-size"},
-    {"n_parallel", "--parallel"},
-    {"temperature", "--temp"},
-    {"top_k", "--top-k"},
-    {"top_p", "--top-p"},
-    {"min_p", "--min-p"},
-    {"dynatemp_exponent", "--dynatemp-exp"},
-    {"ctx_len", "--ctx-size"},
     {"ngl", "-ngl"},
 };
 
@@ -85,6 +75,12 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         res.push_back("--ignore_eos");
       }
       continue;
+    } else if (member == "ctx_len") {
+        if (!root[member].isNull()) { 
+            res.push_back("--ctx-size");
+            res.push_back(root[member].asString());
+        }
+        continue;
     }
 
     res.push_back("--" + member);
