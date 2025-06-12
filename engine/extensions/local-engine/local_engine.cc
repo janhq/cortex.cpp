@@ -1,6 +1,8 @@
 #include "local_engine.h"
+#include <algorithm>
 #include <random>
 #include <thread>
+#include <string.h>
 #include <unordered_set>
 #include "utils/curl_utils.h"
 #include "utils/json_helper.h"
@@ -37,13 +39,29 @@ int GenerateRandomInteger(int min, int max) {
 
 std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
   std::vector<std::string> res;
-  std::string errors;
 
   for (const auto& member : root.getMemberNames()) {
     if (member == "model_path" || member == "llama_model_path") {
       if (!root[member].isNull()) {
+        const std::string path = root[member].asString();
         res.push_back("--model");
-        res.push_back(root[member].asString());
+        res.push_back(path);
+
+        // If path contains both "Jan" and "nano", case-insensitive, add special params
+        std::string lowered = path;
+        std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
+          return std::tolower(c);
+        });
+        if (lowered.find("jan") != std::string::npos && lowered.find("nano") != std::string::npos) {
+          res.push_back("--temp");
+          res.push_back("0.7");
+          res.push_back("--top-p");
+          res.push_back("0.8");
+          res.push_back("--top-k");
+          res.push_back("20");
+          res.push_back("--min-p");
+          res.push_back("0");
+        }
       }
       continue;
     } else if (kIgnoredParams.find(member) != kIgnoredParams.end()) {
@@ -76,13 +94,14 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
       }
       continue;
     } else if (member == "ctx_len") {
-        if (!root[member].isNull()) { 
-            res.push_back("--ctx-size");
-            res.push_back(root[member].asString());
-        }
-        continue;
+      if (!root[member].isNull()) {
+        res.push_back("--ctx-size");
+        res.push_back(root[member].asString());
+      }
+      continue;
     }
 
+    // Generic handling for other members
     res.push_back("--" + member);
     if (root[member].isString()) {
       res.push_back(root[member].asString());
@@ -101,13 +120,14 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         ss << "\"" << value.asString() << "\"";
         first = false;
       }
-      ss << "] ";
+      ss << "]";
       res.push_back(ss.str());
     }
   }
 
   return res;
 }
+
 
 constexpr const auto kMinDataChunkSize = 6u;
 
