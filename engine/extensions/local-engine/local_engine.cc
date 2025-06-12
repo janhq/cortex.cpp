@@ -1,6 +1,9 @@
 #include "local_engine.h"
+#include <algorithm>
 #include <random>
+#include <string>
 #include <thread>
+#include <string.h>
 #include <unordered_set>
 #include "utils/curl_utils.h"
 #include "utils/json_helper.h"
@@ -20,6 +23,7 @@ const std::unordered_set<std::string> kIgnoredParams = {
     "user_prompt",  "min_keep",        "mirostat",   "mirostat_eta",
     "mirostat_tau", "text_model",      "version",    "n_probs",
     "object",       "penalize_nl",     "precision",  "size",
+    "flash_attn",
     "stop",         "tfs_z",           "typ_p",      "caching_enabled"};
 
 const std::unordered_map<std::string, std::string> kParamsMap = {
@@ -42,18 +46,24 @@ int GenerateRandomInteger(int min, int max) {
   std::uniform_int_distribution<> dis(
       min, max);  // Distribution for the desired range
 
-  return dis(gen);  // Generate and return a random integer within the range
+  return dis(gen);
 }
 
 std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
   std::vector<std::string> res;
-  std::string errors;
 
   for (const auto& member : root.getMemberNames()) {
     if (member == "model_path" || member == "llama_model_path") {
       if (!root[member].isNull()) {
+        const std::string path = root[member].asString();
         res.push_back("--model");
-        res.push_back(root[member].asString());
+        res.push_back(path);
+
+        // If path contains both "Jan" and "nano", case-insensitive, add special params
+        std::string lowered = path;
+        std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
+          return std::tolower(c);
+        });
       }
       continue;
     } else if (kIgnoredParams.find(member) != kIgnoredParams.end()) {
@@ -85,8 +95,15 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         res.push_back("--ignore_eos");
       }
       continue;
+    } else if (member == "ctx_len") {
+      if (!root[member].isNull()) {
+        res.push_back("--ctx-size");
+        res.push_back(root[member].asString());
+      }
+      continue;
     }
 
+    // Generic handling for other members
     res.push_back("--" + member);
     if (root[member].isString()) {
       res.push_back(root[member].asString());
@@ -105,13 +122,14 @@ std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
         ss << "\"" << value.asString() << "\"";
         first = false;
       }
-      ss << "] ";
+      ss << "]";
       res.push_back(ss.str());
     }
   }
 
   return res;
 }
+
 
 constexpr const auto kMinDataChunkSize = 6u;
 
@@ -561,8 +579,6 @@ void LocalEngine::LoadModel(std::shared_ptr<Json::Value> json_body,
   params.push_back("--port");
   params.push_back(std::to_string(s.port));
 
-  params.push_back("--pooling");
-  params.push_back("mean");
 
   params.push_back("--jinja");
 
