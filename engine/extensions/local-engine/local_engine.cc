@@ -34,6 +34,7 @@ const std::unordered_map<std::string, std::string> kParamsMap = {
     {"dynatemp_exponent", "--dynatemp-exp"},
     {"ctx_len", "--ctx-size"},
     {"ngl", "-ngl"},
+    {"reasoning_budget", "--reasoning-budget"},
 };
 
 int GenerateRandomInteger(int min, int max) {
