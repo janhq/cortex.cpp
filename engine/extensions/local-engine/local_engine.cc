@@ -51,6 +51,8 @@ int GenerateRandomInteger(int min, int max) {
 
 std::vector<std::string> ConvertJsonToParamsVector(const Json::Value& root) {
   std::vector<std::string> res;
+  std::string errors;
+  res.push_back("--no-webui");
 
   for (const auto& member : root.getMemberNames()) {
     if (member == "model_path" || member == "llama_model_path") {
