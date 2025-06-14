@@ -1,11 +1,11 @@
 # cortex-cpp - Embeddable AI
 <p align="center">
-  <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/menloresearch/cortex/dev/assets/cortex-banner.png">
+  <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/menloresearch/cortex.cpp/dev/assets/cortex-banner.png">
 </p>
 
 <p align="center">
   <a href="https://jan.ai/cortex">Documentation</a> - <a href="https://jan.ai/api-reference">API Reference</a> 
-  - <a href="https://github.com/menloresearch/cortex/releases">Changelog</a> - <a href="https://github.com/menloresearch/cortex/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
+  - <a href="https://github.com/menloresearch/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/menloresearch/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
 > ⚠️ **cortex-cpp is currently in Development**: Expect breaking changes and bugs!
@@ -41,7 +41,7 @@ Ensure that your system meets the following requirements to run Cortex:
 
 ## Quickstart
 To install Cortex CLI, follow the steps below:
-1. Download cortex-cpp here: https://github.com/menloresearch/cortex/releases
+1. Download cortex-cpp here: https://github.com/menloresearch/cortex.cpp/releases
 2. Install cortex-cpp by running the downloaded file.
 
 3. Download a Model:
@@ -121,37 +121,37 @@ Below is the available list of the model parameters you can set when loading a m
   <tr>
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/menloresearch/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2.tar.gz'>
+      <a href='https://github.com/menloresearch/cortex.cpp/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/menloresearch/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2-cuda-12-0.tar.gz'>
+      <a href='https://github.com/menloresearch/cortex.cpp/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2-cuda-12-0.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/menloresearch/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-amd64.tar.gz'>
+      <a href='https://github.com/menloresearch/cortex.cpp/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-amd64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>Intel</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/menloresearch/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-arm64.tar.gz'>
+      <a href='https://github.com/menloresearch/cortex.cpp/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-arm64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>M1/M2</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/menloresearch/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-avx2.tar.gz'>
+      <a href='https://github.com/menloresearch/cortex.cpp/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-avx2.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/menloresearch/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-cuda-12-0.tar.gz'>
+      <a href='https://github.com/menloresearch/cortex.cpp/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-cuda-12-0.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
@@ -159,7 +159,7 @@ Below is the available list of the model parameters you can set when loading a m
   </tr>
 </table>
 
-> Download the latest or older versions of Cortex-cpp at the **[GitHub Releases](https://github.com/menloresearch/cortex/releases)**.
+> Download the latest or older versions of Cortex-cpp at the **[GitHub Releases](https://github.com/menloresearch/cortex.cpp/releases)**.
 
 
 ## Manual Build

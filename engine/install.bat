@@ -45,7 +45,7 @@ if "%VERSION%"=="latest" (
 )
 
 :: Construct the download URL
-set "URL=https://github.com/menloresearch/cortex/releases/download/v%VERSION%/cortex-cpp-%VERSION%-win-amd64%AVX%"
+set "URL=https://github.com/menloresearch/cortex.cpp/releases/download/v%VERSION%/cortex-cpp-%VERSION%-win-amd64%AVX%"
 if "%GPU%"=="true" (
     :: If --gpu option is provided, append -cuda to the URL
     set "URL=%URL%-cuda"
