@@ -165,8 +165,8 @@ ModelService::ModelService(std::shared_ptr<DatabaseService> db_service,
       download_service_{download_service},
       inference_svc_(inference_service),
       engine_svc_(engine_svc),
-      task_queue_(task_queue) {
-        // ProcessBgrTasks();
+      task_queue_(task_queue){
+          // ProcessBgrTasks();
       };
 
 void ModelService::ForceIndexingModelList() {
@@ -554,6 +554,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
   if (auto& o = params_override["ctx_len"]; !o.isNull()) {
     ctx_len = o.asInt();
   }
+  Json::Value model_load_params;
+  json_helper::MergeJson(model_load_params, params_override);
 
   try {
     constexpr const int kDefautlContextLength = 8192;
@@ -627,6 +629,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 #else
         json_data["model_path"] =
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
+        model_load_params["model_path"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
 #endif
       } else {
         LOG_WARN << "model_path is empty";
@@ -638,6 +642,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).wstring());
 #else
         json_data["mmproj"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).string();
+        model_load_params["model_path"] =
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).string();
 #endif
       }
@@ -652,14 +658,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     }
 
     json_data["model"] = model_handle;
+    model_load_params["model"] = model_handle;
     if (auto& cpt = custom_prompt_template; !cpt.value_or("").empty()) {
       auto parse_prompt_result = string_utils::ParsePrompt(cpt.value());
       json_data["system_prompt"] = parse_prompt_result.system_prompt;
       json_data["user_prompt"] = parse_prompt_result.user_prompt;
       json_data["ai_prompt"] = parse_prompt_result.ai_prompt;
     }
-
-    json_helper::MergeJson(json_data, params_override);
 
     // Set default cpu_threads if it is not configured
     if (!json_data.isMember("cpu_threads")) {
@@ -683,12 +688,12 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
     assert(!!inference_svc_);
 
-    auto ir =
-        inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+    auto ir = inference_svc_->LoadModel(
+        std::make_shared<Json::Value>(model_load_params));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
 
-    if (status == drogon::k200OK) {      
+    if (status == drogon::k200OK) {
       return StartModelResult{/* .success = */ true,
                               /* .warning = */ may_fallback_res.value()};
     } else if (status == drogon::k409Conflict) {
@@ -1028,13 +1033,15 @@ ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
   auto es = hardware::EstimateLLaMACppRun(model_path, rc);
 
   if (!!es && (*es).gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
-    CTL_WRN("Not enough VRAM - " << "required: " << (*es).gpu_mode.vram_MiB
-                                 << ", available: " << free_vram_MiB);
+    CTL_WRN("Not enough VRAM - "
+            << "required: " << (*es).gpu_mode.vram_MiB
+            << ", available: " << free_vram_MiB);
   }
 
   if (!!es && (*es).cpu_mode.ram_MiB > free_ram_MiB) {
-    CTL_WRN("Not enough RAM - " << "required: " << (*es).cpu_mode.ram_MiB
-                                << ", available: " << free_ram_MiB);
+    CTL_WRN("Not enough RAM - "
+            << "required: " << (*es).cpu_mode.ram_MiB
+            << ", available: " << free_ram_MiB);
   }
 
   return warning;
