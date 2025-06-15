@@ -626,6 +626,9 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 #if defined(_WIN32)
         json_data["model_path"] = cortex::wc::WstringToUtf8(
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
+        model_load_params["model_path"] =
+            cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
 #else
         json_data["model_path"] =
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
