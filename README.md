@@ -1,7 +1,9 @@
-> ⚠️ **Archived Notice**  
-> This repository is no longer actively maintained.  
-> We have migrated development to [menloresearch/llama.cpp](https://github.com/menloresearch/llama.cpp).  
-> Please contribute directly to `llama.cpp` moving forward.
+<div style="border: 2px solid #f44336; background-color: #fff3f3; padding: 16px; border-radius: 6px; margin-bottom: 20px;">
+  <h2>🚨 Archived Repository Notice</h2>
+  <p><strong>This repository is no longer actively maintained.</strong></p>
+  <p>Development has moved to <a href="https://github.com/menloresearch/llama.cpp"><strong>menloresearch/llama.cpp</strong></a>.</p>
+  <p>Please contribute directly to <code>llama.cpp</code> moving forward.</p>
+</div>
 
 # Cortex
 
